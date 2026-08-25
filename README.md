@@ -82,7 +82,7 @@ pnpm docker:up
 ## Stack
 
 - **Frontend:** React, TypeScript, Vite, Tailwind, TanStack Query, React Router, Zod
-- **Backend:** Fastify (Nest-compatible module path; ADR-003)
+- **Backend:** TypeScript + Fastify (`services/api`)
 - **Data:** PostgreSQL + Redis
 - **Crypto:** Ed25519 signed verdicts (`otv.verdict.v1`)
 - **Chains:** Adapter abstraction; Ethereum + mock for MVP
