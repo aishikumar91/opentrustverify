@@ -14,7 +14,8 @@ export class OtvApiClient {
   constructor(opts: OtvClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/$/, "");
     this.apiKey = opts.apiKey;
-    this.fetchImpl = opts.fetch ?? fetch;
+    // Bind fetch — bare `fetch` loses Window context in browsers ("Illegal invocation")
+    this.fetchImpl = opts.fetch ?? ((input, init) => globalThis.fetch(input, init));
   }
 
   private headers(): HeadersInit {
