@@ -313,6 +313,73 @@ importers:
         specifier: ^5.4.19
         version: 5.4.21(@types/node@22.20.1)
 
+  apps/web:
+    dependencies:
+      '@otv/chain-adapters':
+        specifier: workspace:*
+        version: link:../../packages/chain-adapters
+      '@otv/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@otv/crypto-signatures':
+        specifier: workspace:*
+        version: link:../../packages/crypto-signatures
+      '@otv/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
+      '@otv/sdk-core':
+        specifier: workspace:*
+        version: link:../../packages/sdk-core
+      '@otv/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@otv/verdict-schema':
+        specifier: workspace:*
+        version: link:../../packages/verdict-schema
+      '@otv/verification-engine':
+        specifier: workspace:*
+        version: link:../../packages/verification-engine
+      '@tanstack/react-query':
+        specifier: ^5.83.0
+        version: 5.102.3(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.1
+        version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.23
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.3.7
+        version: 18.3.7(@types/react@18.3.31)
+      '@vitejs/plugin-react-swc':
+        specifier: ^3.11.0
+        version: 3.11.0(vite@5.4.21(@types/node@22.20.1))
+      autoprefixer:
+        specifier: ^10.4.21
+        version: 10.5.4(postcss@8.5.26)
+      postcss:
+        specifier: ^8.5.6
+        version: 8.5.26
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19(tsx@4.23.12)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.19
+        version: 5.4.21(@types/node@22.20.1)
+
   packages/api-client:
     dependencies:
       '@otv/verdict-schema':

@@ -14,7 +14,7 @@ export class EthereumAdapter implements ChainAdapter {
 
   constructor(network = "sepolia", rpcUrl?: string) {
     this.network = network;
-    this.rpcUrl = rpcUrl ?? process.env.ETH_RPC_URL;
+    this.rpcUrl = rpcUrl ?? (typeof process !== "undefined" ? process.env?.ETH_RPC_URL : undefined);
     this.mock = new MockChainAdapter(network);
   }
 

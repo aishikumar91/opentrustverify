@@ -100,3 +100,15 @@ pnpm docker:up
 ## License
 
 See [LICENSE.md](LICENSE.md). Protocol vs hosted service licensing is under review.
+
+## Vercel UI preview
+
+Unified frontend for UI/UX testing: `@otv/web` (marketing + verifier + dashboard + demo + docs).
+
+See [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md).
+
+```bash
+pnpm build:web
+pnpm preview:web   # local
+# or from opentrust-verify/: vercel --yes
+```

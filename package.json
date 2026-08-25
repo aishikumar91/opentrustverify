@@ -17,7 +17,10 @@
     "typecheck": "pnpm -r run typecheck --if-present",
     "demo": "pnpm --filter @otv/api run demo",
     "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
-    "docker:down": "docker compose -f infra/docker/docker-compose.yml down"
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "dev:web": "pnpm --filter @otv/web run dev",
+    "build:web": "pnpm --filter @otv/design-tokens --filter @otv/config --filter @otv/verdict-schema --filter @otv/crypto-signatures --filter @otv/chain-adapters --filter @otv/verification-engine --filter @otv/api-client --filter @otv/sdk-core --filter @otv/ui --filter @otv/web run build",
+    "preview:web": "pnpm --filter @otv/web run preview"
   },
   "engines": {
     "node": ">=20"
