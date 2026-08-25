@@ -20,7 +20,7 @@ OTV is introduced as a **sibling product folder** inside the existing POP Trust 
 | Host DB | Supabase Postgres + Edge Functions |
 | Host brand | Electric blue interlocking-links mark, dark-first |
 | OTV location | `/opentrust-verify/` (this monorepo) |
-| OTV stack decision | Independent React+Vite frontend; NestJS/Fastify backend; own Postgres/Redis |
+| OTV stack decision | Independent React+Vite frontend; TypeScript + Fastify backend; own Postgres/Redis |
 
 ## 2. Existing stack (host) — do not reuse as OTV runtime
 
@@ -49,7 +49,7 @@ Logo assets copied from host into `brand/assets/`.
 | Verdict schema + signed verdicts | Absent | New packages |
 | Chain adapter abstraction | Absent (POP has anchor only) | New package |
 | Verification engine pipeline | Absent | New service |
-| NestJS/Fastify + Postgres + Redis | Supabase only | New services + Docker |
+| TypeScript Fastify + Postgres + Redis | Supabase only | New services + Docker |
 | Public verifier for incoming value | POP has public verify for commitments | New `/verifier` app |
 | Wallet / explorer SDKs | POP developer API exists | New OTV SDKs |
 | RFC / whitepaper for transfer trust | Absent | New docs |

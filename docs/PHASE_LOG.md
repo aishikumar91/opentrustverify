@@ -21,6 +21,6 @@ Signed webhooks; SECURITY.md; unit tests; whitepaper/RFCs/research; Docker Compo
 ### Known blockers (explicit)
 - Live JSON-RPC eth_ methods: interface ready; mock used when RPC unset
 - KMS/HSM: in-memory keys for demo
-- NestJS: Fastify chosen per ADR-003 with migration path
+- Backend is TypeScript + Fastify only (no NestJS)
 - Flutter SDK: stub
 - Postgres wired in schema; API MVP uses memory store until DATABASE_URL integration lands

@@ -12,11 +12,11 @@
 **Why:** Explicit product requirement; aligns with POP frontend skills.  
 **Consequence:** SPA hosting + API reverse proxy; docs as Vite app (or static MD renderer).
 
-## ADR-003: Fastify API service (Nest-compatible module layout)
+## ADR-003: TypeScript + Fastify API
 
-**Decision:** Production TypeScript backend on **Fastify** with modular Nest-like folder layout (`modules/`, DI via simple containers).  
-**Why:** Faster MVP bootstrap, excellent OpenAPI, NestJS migration path documented; NestJS remains preferred for future enterprise module expansion.  
-**Status:** Accepted for MVP; revisit NestJS when org/SSO modules grow.
+**Decision:** Production backend is **TypeScript on Fastify** — not NestJS.  
+**Why:** Clean TypeScript service, first-class OpenAPI, low ceremony, modular `src/` layout.  
+**Status:** Accepted. NestJS is out of scope for OTV.
 
 ## ADR-004: PostgreSQL source of truth + Redis coordination
 
