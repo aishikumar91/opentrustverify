@@ -1,0 +1,24 @@
+{
+  "name": "@otv/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": { "build": "echo 'ui source package'", "typecheck": "tsc -p tsconfig.json --noEmit", "test": "echo ok" },
+  "peerDependencies": { "react": "^18.0.0", "react-dom": "^18.0.0" },
+  "dependencies": {
+    "@otv/design-tokens": "workspace:*",
+    "@otv/verdict-schema": "workspace:*",
+    "clsx": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.23",
+    "react": "^18.3.1",
+    "typescript": "^5.8.3"
+  }
+}

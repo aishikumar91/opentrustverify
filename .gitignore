@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+.turbo
+.env
+.env.local
+*.log
+coverage
+.DS_Store
+keys/*.pem
+!keys/.gitkeep
+**/tsconfig.tsbuildinfo
+**/dist
+apps/*/dist

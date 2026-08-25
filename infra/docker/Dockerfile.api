@@ -1,0 +1,18 @@
+FROM node:20-alpine AS deps
+WORKDIR /app
+RUN corepack enable
+COPY package.json pnpm-workspace.yaml ./
+COPY packages ./packages
+COPY services/api ./services/api
+RUN pnpm install --filter @otv/api...
+
+FROM deps AS build
+RUN pnpm --filter @otv/verdict-schema --filter @otv/crypto-signatures --filter @otv/chain-adapters --filter @otv/verification-engine --filter @otv/config --filter @otv/api run build
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app /app
+WORKDIR /app/services/api
+EXPOSE 4080
+CMD ["node", "--import", "tsx", "src/main.ts"]

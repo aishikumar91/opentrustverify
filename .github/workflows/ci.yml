@@ -1,0 +1,28 @@
+name: OTV CI
+on:
+  push:
+    paths:
+      - "opentrust-verify/**"
+  pull_request:
+    paths:
+      - "opentrust-verify/**"
+defaults:
+  run:
+    working-directory: opentrust-verify
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: opentrust-verify/pnpm-lock.yaml
+      - run: pnpm install
+      - run: pnpm --filter './packages/*' run build
+      - run: pnpm --filter './packages/*' --filter @otv/api run test
+      - run: pnpm demo

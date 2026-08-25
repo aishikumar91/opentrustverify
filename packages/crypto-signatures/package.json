@@ -1,0 +1,16 @@
+{
+  "name": "@otv/crypto-signatures",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": { "@noble/ed25519": "^2.2.3", "@noble/hashes": "^1.7.1" },
+  "devDependencies": { "typescript": "^5.8.3", "vitest": "^3.0.5" }
+}

@@ -1,0 +1,1 @@
+{ "name": "@otv/risk-service", "version": "0.1.0", "private": true, "scripts": { "build": "echo stub", "test": "echo stub" } }

@@ -1,0 +1,76 @@
+:root {
+  /* Brand — POP Trust family, OTV product */
+  --otv-brand: #1e6bff;
+  --otv-brand-hover: #3d82ff;
+  --otv-brand-muted: rgba(30, 107, 255, 0.12);
+
+  /* Surfaces (dark-first infrastructure) */
+  --otv-background: #050505;
+  --otv-surface: #0c0c0e;
+  --otv-surface-muted: #141418;
+  --otv-border: #26262c;
+  --otv-border-strong: #3a3a44;
+
+  /* Text */
+  --otv-text-primary: #f4f4f5;
+  --otv-text-secondary: #a1a1aa;
+  --otv-text-muted: #71717a;
+
+  /* Semantic status */
+  --otv-success: #22c55e;
+  --otv-warning: #f59e0b;
+  --otv-danger: #ef4444;
+  --otv-info: #38bdf8;
+  --otv-pending: #f59e0b;
+  --otv-verified: #22c55e;
+  --otv-unverified: #a1a1aa;
+  --otv-suspicious: #f97316;
+
+  /* Typography */
+  --otv-font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --otv-font-heading: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --otv-font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --otv-font-label: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --otv-font-code: "JetBrains Mono", ui-monospace, monospace;
+  --otv-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Type scale */
+  --otv-text-xs: 0.75rem;
+  --otv-text-sm: 0.875rem;
+  --otv-text-md: 1rem;
+  --otv-text-lg: 1.125rem;
+  --otv-text-xl: 1.25rem;
+  --otv-text-2xl: 1.5rem;
+  --otv-text-3xl: 1.875rem;
+  --otv-text-4xl: 2.25rem;
+  --otv-text-5xl: 3rem;
+
+  /* Spacing (8px system) */
+  --otv-space-1: 0.25rem;
+  --otv-space-2: 0.5rem;
+  --otv-space-3: 0.75rem;
+  --otv-space-4: 1rem;
+  --otv-space-5: 1.25rem;
+  --otv-space-6: 1.5rem;
+  --otv-space-8: 2rem;
+  --otv-space-10: 2.5rem;
+  --otv-space-12: 3rem;
+  --otv-space-16: 4rem;
+
+  /* Radius */
+  --otv-radius-sm: 8px;
+  --otv-radius-md: 12px;
+  --otv-radius-lg: 16px;
+
+  /* Motion */
+  --otv-duration-fast: 120ms;
+  --otv-duration-normal: 200ms;
+  --otv-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --otv-duration-fast: 0ms;
+    --otv-duration-normal: 0ms;
+  }
+}
