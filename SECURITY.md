@@ -31,3 +31,11 @@ See `docs/THREAT_MODEL.md`.
 | Dependency + container scanning in CI | Hook placeholders |
 
 Never allow LLM output to decide whether money exists.
+
+
+## MVP honesty notes (2026-08-25)
+
+- Mock adapter risk signal `MOCK_ADAPTER` is attached when live RPC is not used.
+- `apps/web` browser demo signing is for UI previews only — not production key management.
+- Enterprise dashboard routes require API keys until session/OIDC is implemented.
+- Webhook URLs are SSRF-checked (private IP / localhost deny-list) with inline retries.

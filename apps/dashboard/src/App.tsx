@@ -165,7 +165,10 @@ function ApiKeys() {
           onClick={async () => {
             const res = await fetch(`${API_BASE}/v1/api-keys`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${DEMO_KEY}`,
+              },
               body: JSON.stringify({ projectId: "proj_demo", name: "Dashboard key" }),
             });
             const data = await res.json();

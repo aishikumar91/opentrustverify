@@ -11,7 +11,7 @@ import { verifyIncomingTransfer } from "@otv/verification-engine";
 import { verifyPayload } from "@otv/crypto-signatures";
 import { store, DEMO_API_KEY } from "./lib/store.js";
 import { keyStore } from "./lib/keys.js";
-import { dispatchWebhooks, mapStatusToEvent } from "./lib/webhooks.js";
+import { dispatchWebhooks, mapStatusToEvent, isSafeWebhookUrl } from "./lib/webhooks.js";
 import { randomBytes } from "node:crypto";
 
 const app = Fastify({ logger: true });
@@ -80,21 +80,104 @@ app.post("/v1/verify/incoming", async (req, reply) => {
   );
   const claim = IncomingClaimSchema.parse(req.body);
   const adapter = createAdapter(claim.chain, claim.network, process.env.ETH_RPC_URL);
+  const live = Boolean(process.env.ETH_RPC_URL) && claim.chain !== "mock";
   const verdict = await verifyIncomingTransfer(claim, {
     adapter,
     keyStore,
-    maxConfidence: process.env.ETH_RPC_URL ? 0.99 : 0.95,
+    // Never inflate confidence for mock/offline adapters
+    maxConfidence: live ? 0.99 : 0.95,
   });
+  if (!live) {
+    verdict.risk.signals = [
+      ...verdict.risk.signals,
+      {
+        code: "MOCK_ADAPTER",
+        severity: "LOW",
+        message: "Verdict produced via mock chain adapter; not live RPC evidence",
+      },
+    ];
+    if (verdict.risk.level === "LOW") verdict.risk.level = "MEDIUM";
+  }
   store.saveVerdict(verdict);
   await dispatchWebhooks(mapStatusToEvent(verdict.status), verdict);
   return reply.send(verdict);
 });
 
 app.get("/v1/verdicts/:id", async (req, reply) => {
+  // Public read by verdict ID is intentional for share links; rate-limited globally.
   const { id } = req.params as { id: string };
   const verdict = store.verdicts.get(id);
   if (!verdict) return reply.code(404).send({ error: "not_found" });
   return verdict;
+});
+
+app.post("/v1/organizations", async (req, reply) => {
+  // MVP: API-key gate until session/OIDC lands (see API_SPEC + PENDING docs)
+  requireApiKey(
+    req.headers.authorization as string | undefined,
+    req.headers["x-otv-api-key"] as string | undefined
+  );
+  const body = req.body as { name: string };
+  const id = `org_${randomBytes(6).toString("hex")}`;
+  const org = { id, name: body.name ?? "Untitled", createdAt: new Date().toISOString() };
+  store.orgs.set(id, org);
+  return org;
+});
+
+app.post("/v1/projects", async (req) => {
+  requireApiKey(
+    req.headers.authorization as string | undefined,
+    req.headers["x-otv-api-key"] as string | undefined
+  );
+  const body = req.body as { orgId: string; name: string };
+  const id = `proj_${randomBytes(6).toString("hex")}`;
+  const project = {
+    id,
+    orgId: body.orgId,
+    name: body.name ?? "Project",
+    createdAt: new Date().toISOString(),
+  };
+  store.projects.set(id, project);
+  return project;
+});
+
+app.post("/v1/api-keys", async (req) => {
+  requireApiKey(
+    req.headers.authorization as string | undefined,
+    req.headers["x-otv-api-key"] as string | undefined
+  );
+  const body = req.body as { projectId: string; name?: string };
+  return store.createApiKey(body.projectId ?? "proj_demo", body.name ?? "API Key");
+});
+
+app.post("/v1/api-keys/rotate", async (req) => {
+  requireApiKey(
+    req.headers.authorization as string | undefined,
+    req.headers["x-otv-api-key"] as string | undefined
+  );
+  const body = req.body as { projectId: string; name?: string };
+  return store.createApiKey(body.projectId ?? "proj_demo", body.name ?? "Rotated Key");
+});
+
+app.get("/v1/audit", async (req) => {
+  requireApiKey(
+    req.headers.authorization as string | undefined,
+    req.headers["x-otv-api-key"] as string | undefined
+  );
+  return store.audit.slice(-100);
+});
+
+app.get("/v1/billing", async (req) => {
+  requireApiKey(
+    req.headers.authorization as string | undefined,
+    req.headers["x-otv-api-key"] as string | undefined
+  );
+  return {
+    plan: "FREE",
+    plans: ["FREE", "DEVELOPER", "BUSINESS", "ENTERPRISE"],
+    usage: store.usage,
+    provider: "abstracted",
+  };
 });
 
 app.post("/v1/verdicts/verify", async (req, reply) => {
@@ -113,6 +196,9 @@ app.post("/v1/webhooks", async (req, reply) => {
   );
   const body = req.body as { url: string; events?: string[] };
   if (!body?.url) return reply.code(400).send({ error: "url_required" });
+  if (!isSafeWebhookUrl(body.url)) {
+    return reply.code(400).send({ error: "unsafe_webhook_url" });
+  }
   const record = {
     id: `wh_${randomBytes(6).toString("hex")}`,
     projectId: key.projectId,
@@ -132,46 +218,6 @@ app.get("/v1/usage", async (req) => {
   );
   return store.usage;
 });
-
-app.post("/v1/organizations", async (req) => {
-  const body = req.body as { name: string };
-  const id = `org_${randomBytes(6).toString("hex")}`;
-  const org = { id, name: body.name ?? "Untitled", createdAt: new Date().toISOString() };
-  store.orgs.set(id, org);
-  return org;
-});
-
-app.post("/v1/projects", async (req) => {
-  const body = req.body as { orgId: string; name: string };
-  const id = `proj_${randomBytes(6).toString("hex")}`;
-  const project = {
-    id,
-    orgId: body.orgId,
-    name: body.name ?? "Project",
-    createdAt: new Date().toISOString(),
-  };
-  store.projects.set(id, project);
-  return project;
-});
-
-app.post("/v1/api-keys", async (req) => {
-  const body = req.body as { projectId: string; name?: string };
-  return store.createApiKey(body.projectId ?? "proj_demo", body.name ?? "API Key");
-});
-
-app.post("/v1/api-keys/rotate", async (req) => {
-  const body = req.body as { projectId: string; name?: string };
-  return store.createApiKey(body.projectId ?? "proj_demo", body.name ?? "Rotated Key");
-});
-
-app.get("/v1/audit", async () => store.audit.slice(-100));
-
-app.get("/v1/billing", async () => ({
-  plan: "FREE",
-  plans: ["FREE", "DEVELOPER", "BUSINESS", "ENTERPRISE"],
-  usage: store.usage,
-  provider: "abstracted",
-}));
 
 app.get("/v1/demo/meta", async () => ({
   demoApiKey: DEMO_API_KEY,

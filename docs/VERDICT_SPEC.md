@@ -72,7 +72,11 @@ Chain policies may skip balance confirmation when not technically available; sta
 2. Canonical JSON (sorted keys, no whitespace variance)
 3. SHA-256 digest
 4. Ed25519 sign with active key `kid`
-5. Attach base64url signature
+5. Attach **hex-encoded** signature (lowercase, no `0x` prefix)
+
+> Encoding note: MVP uses hex for signatures (`@noble/hashes` `bytesToHex`).
+> A future `otv.verdict.v2` may migrate to base64url; clients must read `schema`.
+
 
 ## Evidence rule
 

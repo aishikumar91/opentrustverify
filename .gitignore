@@ -12,3 +12,4 @@ keys/*.pem
 **/tsconfig.tsbuildinfo
 **/dist
 apps/*/dist
+wiki-vault/.vault-meta/

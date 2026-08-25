@@ -10,3 +10,5 @@ export * from "./components/Navbar";
 export * from "./components/Sidebar";
 export * from "./components/EmptyState";
 export * from "./components/Alert";
+export * from "./components/VerificationBadge";
+export * from "./components/Explorer";

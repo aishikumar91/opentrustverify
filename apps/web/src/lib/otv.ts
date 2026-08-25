@@ -64,9 +64,13 @@ export async function createApiKeyDemo(): Promise<{ raw: string; prefix: string 
   }
   const res = await fetch(`${API_BASE}/v1/api-keys`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${API_KEY}`,
+    },
     body: JSON.stringify({ projectId: "proj_demo", name: "Dashboard key" }),
   });
+  if (!res.ok) throw new Error(`api-keys failed: ${res.status}`);
   const data = await res.json();
   return { raw: data.raw, prefix: data.record?.prefix ?? "otv_live_" };
 }

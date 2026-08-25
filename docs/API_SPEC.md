@@ -5,9 +5,9 @@
 
 ## Authentication
 
-- Public read for `GET /v1/health`, public verifier subset
-- API key: `Authorization: Bearer otv_live_...` or `X-OTV-Api-Key`
-- Dashboard: session cookie (HTTP-only) after login
+- Public: `GET /v1/health`, chains/networks/assets, `POST /v1/verdicts/verify`, `GET /v1/verdicts/:id` (share links)
+- API key: `Authorization: Bearer otv_live_...` or `X-OTV-Api-Key` for verify, webhooks, usage, orgs/projects/keys, audit, billing
+- Dashboard session / OIDC: **specified; not implemented in MVP** — enterprise routes currently require API key
 
 ## Endpoints (MVP)
 
