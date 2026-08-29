@@ -8,7 +8,7 @@ export function Logo({
 }: {
   className?: string;
   showWordmark?: boolean;
-  href?: string;
+  href?: string | false;
 }) {
   const content = (
     <span className={clsx("inline-flex items-center gap-3", className)}>

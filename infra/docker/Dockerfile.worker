@@ -1,0 +1,19 @@
+FROM node:20-alpine AS deps
+WORKDIR /app
+RUN corepack enable
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY packages ./packages
+COPY services/api ./services/api
+COPY database ./database
+RUN pnpm install --frozen-lockfile --filter @otv/api...
+RUN pnpm --filter @otv/verdict-schema --filter @otv/crypto-signatures --filter @otv/chain-adapters --filter @otv/verification-engine --filter @otv/config --filter @otv/api run build
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+RUN addgroup -S otv && adduser -S otv -G otv
+COPY --from=deps /app /app
+RUN mkdir -p /app/keys && chown -R otv:otv /app/keys
+USER otv
+WORKDIR /app/services/api
+CMD ["node", "dist/worker.js"]

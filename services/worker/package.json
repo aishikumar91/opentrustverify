@@ -1,1 +1,11 @@
-{ "name": "@otv/worker", "version": "0.1.0", "private": true, "scripts": { "build": "echo stub", "test": "echo stub" } }
+{
+  "name": "@otv/worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @otv/api run worker",
+    "start": "pnpm --filter @otv/api run start:worker",
+    "build": "pnpm --filter @otv/api run build",
+    "test": "echo 'covered by @otv/api'"
+  }
+}

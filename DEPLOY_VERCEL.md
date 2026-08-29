@@ -1,53 +1,31 @@
-# OpenTrust Verify — Vercel frontend preview
+# OpenTrust Verify — frontend deploy
 
-Deploy the unified UI app (`apps/web`) for UI/UX testing.
+The canonical UI is `apps/web`. It talks to the Fastify API. There is no in-browser signing path.
 
-## Routes on one URL
+## Routes
 
 | Path | Surface |
 |------|---------|
-| `/` | Marketing |
-| `/verifier` | Public verifier |
-| `/dashboard` | Enterprise dashboard |
-| `/demo` | Demo wallet |
+| `/` | Product home |
+| `/login` `/register` | Auth |
+| `/about` `/whitepaper` `/security` `/contact` | Public product pages |
 | `/docs` | Developer docs |
+| `/verifier` | Public verdict lookup + authenticated verify |
+| `/dashboard` | Keys, verifications, webhooks, billing, audit |
+| `/wallet` | Wallet integration profile |
 
-## Preview behavior
-
-By default `VITE_OTV_DEMO_MODE` is on when no API URL is set. Verification runs **in-browser** (mock chain + Ed25519) so the UI is fully testable without deploying the Fastify API.
-
-## Deploy from this folder
-
-```bash
-cd opentrust-verify
-pnpm install
-pnpm --filter @otv/web run build   # local check
-vercel link                        # rootDirectory = opentrust-verify
-vercel --yes                       # preview
-vercel --prod --yes                # production
-```
-
-### Vercel project settings (if linking in dashboard)
-
-- **Root Directory:** `opentrust-verify`
-- **Framework:** Vite
-- **Install:** `pnpm install`
-- **Build:** (from `vercel.json`) builds packages + `@otv/web`
-- **Output:** `apps/web/dist`
-
-### Optional env
+## Env
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_OTV_DEMO_MODE=true` | Force in-browser verification |
-| `VITE_OTV_API_URL` | Point UI at a live API |
-| `VITE_OTV_API_KEY` | API key when using live API |
+| `VITE_OTV_API_URL` | Fastify API base (required for a working UI) |
 
-## Local preview of production build
+Session tokens from login/register are stored as `otv_session_token` and sent as `X-OTV-Session`.
+
+## Local
 
 ```bash
-cd opentrust-verify
-pnpm --filter './packages/*' --filter @otv/web run build
-pnpm --filter @otv/web run preview
-# http://localhost:4090
+pnpm install
+pnpm --filter './packages/*' run build
+pnpm dev:web
 ```

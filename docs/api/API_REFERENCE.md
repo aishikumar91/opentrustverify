@@ -5,17 +5,29 @@
 
 ## Authentication
 
-| Mode | Header | Used for |
-|------|--------|----------|
-| API key | `Authorization: Bearer otv_…` or `X-OTV-Api-Key` | verify, webhooks, usage, orgs/projects/keys (MVP), audit, billing |
-| None | — | health, chains, networks, assets, verdicts/verify (signature check), GET verdict by id (share links) |
+| Mode | Header / cookie | Used for |
+|------|-----------------|----------|
+| API key | `Authorization: Bearer otv_…` or `X-OTV-Api-Key` | verify, webhooks, usage |
+| Session | Cookie `otv_session` | login-gated dashboard routes |
+| None | — | health, ready, metrics, keys, catalogs, GET verdict, signature check |
 
-Keys are stored as SHA-256 hashes. Demo key (local only): `otv_test_demo_key_change_me`.
+Keys are stored as SHA-256 hashes. Demo key (local only): `otv_test_demo_key_change_me`.  
+Demo user: `demo@poptrust.me` / `otv-demo-change-me`.
+
+## Persistence
+
+When `DATABASE_URL` is set, verdicts, keys, webhooks, sessions, and audit rows live in PostgreSQL. Without it (development only) the process uses `MemoryStore`. Production boot requires Postgres.
 
 ## Endpoints
 
 ### GET /v1/health
-Returns product identity and clock.
+Liveness + `store` backend (`postgres` | `memory`) + redis flag.
+
+### GET /v1/ready
+Fails 503 unless Postgres, optional Redis, and the active signing kid are usable.
+
+### GET /v1/metrics
+Prometheus metrics (`otv_verifications_total`, webhook queue depth, …).
 
 ### POST /v1/verify/incoming
 Submit an incoming transfer claim. Returns `otv.verdict.v1`.
@@ -41,26 +53,31 @@ Fetch a stored verdict (public by ID for share links; rate-limited).
 ### POST /v1/verdicts/verify
 Verify Ed25519 signature of a verdict body (hex signature).
 
-### GET /v1/chains · /v1/networks · /v1/assets
-Catalog endpoints.
+### GET /v1/keys
+Public key list (`kid`, `publicKeyHex`, `status`).
+
+### POST /v1/auth/login
+Sets `otv_session`. See `docs/security/OIDC.md`.
 
 ### POST /v1/webhooks
-Register HTTPS webhook. SSRF deny-list applied. Returns signing secret once.
+Register HTTPS webhook. SSRF deny-list. Secret returned once. Delivery: `docs/webhooks/DELIVERY.md`.
 
 ### GET /v1/usage · /v1/audit · /v1/billing
-API-key gated operational endpoints.
+Operational endpoints (API key or session).
 
 ### POST /v1/organizations · /v1/projects · /v1/api-keys · /v1/api-keys/rotate
-MVP gated by API key (session/OIDC pending).
+Session or API key.
 
 ## Errors
 
 | Code | Meaning |
 |------|---------|
 | 400 | Validation / unsafe webhook URL |
-| 401 | Missing/invalid API key |
+| 401 | Missing/invalid credentials |
 | 404 | Verdict not found |
 | 429 | Rate limited |
+| 501 | OIDC not configured |
+| 503 | Not ready |
 | 500 | Internal |
 
 ## TypeScript

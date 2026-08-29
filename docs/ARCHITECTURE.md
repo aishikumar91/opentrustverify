@@ -13,8 +13,8 @@ flowchart LR
   Engine --> Adapters[Chain Adapters]
   Adapters --> RPC[Blockchain RPC]
   Engine --> Sign[Signing Service]
-  API --> PG[(PostgreSQL)]
-  API --> Redis[(Redis)]
+  API --> PG[(PostgreSQL — runtime SoT)]
+  API --> Redis[(Redis — limits + queue)]
   API --> WH[Webhook Service]
 ```
 
@@ -45,4 +45,4 @@ Clients never receive signing keys. Verdicts are signed server-side. Signature v
 
 ## Tenancy
 
-`organizations` → `projects` → `api_keys` / `webhooks` / usage. Row-level tenant filters in queries.
+`organizations` → `projects` → `api_keys` / `webhooks` / usage. Row-level tenant filters in `PostgresStore` queries. Production requires `DATABASE_URL`.

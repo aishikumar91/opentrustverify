@@ -1,0 +1,20 @@
+{
+  "name": "@otv/conformance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "build": "echo conformance-tests"
+  },
+  "dependencies": {
+    "@otv/chain-adapters": "workspace:*",
+    "@otv/crypto-signatures": "workspace:*",
+    "@otv/verdict-schema": "workspace:*",
+    "@otv/verification-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.5"
+  }
+}

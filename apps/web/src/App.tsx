@@ -1,146 +1,82 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { MarketingHome, MarketingPage } from "./pages/Marketing";
+import { AuthProvider } from "./lib/auth";
+import { RequireAuth } from "./components/RequireAuth";
+import { PublicLayout, AuthLayout } from "./layouts/PublicLayout";
+import { DocsLayout } from "./layouts/DocsLayout";
+import { DashboardLayout } from "./layouts/DashboardLayout";
+import { ToolLayout } from "./layouts/ToolLayout";
+import { HomePage } from "./pages/Home";
+import { AboutPage, WhitepaperPage } from "./pages/About";
+import { ContactPage, SecurityPage } from "./pages/Public";
 import { VerifierPage } from "./pages/Verifier";
-import { DashboardOverview, DashboardSimple, DashboardApi } from "./pages/Dashboard";
-import { DemoWalletPage } from "./pages/DemoWallet";
+import {
+  DashboardApi,
+  DashboardAudit,
+  DashboardBilling,
+  DashboardOverview,
+  DashboardSettings,
+  DashboardVerifications,
+  DashboardWebhooks,
+} from "./pages/Dashboard";
+import { WalletPage } from "./pages/Wallet";
 import { DocsPage } from "./pages/Docs";
+import { LoginPage, RegisterPage } from "./pages/Auth";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MarketingHome />} />
-        <Route
-          path="/product"
-          element={
-            <MarketingPage
-              title="Product"
-              body="Vendor-neutral verification infrastructure for wallets, exchanges, explorers, and fintech apps."
-            />
-          }
-        />
-        <Route
-          path="/how-it-works"
-          element={
-            <MarketingPage
-              title="How it works"
-              body="Claim → lookup → execution → asset → recipient → amount → balance → finality → spendability → signed verdict."
-            />
-          }
-        />
-        <Route
-          path="/developers"
-          element={
-            <MarketingPage
-              title="Developers"
-              body="Integrate with the TypeScript SDK, React hooks, and OpenAPI. Open /docs for the developer portal."
-            />
-          }
-        />
-        <Route
-          path="/security"
-          element={
-            <MarketingPage
-              title="Security"
-              body="Threat-modeled API, hashed API keys, signed webhooks, server-side signing keys, and auditable evidence."
-            />
-          }
-        />
-        <Route
-          path="/standards"
-          element={
-            <MarketingPage
-              title="Standards"
-              body="OTV RFCs define verdict schema, wallet profile, explorer profile, and conformance."
-            />
-          }
-        />
-        <Route
-          path="/research"
-          element={
-            <MarketingPage
-              title="Research"
-              body="Competitor analysis and consumer-protection research informed by emerging-market realities."
-            />
-          }
-        />
-        <Route
-          path="/pricing"
-          element={
-            <MarketingPage
-              title="Pricing"
-              body="FREE · DEVELOPER · BUSINESS · ENTERPRISE. Metered verifications with a replaceable billing provider."
-            />
-          }
-        />
-        <Route
-          path="/company"
-          element={
-            <MarketingPage
-              title="Company"
-              body="A POP Trust product — global infrastructure standard born from a real consumer-protection problem."
-            />
-          }
-        />
-        <Route
-          path="/contact"
-          element={
-            <MarketingPage title="Contact" body="enterprise@poptrust.me · support for verify.poptrust.me" />
-          }
-        />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/security" element={<SecurityPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/whitepaper" element={<WhitepaperPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Route>
 
-        <Route path="/verifier" element={<VerifierPage />} />
-        <Route path="/demo" element={<DemoWalletPage />} />
-        <Route path="/demo-wallet" element={<DemoWalletPage />} />
-        <Route path="/docs" element={<DocsPage />} />
+          <Route element={<DocsLayout />}>
+            <Route path="/docs" element={<DocsPage />} />
+          </Route>
 
-        <Route path="/dashboard" element={<DashboardOverview />} />
-        <Route
-          path="/dashboard/verifications"
-          element={
-            <DashboardSimple
-              title="Verifications"
-              body="Search by transaction hash, wallet, or verdict ID."
-            />
-          }
-        />
-        <Route path="/dashboard/api" element={<DashboardApi />} />
-        <Route
-          path="/dashboard/webhooks"
-          element={
-            <DashboardSimple
-              title="Webhooks"
-              body="Signed webhook delivery with retries and idempotency keys."
-            />
-          }
-        />
-        <Route
-          path="/dashboard/billing"
-          element={
-            <DashboardSimple
-              title="Billing"
-              body="FREE / DEVELOPER / BUSINESS / ENTERPRISE — provider abstracted."
-            />
-          }
-        />
-        <Route
-          path="/dashboard/security"
-          element={
-            <DashboardSimple title="Security" body="Sessions, audit logs, key events, and alerts." />
-          }
-        />
-        <Route
-          path="/dashboard/settings"
-          element={
-            <DashboardSimple
-              title="Settings"
-              body="Project configuration and policy version selection."
-            />
-          }
-        />
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          <Route element={<ToolLayout />}>
+            <Route path="/verifier" element={<VerifierPage />} />
+          </Route>
+
+          <Route element={<RequireAuth />}>
+            <Route element={<ToolLayout />}>
+              <Route path="/wallet" element={<WalletPage />} />
+            </Route>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardOverview />} />
+              <Route path="/dashboard/verifications" element={<DashboardVerifications />} />
+              <Route path="/dashboard/api" element={<DashboardApi />} />
+              <Route path="/dashboard/webhooks" element={<DashboardWebhooks />} />
+              <Route path="/dashboard/billing" element={<DashboardBilling />} />
+              <Route path="/dashboard/security" element={<DashboardAudit />} />
+              <Route path="/dashboard/settings" element={<DashboardSettings />} />
+            </Route>
+          </Route>
+
+          <Route path="/product" element={<Navigate to="/" replace />} />
+          <Route path="/how-it-works" element={<Navigate to="/" replace />} />
+          <Route path="/developers" element={<Navigate to="/docs" replace />} />
+          <Route path="/standards" element={<Navigate to="/whitepaper" replace />} />
+          <Route path="/research" element={<Navigate to="/about" replace />} />
+          <Route path="/pricing" element={<Navigate to="/" replace />} />
+          <Route path="/company" element={<Navigate to="/about" replace />} />
+          <Route path="/marketing" element={<Navigate to="/" replace />} />
+
+          <Route path="/demo" element={<Navigate to="/wallet" replace />} />
+          <Route path="/demo-wallet" element={<Navigate to="/wallet" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

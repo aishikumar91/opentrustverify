@@ -13,11 +13,14 @@ Gate “OTV Compatible” claims. Certification marks require separate authoriza
 5. **Adapter** — mock normalizeEvidence deterministic for demo hash.
 6. **API** — OpenAPI paths exist; unauthorized verify returns 401.
 
-## Run (MVP)
+## Automated harness (repo)
 
 ```bash
-pnpm --filter './packages/*' --filter @otv/api run test
+pnpm --filter './packages/*' run build
+pnpm conformance
+pnpm --filter @otv/api run test
 pnpm demo
 ```
 
-Automated conformance CLI is **pending** (`docs/PENDING.md` P-07).
+The CLI lives in `tests/conformance` (`@otv/conformance`). It is the OTV-0010 gate for the mock path.
+

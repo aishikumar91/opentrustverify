@@ -1,10 +1,10 @@
 # OpenTrust Verify Whitepaper
 
-**Version:** 0.2.0-draft  
+**Version:** 0.3.0  
 **Date:** 2026-08-25  
 **Brand:** POP Trust · Product: OpenTrust Verify (OTV)  
 **Tagline:** Trust the balance, not just the blockchain event.  
-**Domain:** `verify.poptrust.me`
+**Domain:** `otv.poptrust.me`
 
 > This document is an engineering whitepaper for reviewers (wallets, exchanges, auditors, standards bodies). Market sizing claims are marked **RESEARCH REQUIRED**.
 
@@ -55,9 +55,9 @@ Happy path and failure transitions are enforced in `@otv/verdict-schema`.
 
 ## 9. Architecture
 
-TypeScript Fastify API + verification engine + chain adapters + Postgres schema + Redis (coordination target) + SDKs + dashboard + public verifier. See `docs/ARCHITECTURE.md`.
+**Runtime:** TypeScript Fastify API + verification engine + chain adapters + Postgres source of truth + Redis rate limits/queues + SDKs + unified web app (`apps/web`). See `docs/ARCHITECTURE.md`.
 
-**MVP runtime honesty:** API may use an in-memory store for demos; Postgres migrations are present for durable deployment. Set `ETH_RPC_URL` for live Ethereum JSON-RPC; otherwise mock adapter is used and risk signals disclose `MOCK_ADAPTER`.
+Set `ETH_RPC_URL` for live Ethereum JSON-RPC; otherwise the mock adapter is used and risk signals disclose `MOCK_ADAPTER`.
 
 ## 10. Signed Verdicts
 
@@ -73,7 +73,7 @@ Additive components: `VerificationBadge`, `TransactionTrustPanel`, `EvidenceTime
 
 ## 13. API
 
-REST `/v1/*` with OpenAPI (`/docs`). API keys for developers. Session/OIDC path specified; MVP gates enterprise routes with API keys until SSO lands.
+REST `/v1/*` with OpenAPI (`/docs`). API keys for machines. Email/password sessions for the dashboard (`X-OTV-Session` plus cookies). OIDC remains 501 until an identity provider is configured.
 
 ## 14. SDK
 
@@ -81,7 +81,7 @@ TypeScript (`@otv/sdk-core`), React hooks (`@otv/sdk-react`), Flutter stub.
 
 ## 15. Security
 
-Hashed API keys, Helmet, rate limits, webhook HMAC + SSRF deny-list + retries, Zod validation, server-side signing on API path. Browser demo mode is explicitly labeled and must not be used as production signing.
+Hashed API keys, Helmet, rate limits, webhook HMAC + SSRF deny-list + retries, Zod validation, server-side signing on the API. The product UI never signs verdicts in the browser.
 
 ## 16. Privacy
 
@@ -107,11 +107,12 @@ Wallet and explorer profiles; sandbox; clear docs; African-origin insight, globa
 
 1. Mock MVP (done)  
 2. Live Ethereum RPC (adapter live path landed; ops hardening)  
-3. Postgres persistence wiring  
-4. KMS + Redis queues  
-5. SSO/OIDC  
-6. Multi-chain adapters  
-7. Conformance suite + certification
+3. Postgres persistence (wired as source of truth)  
+4. Redis queues + file/KMS wrap  
+5. Email/password sessions (OIDC still pending)  
+6. Unified product UI (`apps/web`)  
+7. Multi-chain adapters  
+8. Conformance suite + certification
 
 ## 22. Research
 

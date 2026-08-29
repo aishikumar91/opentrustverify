@@ -67,9 +67,19 @@ export function verifyPayload(
   }
 }
 
-export class InMemoryKeyStore {
-  private keys = new Map<string, KeyPairRecord>();
-  private activeKid: string | null = null;
+/** Sync signing keystore used by the verification engine. */
+export interface SigningKeyStore {
+  put(record: KeyPairRecord): void;
+  getActive(): KeyPairRecord;
+  getPublic(kid: string): string | undefined;
+  listPublic(): Array<Pick<KeyPairRecord, "kid" | "publicKeyHex" | "status" | "createdAt">>;
+  rotate(newKid: string): KeyPairRecord;
+  revoke(kid: string): void;
+}
+
+export class InMemoryKeyStore implements SigningKeyStore {
+  protected keys = new Map<string, KeyPairRecord>();
+  protected activeKid: string | null = null;
 
   put(record: KeyPairRecord): void {
     this.keys.set(record.kid, record);
@@ -85,6 +95,15 @@ export class InMemoryKeyStore {
 
   getPublic(kid: string): string | undefined {
     return this.keys.get(kid)?.publicKeyHex;
+  }
+
+  listPublic(): Array<Pick<KeyPairRecord, "kid" | "publicKeyHex" | "status" | "createdAt">> {
+    return [...this.keys.values()].map(({ kid, publicKeyHex, status, createdAt }) => ({
+      kid,
+      publicKeyHex,
+      status,
+      createdAt,
+    }));
   }
 
   rotate(newKid: string): KeyPairRecord {

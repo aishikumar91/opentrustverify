@@ -47,6 +47,8 @@
 **Decision:** Proprietary / all-rights-reserved pending legal review; evaluate Apache-2.0 for protocol schemas later.  
 **See:** `LICENSE.md`, `docs/governance/LICENSING.md`.
 
-## ADR-010: Brand subdomain
+## ADR-011: Runtime Postgres (not MemoryStore in production)
 
-**Decision:** Product lives at `verify.poptrust.me` (not a separate trademark site for MVP).
+**Decision:** The API connects to PostgreSQL whenever `DATABASE_URL` is set; production refuses to boot without it. MemoryStore remains a local/test fallback only.  
+**Why:** ADR-004 required Postgres as source of truth; the schema existed but was unused.  
+**Consequence:** Multi-instance durability, tenant isolation, and webhook delivery rows are real.

@@ -1,0 +1,98 @@
+# Isolated OTV stack for the HealFast VPS.
+# Does not share healfast-redis (6379) or existing Postgres containers.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: otv-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: otv
+      POSTGRES_PASSWORD: ${OTV_PG_PASSWORD}
+      POSTGRES_DB: otv
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - otv_pg:/var/lib/postgresql/data
+      - ../../database/migrations/001_core.sql:/docker-entrypoint-initdb.d/001_core.sql:ro
+      - ../../database/migrations/002_production.sql:/docker-entrypoint-initdb.d/002_production.sql:ro
+      - ../../database/seeds/001_demo.sql:/docker-entrypoint-initdb.d/003_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U otv -d otv"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  redis:
+    image: redis:7-alpine
+    container_name: otv-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - otv_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: otv-api
+    restart: unless-stopped
+    environment:
+      PORT: 4080
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      DATABASE_URL: postgres://otv:${OTV_PG_PASSWORD}@postgres:5432/otv
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: ${SESSION_SECRET}
+      OTV_KMS_MASTER_KEY: ${OTV_KMS_MASTER_KEY}
+      OTV_KEYS_DIR: /app/keys
+      OTV_EMBED_WORKER: "0"
+      COOKIE_SECURE: "1"
+      COOKIE_SAMESITE: "lax"
+      OTV_PUBLIC_URL: ${OTV_PUBLIC_URL:-https://otv.poptrust.me}
+      ETH_RPC_URL: ${ETH_RPC_URL:-}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
+    ports:
+      - "4080:4080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.worker
+    container_name: otv-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://otv:${OTV_PG_PASSWORD}@postgres:5432/otv
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        VITE_OTV_API_URL: ${VITE_OTV_API_URL:-https://otv.poptrust.me}
+    container_name: otv-web
+    restart: unless-stopped
+    ports:
+      - "4090:80"
+    depends_on:
+      api:
+        condition: service_started
+volumes:
+  otv_pg:
+  otv_redis:

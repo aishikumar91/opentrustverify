@@ -1,0 +1,14 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN corepack enable
+COPY . .
+ARG VITE_OTV_API_URL=https://otv.poptrust.me
+ENV VITE_OTV_API_URL=$VITE_OTV_API_URL
+RUN pnpm install --frozen-lockfile --filter @otv/web...
+RUN pnpm --filter @otv/design-tokens --filter @otv/config --filter @otv/verdict-schema --filter @otv/api-client --filter @otv/web run build
+
+FROM nginx:1.27-alpine
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+COPY infra/docker/nginx.web.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+HEALTHCHECK --interval=20s --timeout=5s --start-period=10s CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1

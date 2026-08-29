@@ -6,36 +6,37 @@ Report vulnerabilities privately to security@poptrust.me (placeholder until publ
 
 Do not file public issues for key material, auth bypasses, or signature forgery.
 
-## Security model (MVP)
+## Security model
 
 - API keys stored as SHA-256 hashes
-- Helmet + CORS + rate limiting on API
+- Dashboard passwords: scrypt; sessions hashed; HttpOnly cookies
+- Helmet + CORS + Redis (or in-process) rate limiting
 - Zod validation on claims and verdicts
-- Signing keys never shipped to clients
-- Webhook HMAC signatures + idempotency keys
-- Parameterized SQL in schema (API MVP uses memory store; Postgres migrations ready)
-- Structured audit events for key creation
+- Signing keys on disk, optional AES-256-GCM wrap; never shipped to clients
+- Webhook HMAC signatures, idempotency keys, SSRF deny-list, durable retries
+- Parameterized SQL via `pg`
+- Structured audit events
 
 ## Threat model
 
 See `docs/THREAT_MODEL.md`.
 
-## Production blockers (explicit)
+## Production checklist
 
 | Item | Status |
 |------|--------|
-| HSM/KMS for signing keys | Interface only — file/in-memory for demo |
-| Live multi-RPC consensus | Single adapter path; mock when RPC unset |
-| Private-IP webhook SSRF guard | Documented; enforce in gateway before prod |
-| OIDC/SSO | Architecture only |
-| Dependency + container scanning in CI | Hook placeholders |
+| Postgres source of truth | Required (`DATABASE_URL`) |
+| Redis rate limits + webhook queue | Required for multi-instance |
+| File keystore + `OTV_KMS_MASTER_KEY` | Required for wrapped keys |
+| Cloud HSM | Next hardening — interface documented |
+| Live multi-RPC consensus | Single Ethereum RPC path |
+| OIDC/SSO | Specified; 501 until configured |
+| Dependency + container scanning | Add in deploy pipeline |
 
 Never allow LLM output to decide whether money exists.
 
+## Honesty notes
 
-## MVP honesty notes (2026-08-25)
-
-- Mock adapter risk signal `MOCK_ADAPTER` is attached when live RPC is not used.
-- `apps/web` browser demo signing is for UI previews only — not production key management.
-- Enterprise dashboard routes require API keys until session/OIDC is implemented.
-- Webhook URLs are SSRF-checked (private IP / localhost deny-list) with inline retries.
+- `MOCK_ADAPTER` is attached when live RPC is not used.
+- `apps/web` browser demo signing is UI preview only.
+- Session cookies + API keys are the MVP auth story; OIDC is future (`docs/security/OIDC.md`).

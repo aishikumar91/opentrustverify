@@ -1,14 +1,7 @@
 name: OTV CI
 on:
   push:
-    paths:
-      - "opentrust-verify/**"
   pull_request:
-    paths:
-      - "opentrust-verify/**"
-defaults:
-  run:
-    working-directory: opentrust-verify
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -21,8 +14,15 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: opentrust-verify/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install
       - run: pnpm --filter './packages/*' run build
-      - run: pnpm --filter './packages/*' --filter @otv/api run test
+      - run: pnpm --filter './packages/*' --filter @otv/api --filter @otv/conformance run test
       - run: pnpm demo
+      - name: Fail if ethereum adapter still always-mocks
+        run: |
+          if grep -E "return this\.mock;" packages/chain-adapters/src/ethereum.ts; then
+            echo "ethereum adapter still short-circuits to mock"
+            exit 1
+          fi
+          grep -n "eth_getTransactionByHash" packages/chain-adapters/src/ethereum.ts

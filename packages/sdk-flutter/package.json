@@ -1,1 +1,1 @@
-{ "name": "@otv/sdk-flutter", "version": "0.1.0", "private": true, "scripts": { "build": "echo flutter-stub", "test": "echo flutter-stub" } }
+{ "name": "@otv/sdk-flutter", "version": "0.1.0", "private": true, "scripts": { "build": "echo dart-client", "test": "echo dart-client" } }

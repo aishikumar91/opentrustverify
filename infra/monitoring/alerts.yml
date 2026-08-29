@@ -1,0 +1,24 @@
+groups:
+  - name: otv
+    rules:
+      - alert: OtvApiNotReady
+        expr: up{job="otv-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: OTV API scrape is down
+      - alert: OtvWebhookQueueBacklog
+        expr: otv_webhook_queue_depth > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Webhook queue depth is high
+      - alert: OtvVerificationErrors
+        expr: rate(otv_api_errors_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elevated OTV API 5xx rate

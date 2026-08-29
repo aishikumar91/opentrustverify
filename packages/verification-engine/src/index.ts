@@ -7,10 +7,7 @@ import {
   VERDICT_SCHEMA_ID,
   assertTransition,
 } from "@otv/verdict-schema";
-import {
-  type InMemoryKeyStore,
-  signPayload,
-} from "@otv/crypto-signatures";
+import { type SigningKeyStore, signPayload } from "@otv/crypto-signatures";
 
 function id(): string {
   return `vr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -28,7 +25,7 @@ function pushStatus(
 
 export interface VerifyOptions {
   adapter: ChainAdapter;
-  keyStore: InMemoryKeyStore;
+  keyStore: SigningKeyStore;
   policyVersion?: string;
   ttlMs?: number;
   /** When using mock/offline adapters, confidence is capped. */

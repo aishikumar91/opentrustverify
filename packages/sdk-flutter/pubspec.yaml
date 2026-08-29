@@ -1,0 +1,7 @@
+name: open_trust_verify
+description: Dart client for OpenTrust Verify (OTV) incoming-transfer verification.
+version: 0.1.0
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+dependencies:
+  http: ^1.2.2

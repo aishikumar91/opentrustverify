@@ -11,14 +11,11 @@
     "test": "echo ok"
   },
   "dependencies": {
-    "@otv/chain-adapters": "workspace:*",
+    "@otv/api-client": "workspace:*",
     "@otv/config": "workspace:*",
-    "@otv/crypto-signatures": "workspace:*",
     "@otv/design-tokens": "workspace:*",
-    "@otv/sdk-core": "workspace:*",
     "@otv/ui": "workspace:*",
     "@otv/verdict-schema": "workspace:*",
-    "@otv/verification-engine": "workspace:*",
     "@tanstack/react-query": "^5.83.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

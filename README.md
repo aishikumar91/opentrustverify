@@ -8,9 +8,9 @@ OpenTrust Verify is digital-asset verification infrastructure under the **POP Tr
 |--|--|
 | Product | OpenTrust Verify / OTV |
 | Parent brand | POP Trust |
-| Marketing | `https://verify.poptrust.me` |
-| API | `https://api.verify.poptrust.me` |
-| Docs | `https://docs.verify.poptrust.me` |
+| Product UI | `https://otv.poptrust.me` |
+| API | `https://otv.poptrust.me/v1` |
+| Docs | `https://otv.poptrust.me/docs` |
 
 OTV helps wallets, exchanges, explorers, and fintech apps determine whether an observed incoming blockchain event represents **verified, spendable value** for a recipient.
 
@@ -29,42 +29,45 @@ Blockchain activity
 
 ```
 opentrust-verify/
-├── apps/           # marketing, dashboard, verifier, demo-wallet, docs
+├── apps/web        # Canonical product UI (port 4090)
 ├── packages/       # sdk, verdict-schema, crypto, adapters, ui, tokens
-├── services/       # api + engine/worker boundaries
+├── services/api    # Fastify API + webhook worker
 ├── database/       # migrations, seeds, schema
 ├── docs/           # specs, RFCs, whitepaper, research
-├── infra/docker/   # compose + Dockerfiles
-└── brand/assets/   # POP Trust logo + OTV mark
+└── infra/docker/   # compose + Dockerfiles
 ```
+
+The product UI is `@otv/web` on port 4090. Dashboard, verifier, docs, and wallet are routes in that app.
 
 ## Quick start
 
 ```bash
-cd opentrust-verify
 pnpm install
 pnpm --filter './packages/*' run build
-pnpm --filter @otv/api run dev          # http://localhost:4080
-pnpm --filter @otv/marketing run dev    # http://localhost:4083
-pnpm --filter @otv/verifier run dev     # http://localhost:4082
-pnpm --filter @otv/dashboard run dev    # http://localhost:4081
-pnpm --filter @otv/demo-wallet run dev  # http://localhost:4084
+pnpm docker:up                          # Postgres :5433, Redis :6380, API :4080
+pnpm dev                                # API + unified web UI
 ```
 
-Demo API key (local): `otv_test_demo_key_change_me`
+Create an account at `http://localhost:4090/register`, then use the dashboard to mint API keys and submit verifications. The UI talks to the Fastify API (Postgres-backed). Signing never happens in the browser.
 
 ```bash
+# After creating a key in the dashboard:
 curl -s http://localhost:4080/v1/verify/incoming \
-  -H "Authorization: Bearer otv_test_demo_key_change_me" \
+  -H "Authorization: Bearer otv_live_…" \
   -H "Content-Type: application/json" \
   -d '{
     "chain":"ethereum",
     "network":"sepolia",
-    "transactionHash":"0xdemo000000000000000000000000000000000000000000000000000000000001",
-    "recipient":"0x2222222222222222222222222222222222222222",
-    "asset":{"type":"erc20","contract":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","symbol":"USDC"},
-    "expectedAmount":"1000000"
-  }' | jq .
+    "transactionHash":"0x…",
+    "recipient":"0x…",
+    "asset":{"type":"erc20","contract":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","symbol":"USDC"}
+  }'
+```
+
+Point the UI at a remote API with `apps/web/.env`:
+
+```
+VITE_OTV_API_URL=https://otv.poptrust.me
 ```
 
 Offline engine demo:
@@ -101,14 +104,11 @@ pnpm docker:up
 
 See [LICENSE.md](LICENSE.md). Protocol vs hosted service licensing is under review.
 
-## Vercel UI preview
+## Product UI
 
-Unified frontend for UI/UX testing: `@otv/web` (marketing + verifier + dashboard + demo + docs).
-
-See [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md).
+Unified app `@otv/web` (home, auth, dashboard, verifier, docs, whitepaper, wallet).
 
 ```bash
 pnpm build:web
-pnpm preview:web   # local
-# or from opentrust-verify/: vercel --yes
+pnpm preview:web
 ```

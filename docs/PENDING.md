@@ -1,18 +1,18 @@
 # Pending Work & Documentation Tracker
 
-Generated from Claude Obsidian–guided gap analysis (2026-08-25).
+Updated 2026-08-28 after Postgres + production wiring.
 
 | ID | Item | Status | Severity |
 |----|------|--------|----------|
-| P-01 | Wire Postgres into API (replace MemoryStore for durable MVP) | Pending | Blocker |
-| P-02 | Redis rate-limit / queue backend | Pending | MVP-gap |
-| P-03 | File/KMS keystore for signing keys | Pending | MVP-gap |
-| P-04 | Session cookie auth + OIDC | Pending | MVP-gap / Future |
-| P-05 | Durable webhook worker + delivery table | Partial (inline retries) | MVP-gap |
-| P-06 | Flutter SDK implementation | Stub | Future |
-| P-07 | Conformance test harness (OTV-0010) | Pending | MVP-gap |
-| P-08 | Observability metrics exporters | Pending | MVP-gap |
-| P-09 | Expand RFC bodies beyond templates | Pending | Docs |
+| P-01 | Wire Postgres into API (replace MemoryStore for durable MVP) | **Done** | — |
+| P-02 | Redis rate-limit / queue backend | **Done** | — |
+| P-03 | File/KMS keystore for signing keys | **Done** (file + local AES-GCM; cloud HSM later) | — |
+| P-04 | Session cookie auth + OIDC | **Session done**; OIDC specified (501) | Future (SSO) |
+| P-05 | Durable webhook worker + delivery table | **Done** | — |
+| P-06 | Flutter SDK implementation | **Dart client added** (not pub.dev certified) | Future polish |
+| P-07 | Conformance test harness (OTV-0010) | **Done** (`pnpm conformance`) | — |
+| P-08 | Observability metrics exporters | **Done** (`GET /v1/metrics`) | — |
+| P-09 | Expand RFC bodies beyond templates | **Done** | — |
 | P-10 | Legal licensing decision | Pending counsel | Docs |
 
-See also: `docs/GAP_ANALYSIS.md`.
+Remaining non-blockers: cloud KMS provider, live OIDC, billing provider, extra chain adapters. See `docs/MVP_BOUNDARIES.md`.

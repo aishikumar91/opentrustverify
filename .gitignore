@@ -8,8 +8,11 @@ build
 coverage
 .DS_Store
 keys/*.pem
+keys/*.json
 !keys/.gitkeep
+services/api/keys/
+docs/internal/
+wiki-vault/
 **/tsconfig.tsbuildinfo
 **/dist
 apps/*/dist
-wiki-vault/.vault-meta/

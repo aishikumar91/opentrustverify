@@ -1,0 +1,42 @@
+# Import from the host Caddyfile or append to edge-proxy/Caddyfile.
+# Caddy runs in Docker and reaches host ports via host.docker.internal.
+
+otv.poptrust.me {
+	encode gzip
+
+	handle /v1* {
+		reverse_proxy host.docker.internal:4080 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
+	handle /api/docs* {
+		uri strip_prefix /api
+		reverse_proxy host.docker.internal:4080 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
+	handle {
+		reverse_proxy host.docker.internal:4090 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

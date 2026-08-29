@@ -1,0 +1,9 @@
+**/node_modules
+.git
+**/.git
+**/dist
+**/*.tgz
+**/.env
+apps/web/.env
+*.md
+wiki-vault

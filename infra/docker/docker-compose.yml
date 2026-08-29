@@ -10,23 +10,65 @@ services:
     volumes:
       - otv_pg:/var/lib/postgresql/data
       - ../../database/migrations/001_core.sql:/docker-entrypoint-initdb.d/001_core.sql:ro
-      - ../../database/seeds/001_demo.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
+      - ../../database/migrations/002_production.sql:/docker-entrypoint-initdb.d/002_production.sql:ro
+      - ../../database/seeds/001_demo.sql:/docker-entrypoint-initdb.d/003_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U otv -d otv"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   redis:
     image: redis:7-alpine
     ports:
       - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   api:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
     environment:
       PORT: 4080
+      NODE_ENV: production
       DATABASE_URL: postgres://otv:otv@postgres:5432/otv
       REDIS_URL: redis://redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:-otv-compose-session-secret-change-me-32}
+      OTV_KEYS_DIR: /app/keys
+      OTV_EMBED_WORKER: "0"
+      OTV_PUBLIC_URL: http://localhost:4080
     ports:
       - "4080:4080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://otv:otv@postgres:5432/otv
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles: ["observability"]
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
 volumes:
   otv_pg:

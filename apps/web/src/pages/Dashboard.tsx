@@ -1,51 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Button, Card, EmptyState, Logo, Sidebar, StatusBadge } from "@otv/ui";
+import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, EmptyState, Input, StatusBadge } from "@otv/ui";
 import type { Verdict } from "@otv/verdict-schema";
-import { createApiKeyDemo, DEMO_CLAIM, isDemoMode, verifyIncoming } from "@/lib/otv";
-
-const NAV = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/verifications", label: "Verifications" },
-  { href: "/dashboard/api", label: "API" },
-  { href: "/dashboard/webhooks", label: "Webhooks" },
-  { href: "/dashboard/billing", label: "Billing" },
-  { href: "/dashboard/security", label: "Security" },
-  { href: "/dashboard/settings", label: "Settings" },
-];
-
-function Layout({ children }: { children: React.ReactNode }) {
-  const loc = useLocation();
-  return (
-    <div className="flex min-h-screen">
-      <Sidebar items={NAV} active={loc.pathname} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-[var(--otv-border)] px-4 md:px-6">
-          <div className="md:hidden">
-            <Logo href="/" />
-          </div>
-          <input
-            aria-label="Search"
-            placeholder="Search hash, wallet, verdict…"
-            className="hidden w-full max-w-md rounded-[10px] border border-[var(--otv-border)] bg-[var(--otv-surface-muted)] px-3 py-2 text-sm md:block"
-          />
-          <div className="flex items-center gap-3 text-sm text-[var(--otv-text-secondary)]">
-            <Link to="/verifier">Verifier</Link>
-            <span>Demo Org</span>
-          </div>
-        </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
-        <nav className="flex border-t border-[var(--otv-border)] md:hidden" aria-label="Mobile">
-          {NAV.slice(0, 4).map((n) => (
-            <Link key={n.href} to={n.href} className="flex-1 py-3 text-center text-xs text-[var(--otv-text-secondary)]">
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </div>
-  );
-}
+import type { PublicApiKey, PublicWebhook } from "@otv/api-client";
+import { useAuth } from "@/lib/auth";
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -57,39 +15,58 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 export function DashboardOverview() {
+  const { client } = useAuth();
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
+  const [usage, setUsage] = useState({ verifications: 0, webhooks: 0 });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    verifyIncoming(DEMO_CLAIM)
-      .then((r) => setVerdicts([r.verdict]))
-      .catch(() => undefined);
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        const [list, meters] = await Promise.all([client.listVerdicts(), client.getUsage()]);
+        if (cancelled) return;
+        setVerdicts(list);
+        setUsage(meters);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
   const verified = verdicts.filter((v) => v.status === "SPENDABLE").length;
+  const pending = verdicts.filter((v) => ["PENDING", "OBSERVED", "EXECUTED"].includes(v.status)).length;
+  const rejected = verdicts.filter((v) => v.status === "REJECTED").length;
+  const suspicious = verdicts.filter((v) => v.status === "SUSPICIOUS").length;
 
   return (
-    <Layout>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl font-bold">Overview</h1>
-        {isDemoMode && (
-          <span className="text-xs text-[var(--otv-brand)]">Preview demo data</span>
-        )}
-      </div>
+    <>
+      <h1 className="mb-6 text-2xl font-bold">Overview</h1>
+      {error && (
+        <div className="mb-4">
+          <Alert tone="danger" title="API error">
+            {error}
+          </Alert>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Total verifications" value={verdicts.length} />
-        <Stat label="Verified" value={verified} />
-        <Stat label="Pending" value={0} />
-        <Stat label="Rejected / Suspicious" value="0 / 0" />
+        <Stat label="Total verifications" value={usage.verifications || verdicts.length} />
+        <Stat label="Spendable" value={verified} />
+        <Stat label="Pending" value={pending} />
+        <Stat label="Rejected / Suspicious" value={`${rejected} / ${suspicious}`} />
       </div>
       <Card className="mt-6">
         <h2 className="mb-4 text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">
           RECENT VERDICTS
         </h2>
         {verdicts.length === 0 ? (
-          <EmptyState title="No verifications yet" description="Open the verifier to create one." />
+          <EmptyState title="No verifications yet" description="Open Verifications and submit a claim, or use the public verifier after login." />
         ) : (
           <ul className="space-y-3">
-            {verdicts.map((v) => (
+            {verdicts.slice(0, 12).map((v) => (
               <li
                 key={v.verdictId}
                 className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--otv-border)] pb-3"
@@ -104,43 +81,376 @@ export function DashboardOverview() {
           </ul>
         )}
       </Card>
-    </Layout>
+    </>
   );
 }
 
-export function DashboardSimple({ title, body }: { title: string; body: string }) {
+export function DashboardVerifications() {
+  const { client } = useAuth();
+  const [query, setQuery] = useState("");
+  const [verdicts, setVerdicts] = useState<Verdict[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    chain: "ethereum",
+    network: "sepolia",
+    transactionHash: "",
+    recipient: "",
+    contract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    amount: "",
+  });
+  const [created, setCreated] = useState<Verdict | null>(null);
+
+  async function refresh(q?: string) {
+    const list = await client.listVerdicts(q);
+    setVerdicts(list);
+  }
+
+  useEffect(() => {
+    refresh().catch((err) => setError(err instanceof Error ? err.message : "Failed to load"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client]);
+
+  async function onSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await refresh(query);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Search failed");
+    }
+  }
+
+  async function onVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const verdict = await client.verifyIncoming({
+        chain: form.chain,
+        network: form.network,
+        transactionHash: form.transactionHash,
+        recipient: form.recipient,
+        asset: { type: "erc20", contract: form.contract, symbol: "USDC", decimals: 6 },
+        expectedAmount: form.amount || undefined,
+      });
+      setCreated(verdict);
+      await refresh(query);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verify failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <Layout>
-      <h1 className="mb-4 text-2xl font-bold">{title}</h1>
-      <Card>
-        <p className="text-[var(--otv-text-secondary)]">{body}</p>
-      </Card>
-    </Layout>
+    <>
+      <h1 className="mb-4 text-2xl font-bold">Verifications</h1>
+      {error && (
+        <div className="mb-4">
+          <Alert tone="danger" title="Error">
+            {error}
+          </Alert>
+        </div>
+      )}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">NEW CLAIM</h2>
+          <form className="mt-4 space-y-3" onSubmit={onVerify}>
+            <Input placeholder="Chain" value={form.chain} onChange={(e) => setForm({ ...form, chain: e.target.value })} />
+            <Input placeholder="Network" value={form.network} onChange={(e) => setForm({ ...form, network: e.target.value })} />
+            <Input className="otv-mono" placeholder="Transaction hash" value={form.transactionHash} onChange={(e) => setForm({ ...form, transactionHash: e.target.value })} required />
+            <Input className="otv-mono" placeholder="Recipient" value={form.recipient} onChange={(e) => setForm({ ...form, recipient: e.target.value })} required />
+            <Input className="otv-mono" placeholder="Asset contract" value={form.contract} onChange={(e) => setForm({ ...form, contract: e.target.value })} />
+            <Input className="otv-mono" placeholder="Expected amount (optional)" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            <Button type="submit" disabled={loading}>
+              {loading ? "Verifying…" : "Verify incoming transfer"}
+            </Button>
+          </form>
+          {created && (
+            <p className="otv-mono mt-3 text-xs text-[var(--otv-success)]">
+              {created.verdictId} · {created.status}
+            </p>
+          )}
+        </Card>
+        <Card>
+          <form className="mb-4 flex gap-2" onSubmit={onSearch}>
+            <Input
+              aria-label="Search"
+              placeholder="Search hash, wallet, verdict…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <Button type="submit" variant="secondary">
+              Search
+            </Button>
+          </form>
+          {verdicts.length === 0 ? (
+            <EmptyState title="No matching verdicts" description="Submit a claim or clear the search." />
+          ) : (
+            <ul className="space-y-3">
+              {verdicts.map((v) => (
+                <li key={v.verdictId} className="flex items-center justify-between gap-3 border-b border-[var(--otv-border)] pb-3">
+                  <div>
+                    <Link className="otv-mono text-sm text-[var(--otv-brand)]" to={`/verifier?id=${v.verdictId}`}>
+                      {v.verdictId}
+                    </Link>
+                    <div className="otv-mono text-xs text-[var(--otv-text-muted)]">{v.transactionHash}</div>
+                  </div>
+                  <StatusBadge status={v.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+    </>
   );
 }
 
 export function DashboardApi() {
-  const [created, setCreated] = useState<{ raw?: string; prefix?: string } | null>(null);
+  const { client } = useAuth();
+  const [keys, setKeys] = useState<PublicApiKey[]>([]);
+  const [raw, setRaw] = useState<string | null>(null);
+  const [name, setName] = useState("Production key");
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    setKeys(await client.listApiKeys());
+  }
+
+  useEffect(() => {
+    load().catch((err) => setError(err instanceof Error ? err.message : "Failed to load keys"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client]);
+
   return (
-    <Layout>
-      <h1 className="mb-4 text-2xl font-bold">API</h1>
+    <>
+      <h1 className="mb-4 text-2xl font-bold">API keys</h1>
+      {error && (
+        <div className="mb-4">
+          <Alert tone="danger" title="Error">
+            {error}
+          </Alert>
+        </div>
+      )}
       <Card className="space-y-4">
         <p className="text-sm text-[var(--otv-text-secondary)]">
-          Generate a demo API key for UI testing. Production keys come from the TypeScript Fastify API.
+          Raw secrets are shown once. Store them in your backend. The dashboard authenticates with a
+          session; machines should use these keys.
         </p>
-        <Button
-          type="button"
-          onClick={async () => {
-            const data = await createApiKeyDemo();
-            setCreated(data);
-          }}
-        >
-          Generate API key
-        </Button>
-        {created?.raw && (
-          <p className="otv-mono text-sm text-[var(--otv-success)]">New key (copy now): {created.raw}</p>
+        <div className="flex flex-wrap gap-2">
+          <Input className="max-w-xs" value={name} onChange={(e) => setName(e.target.value)} />
+          <Button
+            type="button"
+            onClick={async () => {
+              setError(null);
+              try {
+                const created = await client.createApiKey(name);
+                setRaw(created.raw);
+                await load();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Create failed");
+              }
+            }}
+          >
+            Create key
+          </Button>
+        </div>
+        {raw && (
+          <Alert tone="info" title="Copy now — this value is not stored in plaintext">
+            <span className="otv-mono text-xs">{raw}</span>
+          </Alert>
+        )}
+        {keys.length === 0 ? (
+          <EmptyState title="No keys yet" description="Create a key for SDK or server integrations." />
+        ) : (
+          <ul className="space-y-2">
+            {keys.map((k) => (
+              <li key={k.id} className="flex justify-between gap-3 border-b border-[var(--otv-border)] py-2 text-sm">
+                <span>{k.name}</span>
+                <span className="otv-mono text-[var(--otv-text-muted)]">{k.prefix}…</span>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
-    </Layout>
+    </>
+  );
+}
+
+export function DashboardWebhooks() {
+  const { client } = useAuth();
+  const [hooks, setHooks] = useState<PublicWebhook[]>([]);
+  const [url, setUrl] = useState("https://example.com/otv/webhook");
+  const [secret, setSecret] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    setHooks(await client.listWebhooks());
+  }
+
+  useEffect(() => {
+    load().catch((err) => setError(err instanceof Error ? err.message : "Failed to load"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client]);
+
+  return (
+    <>
+      <h1 className="mb-4 text-2xl font-bold">Webhooks</h1>
+      {error && (
+        <div className="mb-4">
+          <Alert tone="danger" title="Error">
+            {error}
+          </Alert>
+        </div>
+      )}
+      <Card className="space-y-4">
+        <p className="text-sm text-[var(--otv-text-secondary)]">
+          HMAC-signed deliveries with retries. Loopback and private networks are rejected.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Input className="min-w-[16rem] flex-1" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <Button
+            type="button"
+            onClick={async () => {
+              setError(null);
+              try {
+                const created = await client.createWebhook(url);
+                setSecret(created.secret);
+                await load();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Create failed");
+              }
+            }}
+          >
+            Add endpoint
+          </Button>
+        </div>
+        {secret && (
+          <Alert tone="info" title="Webhook signing secret (copy once)">
+            <span className="otv-mono text-xs">{secret}</span>
+          </Alert>
+        )}
+        {hooks.length === 0 ? (
+          <EmptyState title="No webhooks" description="Add a public HTTPS endpoint." />
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {hooks.map((h) => (
+              <li key={h.id} className="border-b border-[var(--otv-border)] py-2">
+                <div className="otv-mono">{h.url}</div>
+                <div className="text-xs text-[var(--otv-text-muted)]">{h.events.join(", ")}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </>
+  );
+}
+
+export function DashboardBilling() {
+  const { client } = useAuth();
+  const [data, setData] = useState<Awaited<ReturnType<typeof client.getBilling>> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    client
+      .getBilling()
+      .then(setData)
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load billing"));
+  }, [client]);
+
+  return (
+    <>
+      <h1 className="mb-4 text-2xl font-bold">Billing</h1>
+      {error && (
+        <Alert tone="danger" title="Error">
+          {error}
+        </Alert>
+      )}
+      {data && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Stat label="Plan" value={data.plan} />
+          <Stat label="Provider" value={data.provider} />
+          <Stat label="Verifications" value={data.usage.verifications} />
+          <Stat label="Webhook deliveries" value={data.usage.webhooks} />
+        </div>
+      )}
+      <Card className="mt-6">
+        <p className="text-sm text-[var(--otv-text-secondary)]">
+          Available plans: {data?.plans.join(" · ") ?? "…"}. Card capture is provider-abstracted; this
+          page is the live meter from Postgres.
+        </p>
+      </Card>
+    </>
+  );
+}
+
+export function DashboardAudit() {
+  const { client } = useAuth();
+  const [rows, setRows] = useState<Array<{ id: string; at: string; actor: string; action: string }>>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    client
+      .listAudit()
+      .then(setRows)
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load audit"));
+  }, [client]);
+
+  return (
+    <>
+      <h1 className="mb-4 text-2xl font-bold">Audit</h1>
+      {error && (
+        <Alert tone="danger" title="Error">
+          {error}
+        </Alert>
+      )}
+      <Card>
+        {rows.length === 0 ? (
+          <EmptyState title="No audit events" description="Logins, key creation, and verifications appear here." />
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {rows.map((r) => (
+              <li key={r.id} className="flex flex-wrap justify-between gap-2 border-b border-[var(--otv-border)] py-2">
+                <span>
+                  {r.action} · {r.actor}
+                </span>
+                <span className="text-[var(--otv-text-muted)]">{new Date(r.at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </>
+  );
+}
+
+export function DashboardSettings() {
+  const { user, projectId, orgId } = useAuth();
+  const ids = useMemo(() => ({ email: user?.email, projectId, orgId }), [user, projectId, orgId]);
+  return (
+    <>
+      <h1 className="mb-4 text-2xl font-bold">Settings</h1>
+      <Card className="space-y-3 text-sm">
+        <div className="flex justify-between gap-3">
+          <span className="text-[var(--otv-text-muted)]">Email</span>
+          <span>{ids.email}</span>
+        </div>
+        <div className="flex justify-between gap-3">
+          <span className="text-[var(--otv-text-muted)]">Project</span>
+          <span className="otv-mono">{ids.projectId ?? "—"}</span>
+        </div>
+        <div className="flex justify-between gap-3">
+          <span className="text-[var(--otv-text-muted)]">Organization</span>
+          <span className="otv-mono">{ids.orgId ?? "—"}</span>
+        </div>
+        <p className="text-[var(--otv-text-secondary)]">
+          Policy version is <code className="otv-mono">otv-policy-1</code> on the verification engine.
+          Additional projects can be created via <code className="otv-mono">POST /v1/projects</code>.
+        </p>
+      </Card>
+    </>
   );
 }
