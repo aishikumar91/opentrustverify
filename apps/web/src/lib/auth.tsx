@@ -33,22 +33,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!sessionToken) {
-        setUser(null);
-        setReady(true);
-        return;
-      }
       try {
         const me = await client.me();
         if (cancelled) return;
         setUser(me.user);
         setProjectId(me.projectId);
         setOrgId(me.orgId);
+        if (me.sessionToken && me.sessionToken !== sessionToken) {
+          localStorage.setItem(SESSION_STORAGE_KEY, me.sessionToken);
+          setSessionToken(me.sessionToken);
+        }
       } catch {
         localStorage.removeItem(SESSION_STORAGE_KEY);
         if (!cancelled) {
-          setSessionToken(null);
+          if (sessionToken) setSessionToken(null);
           setUser(null);
+          setProjectId(undefined);
+          setOrgId(undefined);
         }
       } finally {
         if (!cancelled) setReady(true);

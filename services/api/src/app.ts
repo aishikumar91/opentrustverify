@@ -85,7 +85,7 @@ function cookieSecure(): boolean {
 function cookieSameSite(): "lax" | "none" | "strict" {
   const raw = (process.env.COOKIE_SAMESITE ?? "").toLowerCase();
   if (raw === "none" || raw === "lax" || raw === "strict") return raw;
-  return cookieSecure() ? "none" : "lax";
+  return "lax";
 }
 
 async function readSession(req: FastifyRequest, store: OtvStore): Promise<UserRecord | undefined> {
@@ -325,7 +325,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     if (!user) return reply.code(401).send({ error: "unauthorized" });
     const projectId = await store.defaultProjectId(user.id);
     const orgId = await store.defaultOrgId(user.id);
-    return { user, projectId, orgId };
+    const sessionToken = sessionTokenFrom(req);
+    return { user, projectId, orgId, sessionToken };
   });
 
   app.get("/v1/auth/oidc/status", { schema: openapi.oidcStatus }, async () => ({
@@ -388,7 +389,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       await store.addAudit({ actor: user.email, action: "auth.oidc" });
       const dest = `${publicUrl}${parsed.returnTo}`;
       return reply.redirect(dest || parsed.returnTo);
-    } catch {
+    } catch (err) {
+      req.log.warn({ err }, "oidc callback failed");
       return reply.redirect(fail);
     }
   });

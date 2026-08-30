@@ -74,6 +74,7 @@ describe("API app", () => {
     });
     expect(me.statusCode).toBe(200);
     expect(me.json().user.email).toBe(DEMO_EMAIL);
+    expect(me.json().sessionToken).toBe(cookie?.value);
 
     const viaHeader = await app.inject({
       method: "GET",

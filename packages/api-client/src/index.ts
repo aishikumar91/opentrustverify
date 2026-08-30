@@ -121,7 +121,7 @@ export class OtvApiClient {
     await this.parse(res, "logout");
   }
 
-  async me(): Promise<{ user: OtvUser; projectId?: string; orgId?: string }> {
+  async me(): Promise<{ user: OtvUser; projectId?: string; orgId?: string; sessionToken?: string }> {
     const res = await this.fetchImpl(`${this.baseUrl}/v1/auth/me`, {
       headers: this.headers(),
       credentials: "include",

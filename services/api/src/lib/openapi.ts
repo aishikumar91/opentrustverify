@@ -345,6 +345,7 @@ export const routes: Record<string, FastifySchema> = {
         user,
         projectId: { type: "string" },
         orgId: { type: "string" },
+        sessionToken: { type: "string" },
       },
     }),
   },
