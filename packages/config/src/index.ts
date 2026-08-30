@@ -6,6 +6,8 @@ export const product = {
   domain: "otv.poptrust.me",
   apiDomain: "otv.poptrust.me",
   docsDomain: "otv.poptrust.me",
+  githubRepo: "aishikumar91/opentrustverify",
+  githubUrl: "https://github.com/aishikumar91/opentrustverify",
 } as const;
 
 export const plans = ["FREE", "DEVELOPER", "BUSINESS", "ENTERPRISE"] as const;

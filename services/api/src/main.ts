@@ -17,7 +17,7 @@ const host = process.env.HOST ?? "0.0.0.0";
 try {
   await app.listen({ port, host });
   app.log.info(`OTV API listening on http://${host}:${port}`);
-  app.log.info(`OpenAPI UI: http://${host}:${port}/docs`);
+  app.log.info(`OpenAPI UI: http://${host}:${port}/api/docs`);
   app.log.info(`Store backend: ${store.backend}; redis: ${Boolean(redis)}`);
 } catch (err) {
   app.log.error(err);

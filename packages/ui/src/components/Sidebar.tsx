@@ -15,14 +15,14 @@ export function Sidebar({
   renderLink?: (item: SidebarItem, className: string) => ReactNode;
   renderLogo?: (logo: ReactNode) => ReactNode;
 }) {
-  const logo = <Logo href={false} className="mb-8" />;
+  const logo = <Logo href={false} />;
   return (
-    <aside className="hidden w-56 shrink-0 border-r border-[var(--otv-border)] bg-[var(--otv-surface)] p-4 md:block">
-      {renderLogo ? renderLogo(logo) : <Logo className="mb-8" />}
+    <aside className="sticky top-0 hidden min-h-screen w-60 shrink-0 self-start border-r border-[var(--otv-border)] bg-[var(--otv-surface)] p-6 md:block">
+      {renderLogo ? renderLogo(logo) : <div className="mb-8">{logo}</div>}
       <nav className="space-y-1" aria-label="Dashboard">
         {items.map((item) => {
           const className = clsx(
-            "block rounded-[10px] px-3 py-2 text-sm",
+            "block rounded-[8px] px-3 py-2 text-sm font-medium",
             active === item.href
               ? "bg-[var(--otv-brand-muted)] text-[var(--otv-brand)]"
               : "text-[var(--otv-text-secondary)] hover:bg-[var(--otv-surface-muted)]"

@@ -7,7 +7,7 @@ export function RequireAuth() {
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-[var(--otv-text-muted)]">
-        Loading session…
+        Checking your sign-in…
       </div>
     );
   }

@@ -1,131 +1,47 @@
-# OpenTrust Verify Whitepaper
+# OpenTrust Verify
 
-**Version:** 0.3.0  
-**Date:** 2026-08-25  
-**Brand:** POP Trust · Product: OpenTrust Verify (OTV)  
-**Tagline:** Trust the balance, not just the blockchain event.  
-**Domain:** `otv.poptrust.me`
+Version 0.3.1. POP Trust. Product host: otv.poptrust.me.
 
-> This document is an engineering whitepaper for reviewers (wallets, exchanges, auditors, standards bodies). Market sizing claims are marked **RESEARCH REQUIRED**.
+Trust the balance, not just the blockchain event.
 
-## 1. Executive Summary
+This paper is for wallet, exchange, explorer, and audit readers. It describes the problem, the check we run, and what we will not claim.
 
-OpenTrust Verify is a vendor-neutral verification layer that evaluates whether an observed incoming digital-asset event represents **verified, spendable value** for a recipient. It produces explainable evidence and a cryptographically signed verdict (`otv.verdict.v1`) for wallets, exchanges, explorers, and fintech applications.
+## Summary
 
-OTV does not custody keys, replace explorers, or invent balances. It verifies evidence.
+OpenTrust Verify decides whether an observed incoming digital-asset event is spendable value for a named recipient. The API returns evidence and a signed verdict. We do not custody keys, replace explorers, or invent balances.
 
-## 2. Problem
+## The problem
 
-Blockchain explorers correctly display events. Non-technical users often interpret those events as “the money has arrived.” Attackers exploit that gap using transaction hashes, pending transfers, token events, and apparent balances.
+Explorers show chain fidelity. Recipients hear "paid." A pending transfer, a lookalike token, or an event that never moved a balance can all look like a deposit. Attackers use technically true data.
 
-## 3. Why Existing UX Fails
+Wallets already simulate outbound signatures. That answers "what happens if I sign." It does not answer "can the person who thinks they were paid actually spend it."
 
-Existing tools optimize for chain fidelity, not recipient spendability. They expose RPC-level concepts (calldata, logs, confirmations, decimals) and leave interpretation to the user. Simulation tools protect *outbound* signing; OTV addresses *inbound* value interpretation.
+## What we refuse to mix
 
-## 4. Threat Model
+A chain event is not a successful execution. A successful execution is not a transfer. A transfer is not a balance increase. A balance increase is not finality. Finality is not spendable funds.
 
-Primary social-engineering threat: technically true but economically misleading chain data. Additional threats: forged claims, compromised RPC, malicious tokens, replayed verdicts, API abuse, webhook SSRF/spoofing. See `docs/THREAT_MODEL.md`.
+Indexers already know this. Current balances come from a state read (`balanceOf` or `eth_getBalance`) at a pinned block. Transfer logs tell you when to refresh. Summing logs is wrong on fee-on-transfer and rebasing tokens. We treat the state read as the source of truth for the amount that arrived.
 
-## 5. Vision
+## How a check runs
 
-A global interoperable trust standard that moves complexity off the user: independent evaluation, clear trust states, signed verdicts, and auditable evidence — born from consumer-protection pressure in emerging markets, designed for global infrastructure.
+Claim, then lookup, then execution, then asset, then recipient, then amount, then balance change, then finality, then spendability, then risk, then a signed verdict.
 
-## 6. Design Principles
+Statuses: observed, pending, executed, asset confirmed, balance confirmed, final, spendable, rejected, suspicious, unverified. Happy-path and failure transitions are enforced in the verdict schema.
 
-1. Never collapse activity / execution / transfer / balance / finality / spendability.
-2. Deterministic verification first; AI only explains after a verdict.
-3. Evidence required for every verdict.
-4. Chain-specific policies via adapters.
-5. Vendor neutrality.
-6. Explicit confidence and mock/live honesty.
+## Signatures
 
-## 7. Verification Model
+The API hashes a stable JSON form of the verdict and signs it with Ed25519. Anyone can POST the payload to `POST /v1/verdicts/verify`. Signing keys stay on the API. The product UI never signs.
 
-```
-Claim → Lookup → Execution → Asset → Recipient → Amount → Balance Δ → Finality → Spendability → Risk → Signed Verdict
-```
+## Runtime
 
-Implemented in `@otv/verification-engine` with evidence at each stage.
+The hosted product is a Fastify API with Postgres as the source of truth, Redis for rate limits and webhook delivery, and a single web app at otv.poptrust.me. Interactive API: `https://otv.poptrust.me/api/docs`.
 
-## 8. Trust States
+When a live Ethereum RPC is configured, evidence comes from that node. When it is not, a mock adapter still returns a verdict and marks the result so a demo cannot be treated as chain proof.
 
-`OBSERVED | PENDING | EXECUTED | ASSET_CONFIRMED | BALANCE_CONFIRMED | FINAL | SPENDABLE | REJECTED | SUSPICIOUS | UNVERIFIED`
+## What we do not claim
 
-Happy path and failure transitions are enforced in `@otv/verdict-schema`.
+Single sign-on is specified and returns 501 until an identity provider is configured. Card capture is not taken in the product UI. We do not publish market-size figures as facts. Certification marks require a written grant. HSM-backed keys are a next step, not a current claim.
 
-## 9. Architecture
+## Limits you should know
 
-**Runtime:** TypeScript Fastify API + verification engine + chain adapters + Postgres source of truth + Redis rate limits/queues + SDKs + unified web app (`apps/web`). See `docs/ARCHITECTURE.md`.
-
-Set `ETH_RPC_URL` for live Ethereum JSON-RPC; otherwise the mock adapter is used and risk signals disclose `MOCK_ADAPTER`.
-
-## 10. Signed Verdicts
-
-Canonical JSON → SHA-256 → Ed25519 → hex signature + `kid`. Public verification via `POST /v1/verdicts/verify`. Production requires KMS/HSM (interface pending).
-
-## 11. Wallet Integration
-
-SDK `verifyIncomingTransfer` maps status to safe notifications. Demo wallet shows raw vs verified. See `WALLET_INTEGRATION.md`.
-
-## 12. Explorer Integration
-
-Additive components: `VerificationBadge`, `TransactionTrustPanel`, `EvidenceTimeline`, `VerdictCard`, `SignatureVerification` in `@otv/ui`. Raw chain data remains visible.
-
-## 13. API
-
-REST `/v1/*` with OpenAPI (`/docs`). API keys for machines. Email/password sessions for the dashboard (`X-OTV-Session` plus cookies). OIDC remains 501 until an identity provider is configured.
-
-## 14. SDK
-
-TypeScript (`@otv/sdk-core`), React hooks (`@otv/sdk-react`), Flutter stub.
-
-## 15. Security
-
-Hashed API keys, Helmet, rate limits, webhook HMAC + SSRF deny-list + retries, Zod validation, server-side signing on the API. The product UI never signs verdicts in the browser.
-
-## 16. Privacy
-
-Minimize PII; store claims/verdicts needed for audit; tenant isolation via org/project FKs when Postgres is wired.
-
-## 17. Governance
-
-RFC process OTV-0001…0010. Conformance suite gates “OTV Compatible” claims. Certification marks require authorization (`TRADEMARK_POLICY.md`).
-
-## 18. Licensing
-
-Pending legal review. Separate open protocol artifacts vs hosted service vs trademarks.
-
-## 19. Business Model
-
-FREE / DEVELOPER / BUSINESS / ENTERPRISE + optional certification programs without misleading claims. Billing provider abstracted.
-
-## 20. Adoption
-
-Wallet and explorer profiles; sandbox; clear docs; African-origin insight, global standard positioning.
-
-## 21. Roadmap
-
-1. Mock MVP (done)  
-2. Live Ethereum RPC (adapter live path landed; ops hardening)  
-3. Postgres persistence (wired as source of truth)  
-4. Redis queues + file/KMS wrap  
-5. Email/password sessions (OIDC still pending)  
-6. Unified product UI (`apps/web`)  
-7. Multi-chain adapters  
-8. Conformance suite + certification
-
-## 22. Research
-
-See `docs/research/COMPETITOR_ANALYSIS.md`. **RESEARCH REQUIRED** before publishing TAM/SAM or competitor pricing in sales materials.
-
-## 23. Limitations
-
-- Mock adapter when RPC unset (disclosed via risk signal)
-- MVP API may use memory store until Postgres wiring
-- Browser demo signing is for UI previews only
-- Single-provider RPC confidence model in MVP
-- Billing abstracted
-
-## 24. Conclusion
-
-OTV does not invent money. It verifies evidence so users can trust the balance—not just the blockchain event.
+A single RPC provider is a single point of view. Mock results are labeled. Verdicts expire. A spendable verdict is evidence at check time, not a promise the funds cannot later be frozen by a token issuer or a court.

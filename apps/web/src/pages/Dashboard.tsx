@@ -44,10 +44,10 @@ export function DashboardOverview() {
 
   return (
     <>
-      <h1 className="mb-6 text-2xl font-bold">Overview</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Overview</h1>
       {error && (
         <div className="mb-4">
-          <Alert tone="danger" title="API error">
+          <Alert tone="danger" title="Could not load">
             {error}
           </Alert>
         </div>
@@ -60,10 +60,10 @@ export function DashboardOverview() {
       </div>
       <Card className="mt-6">
         <h2 className="mb-4 text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">
-          RECENT VERDICTS
+          Recent verdicts
         </h2>
         {verdicts.length === 0 ? (
-          <EmptyState title="No verifications yet" description="Open Verifications and submit a claim, or use the public verifier after login." />
+          <EmptyState title="No verifications yet" description="Open Verifications and submit a hash, or use the public verifier after you sign in." />
         ) : (
           <ul className="space-y-3">
             {verdicts.slice(0, 12).map((v) => (
@@ -145,7 +145,7 @@ export function DashboardVerifications() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Verifications</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Verifications</h1>
       {error && (
         <div className="mb-4">
           <Alert tone="danger" title="Error">
@@ -155,7 +155,7 @@ export function DashboardVerifications() {
       )}
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
-          <h2 className="text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">NEW CLAIM</h2>
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">New claim</h2>
           <form className="mt-4 space-y-3" onSubmit={onVerify}>
             <Input placeholder="Chain" value={form.chain} onChange={(e) => setForm({ ...form, chain: e.target.value })} />
             <Input placeholder="Network" value={form.network} onChange={(e) => setForm({ ...form, network: e.target.value })} />
@@ -163,7 +163,7 @@ export function DashboardVerifications() {
             <Input className="otv-mono" placeholder="Recipient" value={form.recipient} onChange={(e) => setForm({ ...form, recipient: e.target.value })} required />
             <Input className="otv-mono" placeholder="Asset contract" value={form.contract} onChange={(e) => setForm({ ...form, contract: e.target.value })} />
             <Input className="otv-mono" placeholder="Expected amount (optional)" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" size="sm" disabled={loading}>
               {loading ? "Verifying…" : "Verify incoming transfer"}
             </Button>
           </form>
@@ -181,7 +181,7 @@ export function DashboardVerifications() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <Button type="submit" variant="secondary">
+            <Button type="submit" size="sm" variant="secondary">
               Search
             </Button>
           </form>
@@ -226,7 +226,7 @@ export function DashboardApi() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">API keys</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">API keys</h1>
       {error && (
         <div className="mb-4">
           <Alert tone="danger" title="Error">
@@ -236,13 +236,14 @@ export function DashboardApi() {
       )}
       <Card className="space-y-4">
         <p className="text-sm text-[var(--otv-text-secondary)]">
-          Raw secrets are shown once. Store them in your backend. The dashboard authenticates with a
-          session; machines should use these keys.
+          The secret is shown once. Put it in your server. This dashboard uses your sign-in. Machines
+          should use a key.
         </p>
         <div className="flex flex-wrap gap-2">
           <Input className="max-w-xs" value={name} onChange={(e) => setName(e.target.value)} />
           <Button
             type="button"
+            size="sm"
             onClick={async () => {
               setError(null);
               try {
@@ -258,12 +259,12 @@ export function DashboardApi() {
           </Button>
         </div>
         {raw && (
-          <Alert tone="info" title="Copy now — this value is not stored in plaintext">
+          <Alert tone="info" title="Copy now. We will not show this secret again.">
             <span className="otv-mono text-xs">{raw}</span>
           </Alert>
         )}
         {keys.length === 0 ? (
-          <EmptyState title="No keys yet" description="Create a key for SDK or server integrations." />
+          <EmptyState title="No keys yet" description="Create a key for your server." />
         ) : (
           <ul className="space-y-2">
             {keys.map((k) => (
@@ -297,7 +298,7 @@ export function DashboardWebhooks() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Webhooks</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Webhooks</h1>
       {error && (
         <div className="mb-4">
           <Alert tone="danger" title="Error">
@@ -307,12 +308,14 @@ export function DashboardWebhooks() {
       )}
       <Card className="space-y-4">
         <p className="text-sm text-[var(--otv-text-secondary)]">
-          HMAC-signed deliveries with retries. Loopback and private networks are rejected.
+          Each delivery is signed. Private and loopback URLs are refused so a webhook cannot scan an
+          internal network.
         </p>
         <div className="flex flex-wrap gap-2">
           <Input className="min-w-[16rem] flex-1" value={url} onChange={(e) => setUrl(e.target.value)} />
           <Button
             type="button"
+            size="sm"
             onClick={async () => {
               setError(null);
               try {
@@ -363,7 +366,7 @@ export function DashboardBilling() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Billing</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Billing</h1>
       {error && (
         <Alert tone="danger" title="Error">
           {error}
@@ -379,8 +382,8 @@ export function DashboardBilling() {
       )}
       <Card className="mt-6">
         <p className="text-sm text-[var(--otv-text-secondary)]">
-          Available plans: {data?.plans.join(" · ") ?? "…"}. Card capture is provider-abstracted; this
-          page is the live meter from Postgres.
+          Plans on this host: {data?.plans.join(" · ") ?? "…"}. Card payments are not taken on this
+          page. The numbers are your live usage.
         </p>
       </Card>
     </>
@@ -401,7 +404,7 @@ export function DashboardAudit() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Audit</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Audit</h1>
       {error && (
         <Alert tone="danger" title="Error">
           {error}
@@ -432,7 +435,7 @@ export function DashboardSettings() {
   const ids = useMemo(() => ({ email: user?.email, projectId, orgId }), [user, projectId, orgId]);
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold">Settings</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Settings</h1>
       <Card className="space-y-3 text-sm">
         <div className="flex justify-between gap-3">
           <span className="text-[var(--otv-text-muted)]">Email</span>
@@ -440,15 +443,15 @@ export function DashboardSettings() {
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-[var(--otv-text-muted)]">Project</span>
-          <span className="otv-mono">{ids.projectId ?? "—"}</span>
+          <span className="otv-mono">{ids.projectId ?? "-"}</span>
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-[var(--otv-text-muted)]">Organization</span>
-          <span className="otv-mono">{ids.orgId ?? "—"}</span>
+          <span className="otv-mono">{ids.orgId ?? "-"}</span>
         </div>
         <p className="text-[var(--otv-text-secondary)]">
-          Policy version is <code className="otv-mono">otv-policy-1</code> on the verification engine.
-          Additional projects can be created via <code className="otv-mono">POST /v1/projects</code>.
+          Your account uses one default project today. Extra projects can be created from the API if
+          you need a split between staging and production.
         </p>
       </Card>
     </>

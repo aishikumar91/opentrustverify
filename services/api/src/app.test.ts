@@ -105,4 +105,28 @@ describe("API app", () => {
     expect(res.json().store).toBe("memory");
     expect(res.json().status).toBe("ok");
   });
+
+  it("exposes request params on the OpenAPI document", async () => {
+    const res = await app.inject({ method: "GET", url: "/v1/openapi.json" });
+    expect(res.statusCode).toBe(200);
+    const spec = res.json() as {
+      paths: Record<string, Record<string, { requestBody?: unknown; parameters?: { name: string }[] }>>;
+    };
+    const verify = spec.paths["/v1/verify/incoming"]?.post;
+    expect(verify?.requestBody).toBeTruthy();
+    const login = spec.paths["/v1/auth/login"]?.post;
+    expect(login?.requestBody).toBeTruthy();
+    const listed = spec.paths["/v1/verdicts"]?.get;
+    expect(listed?.parameters?.some((p) => p.name === "q")).toBe(true);
+    const one = spec.paths["/v1/verdicts/{id}"]?.get;
+    expect(one?.parameters?.some((p) => p.name === "id")).toBe(true);
+    const hook = spec.paths["/v1/webhooks"]?.post;
+    expect(hook?.requestBody).toBeTruthy();
+    const docs = await app.inject({ method: "GET", url: "/api/docs" });
+    expect(docs.statusCode).toBe(200);
+    expect(docs.body).toContain("/api/docs/static/swagger-initializer.js");
+    const init = await app.inject({ method: "GET", url: "/api/docs/static/swagger-initializer.js" });
+    expect(init.statusCode).toBe(200);
+    expect(init.body).toContain("/v1/openapi.json");
+  });
 });

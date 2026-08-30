@@ -22,6 +22,7 @@ import {
   verificationTotal,
 } from "./lib/metrics.js";
 import { popWebhookJob } from "./lib/queue.js";
+import { openapiInfo, routes as openapi } from "./lib/openapi.js";
 
 export interface AppDeps {
   store: OtvStore;
@@ -95,13 +96,29 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     openapi: {
       info: {
         title: "OpenTrust Verify API",
-        description: product.tagline,
+        description: `${product.tagline} Send a claim, get a signed verdict. Authenticate with an API key (Authorization Bearer or X-OTV-Api-Key) or a session (X-OTV-Session or the otv_session cookie).`,
         version: "0.1.0",
       },
-      servers: [{ url: publicBase }],
+      servers: [{ url: publicBase, description: "This deployment" }],
+      tags: [...openapiInfo.tags],
+      components: {
+        securitySchemes: openapiInfo.components.securitySchemes,
+      },
     },
   });
-  await app.register(swaggerUi, { routePrefix: "/docs" });
+  await app.register(swaggerUi, {
+    routePrefix: "/api/docs",
+    uiConfig: {
+      docExpansion: "list",
+      deepLinking: true,
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      tryItOutEnabled: true,
+      defaultModelsExpandDepth: 2,
+      defaultModelExpandDepth: 2,
+      url: "/v1/openapi.json",
+    },
+  });
 
   async function requireApiKey(req: FastifyRequest): Promise<ApiKeyRecord> {
     const headerAuth = req.headers.authorization;
@@ -150,7 +167,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return reply.code(status).send({ error: status === 401 ? "unauthorized" : message });
   });
 
-  app.get("/v1/health", async () => ({
+  app.get("/v1/health", { schema: openapi.health }, async () => ({
     status: "ok",
     product: product.name,
     shortName: product.shortName,
@@ -161,7 +178,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     time: new Date().toISOString(),
   }));
 
-  app.get("/v1/ready", async (_req, reply) => {
+  app.get("/v1/ready", { schema: openapi.ready }, async (_req, reply) => {
     try {
       await store.ready();
       if (redis) await redis.ping();
@@ -175,26 +192,26 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     }
   });
 
-  app.get("/v1/metrics", async (_req, reply) => {
+  app.get("/v1/metrics", { schema: openapi.metrics }, async (_req, reply) => {
     reply.header("Content-Type", registry.contentType);
     return registry.metrics();
   });
 
-  app.get("/v1/openapi.json", async () => app.swagger());
+  app.get("/v1/openapi.json", { schema: openapi.openapiJson }, async () => app.swagger());
 
-  app.get("/v1/keys", async () => ({ keys: keyStore.listPublic() }));
+  app.get("/v1/keys", { schema: openapi.keys }, async () => ({ keys: keyStore.listPublic() }));
 
-  app.get("/v1/chains", async () => [
+  app.get("/v1/chains", { schema: openapi.chains }, async () => [
     { id: "ethereum", networks: ["mainnet", "sepolia"], adapter: "ethereum" },
     { id: "mock", networks: ["local"], adapter: "mock" },
   ]);
 
-  app.get("/v1/networks", async () => [
+  app.get("/v1/networks", { schema: openapi.networks }, async () => [
     { chain: "ethereum", id: "mainnet", finalityConfirmations: 12 },
     { chain: "ethereum", id: "sepolia", finalityConfirmations: 12 },
   ]);
 
-  app.get("/v1/assets", async () => [
+  app.get("/v1/assets", { schema: openapi.assets }, async () => [
     {
       chain: "ethereum",
       type: "erc20",
@@ -204,7 +221,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     },
   ]);
 
-  app.post("/v1/verify/incoming", async (req, reply) => {
+  app.post("/v1/verify/incoming", { schema: openapi.verifyIncoming }, async (req, reply) => {
     const auth = await resolveProject(req);
     const claim = IncomingClaimSchema.parse(req.body);
     const adapter = createAdapter(claim.chain, claim.network, process.env.ETH_RPC_URL);
@@ -233,21 +250,21 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return reply.send(verdict);
   });
 
-  app.get("/v1/verdicts", async (req) => {
+  app.get("/v1/verdicts", { schema: openapi.listVerdicts }, async (req) => {
     const auth = await resolveProject(req);
     const query = typeof (req.query as { q?: string }).q === "string" ? (req.query as { q: string }).q : undefined;
     const verdicts = await store.listVerdicts(auth.projectId, 100, query);
     return { verdicts };
   });
 
-  app.get("/v1/verdicts/:id", async (req, reply) => {
+  app.get("/v1/verdicts/:id", { schema: openapi.getVerdict }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const verdict = await store.getVerdict(id);
     if (!verdict) return reply.code(404).send({ error: "not_found" });
     return verdict;
   });
 
-  app.post("/v1/auth/register", async (req, reply) => {
+  app.post("/v1/auth/register", { schema: openapi.register }, async (req, reply) => {
     const body = req.body as { email?: string; password?: string; name?: string };
     if (!body?.email || !body.password) return reply.code(400).send({ error: "email_password_required" });
     if (body.password.length < 8) return reply.code(400).send({ error: "password_too_short" });
@@ -264,7 +281,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { user, expiresAt: session.expiresAt, sessionToken: session.token };
   });
 
-  app.post("/v1/auth/login", async (req, reply) => {
+  app.post("/v1/auth/login", { schema: openapi.login }, async (req, reply) => {
     const body = req.body as { email?: string; password?: string };
     if (!body?.email || !body.password) return reply.code(400).send({ error: "email_password_required" });
     const user = await store.authenticateUser(body.email, body.password);
@@ -281,14 +298,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { user, expiresAt: session.expiresAt, sessionToken: session.token };
   });
 
-  app.post("/v1/auth/logout", async (req, reply) => {
+  app.post("/v1/auth/logout", { schema: openapi.logout }, async (req, reply) => {
     const token = sessionTokenFrom(req);
     if (token) await store.destroySession(token);
     reply.clearCookie("otv_session", { path: "/" });
     return { ok: true };
   });
 
-  app.get("/v1/auth/me", async (req, reply) => {
+  app.get("/v1/auth/me", { schema: openapi.me }, async (req, reply) => {
     const user = await readSession(req, store);
     if (!user) return reply.code(401).send({ error: "unauthorized" });
     const projectId = await store.defaultProjectId(user.id);
@@ -296,7 +313,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { user, projectId, orgId };
   });
 
-  app.get("/v1/auth/oidc/login", async (_req, reply) => {
+  app.get("/v1/auth/oidc/login", { schema: openapi.oidc }, async (_req, reply) => {
     if (!process.env.OIDC_ISSUER || !process.env.OIDC_CLIENT_ID) {
       return reply.code(501).send({
         error: "oidc_not_configured",
@@ -310,19 +327,19 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     });
   });
 
-  app.post("/v1/organizations", async (req) => {
+  app.post("/v1/organizations", { schema: openapi.createOrg }, async (req) => {
     await requireUserOrKey(req);
     const body = req.body as { name: string };
     return store.createOrg(body.name ?? "Untitled");
   });
 
-  app.post("/v1/projects", async (req) => {
+  app.post("/v1/projects", { schema: openapi.createProject }, async (req) => {
     await requireUserOrKey(req);
     const body = req.body as { orgId: string; name: string };
     return store.createProject(body.orgId, body.name ?? "Project");
   });
 
-  app.get("/v1/api-keys", async (req) => {
+  app.get("/v1/api-keys", { schema: openapi.listApiKeys }, async (req) => {
     const auth = await resolveProject(req);
     const keys = await store.listApiKeys(auth.projectId);
     return {
@@ -337,29 +354,29 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     };
   });
 
-  app.post("/v1/api-keys", async (req) => {
+  app.post("/v1/api-keys", { schema: openapi.createApiKey }, async (req) => {
     const auth = await resolveProject(req);
     const body = req.body as { projectId?: string; name?: string };
     return store.createApiKey(body.projectId ?? auth.projectId, body.name ?? "API Key");
   });
 
-  app.post("/v1/api-keys/rotate", async (req) => {
+  app.post("/v1/api-keys/rotate", { schema: openapi.rotateApiKey }, async (req) => {
     const auth = await resolveProject(req);
     const body = req.body as { projectId?: string; name?: string };
     return store.createApiKey(body.projectId ?? auth.projectId, body.name ?? "Rotated Key");
   });
 
-  app.get("/v1/audit", async (req) => {
+  app.get("/v1/audit", { schema: openapi.audit }, async (req) => {
     await requireUserOrKey(req);
     return store.listAudit(100);
   });
 
-  app.get("/v1/billing", async (req) => {
+  app.get("/v1/billing", { schema: openapi.billing }, async (req) => {
     const auth = await resolveProject(req);
     return store.getBilling(auth.orgId ?? undefined);
   });
 
-  app.post("/v1/verdicts/verify", async (req, reply) => {
+  app.post("/v1/verdicts/verify", { schema: openapi.verifySignature }, async (req, reply) => {
     const verdict = VerdictSchema.parse(req.body);
     if (!verdict.signature) return reply.send({ valid: false, reason: "missing_signature" });
     const pub = keyStore.getPublic(verdict.kid);
@@ -368,7 +385,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { valid, kid: verdict.kid };
   });
 
-  app.post("/v1/webhooks", async (req, reply) => {
+  app.post("/v1/webhooks", { schema: openapi.createWebhook }, async (req, reply) => {
     const auth = await resolveProject(req);
     const body = req.body as { url: string; events?: string[] };
     if (!body?.url) return reply.code(400).send({ error: "url_required" });
@@ -383,7 +400,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { id: created.record.id, secret: created.secret, events: created.record.events };
   });
 
-  app.get("/v1/webhooks", async (req) => {
+  app.get("/v1/webhooks", { schema: openapi.listWebhooks }, async (req) => {
     const auth = await resolveProject(req);
     const webhooks = await store.listWebhooks(auth.projectId);
     return {
@@ -397,12 +414,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     };
   });
 
-  app.get("/v1/usage", async (req) => {
+  app.get("/v1/usage", { schema: openapi.usage }, async (req) => {
     const auth = await resolveProject(req);
     return store.getUsage(auth.projectId);
   });
 
-  app.get("/v1/demo/meta", async () => ({
+  app.get("/v1/demo/meta", { schema: openapi.demoMeta }, async () => ({
     demoApiKey: DEMO_API_KEY,
     demoEmail: DEMO_EMAIL,
     demoTransactionHash: "0xdemo000000000000000000000000000000000000000000000000000000000001",

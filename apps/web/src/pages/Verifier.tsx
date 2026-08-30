@@ -92,11 +92,11 @@ export function VerifierPage() {
           <Card>
             <h1 className="text-2xl font-bold">Look up a verdict</h1>
             <p className="mt-2 text-sm text-[var(--otv-text-secondary)]">
-              Anyone can fetch a stored signed verdict by ID. No API key required.
+              Paste a verdict ID someone shared with you. No key needed.
             </p>
             <form className="mt-4 flex gap-2" onSubmit={onLookup}>
               <Input className="otv-mono" placeholder="vr_…" value={lookupId} onChange={(e) => setLookupId(e.target.value)} />
-              <Button type="submit" variant="secondary" disabled={loading}>
+              <Button type="submit" size="sm" variant="secondary" disabled={loading}>
                 Lookup
               </Button>
             </form>
@@ -105,7 +105,7 @@ export function VerifierPage() {
           <Card>
             <h2 className="text-xl font-bold">Submit a claim</h2>
             <p className="mt-2 text-sm text-[var(--otv-text-secondary)]">
-              New verifications run on the API and are signed server-side. Requires an account session.
+              Sign in to check a new hash. The signature is created on the API, not in your browser.
             </p>
             {!user && (
               <div className="mt-4">
@@ -146,13 +146,13 @@ export function VerifierPage() {
                 <span className="mb-1 block text-[var(--otv-text-muted)]">Expected amount (optional)</span>
                 <Input className="otv-mono" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </label>
-              <Button type="submit" disabled={loading || !user} className="w-full">
+              <Button type="submit" size="sm" disabled={loading || !user} className="w-full">
                 {loading ? "Verifying…" : "Verify"}
               </Button>
             </form>
             {error && (
               <div className="mt-4">
-                <Alert tone="danger" title="Verification error">
+                <Alert tone="danger" title="Could not verify">
                   {error}
                 </Alert>
               </div>
@@ -175,11 +175,11 @@ export function VerifierPage() {
                   <HashDisplay label="Transaction" value={verdict.transactionHash} />
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--otv-text-muted)]">Asset</span>
-                    <span>{verdict.asset.symbol ?? "—"}</span>
+                    <span>{verdict.asset.symbol ?? "-"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--otv-text-muted)]">Amount</span>
-                    <span className="otv-mono">{verdict.amount ?? "—"}</span>
+                    <span className="otv-mono">{verdict.amount ?? "-"}</span>
                   </div>
                   <HashDisplay label="Recipient" value={verdict.recipient} />
                   <div className="flex justify-between text-sm">
@@ -188,7 +188,7 @@ export function VerifierPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--otv-text-muted)]">Balance change</span>
-                    <span className="otv-mono">{verdict.balanceDelta ?? "—"}</span>
+                    <span className="otv-mono">{verdict.balanceDelta ?? "-"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--otv-text-muted)]">Checked</span>
@@ -200,15 +200,16 @@ export function VerifierPage() {
                   </div>
                 </div>
                 <div className="mt-6 flex flex-wrap gap-2">
-                  <Button variant="secondary" type="button" onClick={() => setShowEvidence((s) => !s)}>
-                    View Evidence
+                  <Button variant="secondary" size="sm" type="button" onClick={() => setShowEvidence((s) => !s)}>
+                    View evidence
                   </Button>
                   <Button
                     variant="secondary"
+                    size="sm"
                     type="button"
                     onClick={() => navigator.clipboard.writeText(JSON.stringify(verdict, null, 2))}
                   >
-                    Copy Verdict
+                    Copy verdict
                   </Button>
                 </div>
               </Card>
@@ -216,7 +217,7 @@ export function VerifierPage() {
               {showEvidence && (
                 <Card>
                   <h2 className="mb-2 text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">
-                    EVIDENCE
+                    Evidence
                   </h2>
                   {verdict.evidence.map((item) => (
                     <EvidenceItemView key={item.type} item={item} />
@@ -226,10 +227,10 @@ export function VerifierPage() {
             </>
           ) : (
             <Card>
-              <h2 className="text-lg font-semibold">Awaiting verification</h2>
+              <h2 className="text-lg font-semibold">Nothing loaded yet</h2>
               <p className="mt-2 text-sm text-[var(--otv-text-secondary)]">
-                Look up a verdict ID or submit a claim after signing in. Signing happens on the API, not
-                in the browser.
+                Look up a verdict ID, or sign in and submit a hash. Signing never happens in this
+                browser.
               </p>
             </Card>
           )}

@@ -3,32 +3,32 @@ import { API_BASE } from "@/lib/api";
 import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 
 const NAV = [
-  ["introduction", "Introduction"],
-  ["quickstart", "Quickstart"],
+  ["introduction", "Overview"],
+  ["first-request", "First request"],
   ["authentication", "Authentication"],
-  ["verification-api", "Verification API"],
-  ["verdicts", "Verdicts"],
+  ["verification-api", "Verify a transfer"],
+  ["verdicts", "Look up a verdict"],
   ["webhooks", "Webhooks"],
   ["keys-usage", "Keys and usage"],
-  ["sdks", "SDKs"],
+  ["clients", "Client libraries"],
   ["errors", "Errors"],
 ] as const;
 
 export function DocsLayout() {
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <div className="md:grid md:grid-cols-[240px_1fr]">
-        <aside className="border-b border-[var(--otv-border)] p-4 md:border-b-0 md:border-r">
-          <p className="mb-4 hidden text-xs tracking-[0.2em] text-[var(--otv-text-muted)] md:block">
-            DEVELOPER DOCS
+      <div className="flex-1 md:grid md:grid-cols-[240px_1fr]">
+        <aside className="border-b border-[var(--otv-border)] bg-[var(--otv-surface-tint)] p-6 md:border-b-0 md:border-r">
+          <p className="mb-4 hidden text-xs font-semibold tracking-[0.28em] text-[var(--otv-text-muted)] md:block">
+            INTEGRATION
           </p>
           <nav className="space-y-1" aria-label="Docs">
             {NAV.map(([id, label]) => (
               <a
                 key={id}
                 href={`#${id}`}
-                className="block rounded-lg px-2 py-1.5 text-sm text-[var(--otv-text-secondary)] hover:bg-[var(--otv-surface-muted)]"
+                className="block rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] hover:bg-[var(--otv-accent)] hover:text-[var(--otv-brand)]"
               >
                 {label}
               </a>
@@ -36,10 +36,10 @@ export function DocsLayout() {
           </nav>
           <div className="mt-8 space-y-2 text-sm">
             <a className="block text-[var(--otv-brand)]" href={`${API_BASE}/api/docs`}>
-              OpenAPI UI →
+              Interactive API
             </a>
             <Link to="/whitepaper" className="block text-[var(--otv-brand)]">
-              Whitepaper →
+              How a check runs
             </Link>
           </div>
         </aside>

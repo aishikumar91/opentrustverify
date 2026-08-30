@@ -11,6 +11,7 @@ OpenTrust Verify is digital-asset verification infrastructure under the **POP Tr
 | Product UI | `https://otv.poptrust.me` |
 | API | `https://otv.poptrust.me/v1` |
 | Docs | `https://otv.poptrust.me/docs` |
+| Interactive API | `https://otv.poptrust.me/api/docs` |
 
 OTV helps wallets, exchanges, explorers, and fintech apps determine whether an observed incoming blockchain event represents **verified, spendable value** for a recipient.
 

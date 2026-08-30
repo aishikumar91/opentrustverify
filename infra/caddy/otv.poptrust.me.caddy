@@ -1,5 +1,9 @@
-# Import from the host Caddyfile or append to edge-proxy/Caddyfile.
-# Caddy runs in Docker and reaches host ports via host.docker.internal.
+# Append to the host edge Caddyfile (HealFast: /home/administrator/hosting/edge-proxy/Caddyfile).
+# Caddy reaches OTV on the host via host.docker.internal (needs extra_hosts host-gateway).
+#
+# OpenAPI lives at /api/docs on the API. Do not strip /api — Swagger HTML
+# references /api/docs/static/*. /docs is the product SPA.
+# Legacy Swagger paths under /docs/static and /docs/json still proxy to the API.
 
 otv.poptrust.me {
 	encode gzip
@@ -14,7 +18,17 @@ otv.poptrust.me {
 	}
 
 	handle /api/docs* {
-		uri strip_prefix /api
+		reverse_proxy host.docker.internal:4080 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
+	@swagger_legacy path /docs/static* /docs/json /docs/yaml /docs/uiConfig
+	handle @swagger_legacy {
+		rewrite * /api{uri}
 		reverse_proxy host.docker.internal:4080 {
 			header_up Host {host}
 			header_up X-Forwarded-Proto https

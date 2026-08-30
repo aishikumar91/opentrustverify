@@ -40,26 +40,26 @@ export function WalletPage() {
 
   return (
     <main className="otv-container max-w-xl space-y-4 py-10">
-        <Alert tone="info" title="No custody">
-          This screen shows the wallet integration profile: raw activity vs an OTV signed verdict. It
-          does not store private keys or send transactions.
+        <Alert tone="info" title="Demo inbox, no custody">
+          This screen is a stand-in for a wallet. It does not hold keys or send coins. Paste a hash a
+          user might treat as paid, then see the verdict.
         </Alert>
         <Card>
           <h1 className="text-xl font-bold">Inbox</h1>
           <p className="mt-1 text-sm text-[var(--otv-text-secondary)]">
-            Paste a transaction the user would otherwise treat as “money arrived.” OTV checks spendability.
+            Raw activity first. Then a spendability decision.
           </p>
           <div className="mt-4 space-y-3">
             <Input className="otv-mono" placeholder="Transaction hash" value={tx} onChange={(e) => setTx(e.target.value)} />
             <Input className="otv-mono" placeholder="Recipient address" value={recipient} onChange={(e) => setRecipient(e.target.value)} />
-            <Button className="w-full" type="button" disabled={loading || !tx || !recipient} onClick={() => void onCheck()}>
+            <Button className="w-full" size="sm" type="button" disabled={loading || !tx || !recipient} onClick={() => void onCheck()}>
               {loading ? "Checking with OTV…" : "Verify incoming transfer"}
             </Button>
           </div>
         </Card>
 
         {error && (
-          <Alert tone="danger" title="API error">
+          <Alert tone="danger" title="Could not verify">
             {error}
           </Alert>
         )}
@@ -67,7 +67,7 @@ export function WalletPage() {
         {rawSeen && (
           <Card>
             <div className="text-xs tracking-widest text-[var(--otv-warning)]">RAW CHAIN ACTIVITY</div>
-            <p className="mt-2 text-sm">Observed hash for this recipient — not yet a spendability decision.</p>
+            <p className="mt-2 text-sm">This hash exists. It is not yet a decision that funds can be spent.</p>
             <p className="otv-mono mt-2 text-xs text-[var(--otv-text-muted)]">
               {tx} → {recipient}
             </p>

@@ -110,7 +110,7 @@ export function SignatureVerification({
 }) {
   return (
     <div
-      className="rounded-[12px] border px-4 py-3 text-sm"
+      className="rounded-[8px] border-2 px-4 py-3 text-sm"
       style={{
         borderColor: valid ? "color-mix(in srgb, var(--otv-success) 40%, transparent)" : "var(--otv-border)",
       }}

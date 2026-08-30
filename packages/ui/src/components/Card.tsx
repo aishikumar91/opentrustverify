@@ -1,14 +1,10 @@
 import { clsx } from "clsx";
 import type { HTMLAttributes } from "react";
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={clsx(
-        "rounded-[16px] border border-[var(--otv-border)] bg-[var(--otv-surface)] p-5",
-        className
-      )}
-      {...props}
-    />
-  );
+export function Card({
+  className,
+  lift = false,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { lift?: boolean }) {
+  return <div className={clsx("otv-card", lift && "otv-card-lift", className)} {...props} />;
 }

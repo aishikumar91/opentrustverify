@@ -4,7 +4,6 @@ import { RequireAuth } from "./components/RequireAuth";
 import { PublicLayout, AuthLayout } from "./layouts/PublicLayout";
 import { DocsLayout } from "./layouts/DocsLayout";
 import { DashboardLayout } from "./layouts/DashboardLayout";
-import { ToolLayout } from "./layouts/ToolLayout";
 import { HomePage } from "./pages/Home";
 import { AboutPage, WhitepaperPage } from "./pages/About";
 import { ContactPage, SecurityPage } from "./pages/Public";
@@ -33,6 +32,7 @@ export default function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/whitepaper" element={<WhitepaperPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/verifier" element={<VerifierPage />} />
           </Route>
 
           <Route element={<DocsLayout />}>
@@ -44,12 +44,8 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
           </Route>
 
-          <Route element={<ToolLayout />}>
-            <Route path="/verifier" element={<VerifierPage />} />
-          </Route>
-
           <Route element={<RequireAuth />}>
-            <Route element={<ToolLayout />}>
+            <Route element={<PublicLayout />}>
               <Route path="/wallet" element={<WalletPage />} />
             </Route>
             <Route element={<DashboardLayout />}>

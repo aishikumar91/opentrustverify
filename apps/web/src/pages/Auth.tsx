@@ -35,12 +35,12 @@ export function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-md space-y-6">
+    <Card lift className="w-full max-w-md space-y-6">
           <div>
             <p className="text-xs font-semibold tracking-[0.28em] text-[var(--otv-brand)]">ACCOUNT</p>
             <h1 className="mt-2 text-2xl font-bold">Log in</h1>
             <p className="mt-1 text-sm text-[var(--otv-text-secondary)]">
-              Session tokens are issued by the API. Keys never leave the server.
+              Use the email you registered with. API keys stay in your backend, not in this form.
             </p>
           </div>
           {error && (
@@ -50,11 +50,11 @@ export function LoginPage() {
           )}
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--otv-text-muted)]">Email</span>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Email</span>
+              <Input className="otv-input-lg" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--otv-text-muted)]">Password</span>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Password</span>
               <Input
                 type="password"
                 value={password}
@@ -102,12 +102,12 @@ export function RegisterPage() {
   }
 
   return (
-    <Card className="w-full max-w-md space-y-6">
+    <Card lift className="w-full max-w-md space-y-6">
           <div>
-            <p className="text-xs font-semibold tracking-[0.28em] text-[var(--otv-brand)]">GET STARTED</p>
+            <p className="text-xs font-semibold tracking-[0.28em] text-[var(--otv-brand)]">NEW TEAM</p>
             <h1 className="mt-2 text-2xl font-bold">Create an account</h1>
             <p className="mt-1 text-sm text-[var(--otv-text-secondary)]">
-              Provisions an organization, default project, and FREE billing record in Postgres.
+              You get a workspace, a default project, and the free plan so you can mint a key.
             </p>
           </div>
           {error && (
@@ -117,15 +117,15 @@ export function RegisterPage() {
           )}
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--otv-text-muted)]">Name</span>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Name</span>
               <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--otv-text-muted)]">Email</span>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Email</span>
+              <Input className="otv-input-lg" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--otv-text-muted)]">Password (min 8)</span>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Password, at least 8 characters</span>
               <Input
                 type="password"
                 value={password}

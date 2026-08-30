@@ -1,77 +1,196 @@
-import { Link, NavLink } from "react-router-dom";
-import { Button, Logo } from "@otv/ui";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Logo, buttonClassName, BtnText } from "@otv/ui";
 import { useAuth } from "@/lib/auth";
+import { GithubStar } from "@/components/GithubStar";
 
-const LINKS = [
+const NAV = [
   { to: "/docs", label: "Docs" },
   { to: "/whitepaper", label: "Whitepaper" },
   { to: "/about", label: "About" },
+  { to: "/verifier", label: "Verifier" },
 ];
+
+const FOOTER_LINKS = [
+  { title: "Product", items: [
+    { to: "/docs", label: "Docs" },
+    { to: "/verifier", label: "Verifier" },
+    { to: "/whitepaper", label: "Whitepaper" },
+  ]},
+  { title: "Company", items: [
+    { to: "/about", label: "About" },
+    { to: "/security", label: "Security" },
+    { to: "/contact", label: "Contact" },
+  ]},
+];
+
+function navClass({ isActive }: { isActive: boolean }) {
+  return `otv-nav-link ${isActive ? "is-active" : ""}`;
+}
+
+function BrandLink({ invert = false }: { invert?: boolean }) {
+  return (
+    <Link to="/" aria-label="OpenTrust Verify by POP Trust">
+      <Logo href={false} invert={invert} />
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const { ready, user } = useAuth();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const onLogin = pathname === "/login";
+  const onRegister = pathname === "/register";
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--otv-border)] bg-[color-mix(in_srgb,var(--otv-background)_85%,transparent)] backdrop-blur">
-      <div className="otv-container flex h-16 items-center justify-between gap-4">
-        <Link to="/" aria-label="OpenTrust Verify by POP Trust">
-          <Logo href={false} />
-        </Link>
-        <nav className="hidden items-center gap-6 lg:flex" aria-label="Primary">
-          {LINKS.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              className={({ isActive }) =>
-                `text-sm ${isActive ? "text-[var(--otv-text-primary)]" : "text-[var(--otv-text-secondary)] hover:text-[var(--otv-text-primary)]"}`
-              }
-            >
+    <header className="otv-header">
+      <div className="otv-container grid grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
+        <BrandLink />
+        <nav className="hidden items-center justify-center gap-8 lg:flex" aria-label="Primary">
+          {NAV.map((l) => (
+            <NavLink key={l.to} to={l.to} className={navClass}>
               {l.label}
             </NavLink>
           ))}
+          {ready && user && (
+            <NavLink to="/dashboard" className={navClass}>
+              Dashboard
+            </NavLink>
+          )}
         </nav>
-        <div className="flex items-center gap-2">
-          <Link to="/verifier">
-            <Button variant="ghost" type="button">
-              Verifier
-            </Button>
-          </Link>
+        <div className="flex items-center justify-end gap-2">
+          <span className="hidden sm:inline-flex">
+            <GithubStar />
+          </span>
+          <button
+            type="button"
+            className={buttonClassName("ghost", "lg:hidden")}
+            aria-expanded={open}
+            aria-controls="site-mobile-nav"
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((v) => !v)}
+          >
+            Menu
+          </button>
           {ready && user ? (
-            <Link to="/dashboard">
-              <Button type="button">Dashboard</Button>
+            <Link to="/dashboard" className={buttonClassName("primary")}>
+              <BtnText>Dashboard</BtnText>
             </Link>
           ) : (
             <>
-              <Link to="/login">
-                <Button variant="ghost" type="button">
-                  Log in
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button type="button">Start building</Button>
-              </Link>
+              {!onLogin && (
+                <Link to="/login" className={buttonClassName("secondary", "hidden sm:inline-flex")}>
+                  <BtnText>Log in</BtnText>
+                </Link>
+              )}
+              {!onRegister && (
+                <Link to="/register" className={buttonClassName("primary")}>
+                  <BtnText>Sign up</BtnText>
+                </Link>
+              )}
             </>
           )}
         </div>
       </div>
+      {open && (
+        <nav
+          id="site-mobile-nav"
+          className="mt-4 border-t border-[var(--otv-border)] lg:hidden"
+          aria-label="Primary"
+        >
+          <div className="otv-container flex flex-col gap-1 py-3">
+            {NAV.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  `rounded-[8px] px-3 py-2 text-sm font-semibold ${
+                    isActive
+                      ? "bg-[var(--otv-accent)] text-[var(--otv-brand)]"
+                      : "text-[var(--otv-text-secondary)]"
+                  }`
+                }
+                onClick={() => setOpen(false)}
+              >
+                {l.label}
+              </NavLink>
+            ))}
+            {user && (
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  `rounded-[8px] px-3 py-2 text-sm font-semibold ${
+                    isActive
+                      ? "bg-[var(--otv-accent)] text-[var(--otv-brand)]"
+                      : "text-[var(--otv-text-secondary)]"
+                  }`
+                }
+                onClick={() => setOpen(false)}
+              >
+                Dashboard
+              </NavLink>
+            )}
+            {!user && !onLogin && (
+              <Link
+                to="/login"
+                className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] sm:hidden"
+                onClick={() => setOpen(false)}
+              >
+                Log in
+              </Link>
+            )}
+            <div className="px-3 py-2 sm:hidden">
+              <GithubStar />
+            </div>
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
 
 export function SiteFooter() {
+  const { user } = useAuth();
   return (
-    <footer className="border-t border-[var(--otv-border)] py-10">
-      <div className="otv-container flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <Link to="/" aria-label="OpenTrust Verify by POP Trust">
-          <Logo href={false} />
-        </Link>
-        <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-[var(--otv-text-secondary)]">
-          <Link to="/docs">API docs</Link>
-          <Link to="/whitepaper">Whitepaper</Link>
-          <Link to="/security">Security</Link>
-          <Link to="/about">About</Link>
-          <Link to="/contact">Contact</Link>
+    <footer className="otv-footer">
+      <div className="otv-container grid gap-12 py-20 md:grid-cols-[1.2fr_1fr_1fr]">
+        <div>
+          <BrandLink invert />
+          <p className="mt-6 max-w-sm text-sm">
+            A signed answer to one question: can this recipient spend what just arrived?
+          </p>
+          <div className="mt-6">
+            <GithubStar invert />
+          </div>
         </div>
+        {FOOTER_LINKS.map((col) => (
+          <div key={col.title}>
+            <h3 className="mb-4 text-lg font-bold text-white">{col.title}</h3>
+            <ul className="space-y-2 text-sm text-white">
+              {col.items.map((l) => (
+                <li key={l.to}>
+                  <Link to={l.to}>{l.label}</Link>
+                </li>
+              ))}
+              {col.title === "Product" && user && (
+                <li>
+                  <Link to="/dashboard">Dashboard</Link>
+                </li>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-white/10 py-5 text-center text-sm">
+        OpenTrust Verify · POP Trust
       </div>
     </footer>
   );
 }
+
+export { BrandLink };

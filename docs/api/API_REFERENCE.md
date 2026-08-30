@@ -1,7 +1,9 @@
-# API Reference — OpenTrust Verify v1
+# API reference, OpenTrust Verify v1
 
-**Base (local):** `http://localhost:4080`  
-**OpenAPI UI:** `GET /docs` · Spec: `GET /v1/openapi.json`
+**Local:** `http://localhost:4080`  
+**Live:** `https://otv.poptrust.me`  
+**Interactive API:** `GET /api/docs`  
+**Spec:** `GET /v1/openapi.json`
 
 ## Authentication
 
@@ -9,7 +11,7 @@
 |------|-----------------|----------|
 | API key | `Authorization: Bearer otv_…` or `X-OTV-Api-Key` | verify, webhooks, usage |
 | Session | Cookie `otv_session` | login-gated dashboard routes |
-| None | — | health, ready, metrics, keys, catalogs, GET verdict, signature check |
+| None | (none) | health, ready, metrics, keys, catalogs, GET verdict, signature check |
 
 Keys are stored as SHA-256 hashes. Demo key (local only): `otv_test_demo_key_change_me`.  
 Demo user: `demo@poptrust.me` / `otv-demo-change-me`.

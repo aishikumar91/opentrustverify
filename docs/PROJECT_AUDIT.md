@@ -4,7 +4,7 @@
 **Status:** Phase 1 complete  
 **Parent brand:** POP Trust (Proof of Presence and Commitment)  
 **Product:** OpenTrust Verify (OTV)  
-**Suggested subdomain:** `verify.poptrust.me` (API: `api.verify.poptrust.me`)
+**Canonical host:** `otv.poptrust.me` (UI + `/v1` API on the same origin; earlier draft used `verify.poptrust.me`)
 
 ---
 
@@ -37,7 +37,7 @@ OTV is introduced as a **sibling product folder** inside the existing POP Trust 
 | Category | Human promise / presence protocol | Digital-asset verification infrastructure |
 | Tagline | Proof of Presence and Commitment | Trust the balance, not just the blockchain event |
 | Logo | Shared interlocking-links mark | Same mark + OTV product wordmark |
-| Subdomain | poptrust.me | verify.poptrust.me |
+| Subdomain | poptrust.me | otv.poptrust.me |
 | Non-goal overlap | Does not verify spendable incoming transfers | Does not custody keys or replace wallets |
 
 Logo assets copied from host into `brand/assets/`.

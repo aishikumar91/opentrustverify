@@ -10,7 +10,7 @@ Show users a clear trust state for **incoming** value — never imply spendabili
 import { OpenTrustVerify } from "@otv/sdk-core";
 
 const otv = new OpenTrustVerify({
-  baseUrl: "https://api.verify.poptrust.me",
+  baseUrl: "https://otv.poptrust.me",
   apiKey: process.env.OTV_API_KEY!,
 });
 

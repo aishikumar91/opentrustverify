@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Logo, Sidebar } from "@otv/ui";
+import { Logo, Sidebar, buttonClassName } from "@otv/ui";
 import { useAuth } from "@/lib/auth";
 
 const NAV = [
@@ -16,12 +16,12 @@ export function DashboardLayout() {
   const loc = useLocation();
   const { user, logout } = useAuth();
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[var(--otv-surface-tint)]">
       <Sidebar
         items={NAV}
         active={loc.pathname}
         renderLogo={(logo) => (
-          <Link to="/" aria-label="OpenTrust Verify by POP Trust">
+          <Link to="/" className="mb-8 block" aria-label="OpenTrust Verify by POP Trust">
             {logo}
           </Link>
         )}
@@ -32,37 +32,36 @@ export function DashboardLayout() {
         )}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between gap-3 border-b border-[var(--otv-border)] px-4 md:px-6">
+        <header className="otv-dash-header">
           <div className="md:hidden">
             <Link to="/" aria-label="OpenTrust Verify by POP Trust">
               <Logo href={false} />
             </Link>
           </div>
-          <div className="hidden text-sm text-[var(--otv-text-secondary)] md:block">{user?.email}</div>
-          <div className="flex items-center gap-3 text-sm">
-            <Link className="text-[var(--otv-text-secondary)]" to="/verifier">
+          <div className="truncate text-sm text-[var(--otv-text-secondary)]">{user?.email}</div>
+          <div className="flex h-11 shrink-0 items-center gap-1">
+            <Link to="/verifier" className={buttonClassName("ghost")}>
               Verifier
             </Link>
-            <button
-              type="button"
-              className="text-[var(--otv-text-secondary)] hover:text-[var(--otv-text-primary)]"
-              onClick={() => void logout()}
-            >
+            <button type="button" className={buttonClassName("ghost")} onClick={() => void logout()}>
               Log out
             </button>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-8">
           <Outlet />
         </main>
-        <nav className="flex border-t border-[var(--otv-border)] md:hidden" aria-label="Mobile">
-          {NAV.slice(0, 4).map((n) => (
+        <nav
+          className="flex overflow-x-auto border-t border-[var(--otv-border)] bg-[var(--otv-surface)] md:hidden"
+          aria-label="Dashboard"
+        >
+          {NAV.map((n) => (
             <NavLink
               key={n.href}
               to={n.href}
               end={n.href === "/dashboard"}
               className={({ isActive }) =>
-                `flex-1 py-3 text-center text-xs ${
+                `flex h-12 shrink-0 items-center px-3 text-center text-xs font-semibold ${
                   isActive ? "text-[var(--otv-brand)]" : "text-[var(--otv-text-secondary)]"
                 }`
               }

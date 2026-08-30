@@ -6,35 +6,34 @@ export function AboutPage() {
   return (
     <DocArticle title="About OpenTrust Verify" kicker="POP TRUST">
       <p>
-        {product.name} ({product.shortName}) is digital-asset verification infrastructure under the{" "}
-        {product.parentBrand} brand. Tagline: {product.tagline}
+        {product.name} is how {product.parentBrand} answers a question explorers leave open: did this
+        incoming transfer become money the recipient can actually spend?
       </p>
       <p>
-        Blockchain explorers correctly display events. Non-technical users often interpret those events
-        as “the money has arrived.” Attackers exploit that gap with transaction hashes, pending
-        transfers, token events, and apparent balances. OTV exists so product teams can show a
-        recipient a signed, evidence-backed trust state instead of raw chain noise.
+        A hash, a pending transfer, or a token event can be technically true and still worthless to the
+        person who thinks they were paid. Attackers lean on that gap. Product teams should not ask a
+        customer to decode logs.
       </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What OTV is</h2>
-      <ul className="list-disc space-y-2 pl-5">
-        <li>An independent verification API that returns <code className="otv-mono">otv.verdict.v1</code>.</li>
-        <li>A deterministic engine: lookup, execution, asset, recipient, amount, balance, finality, spendability.</li>
-        <li>A dashboard for keys, webhooks, usage, audit, and billing snapshot.</li>
-        <li>Public lookup of an existing verdict by ID.</li>
-      </ul>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What OTV is not</h2>
-      <ul className="list-disc space-y-2 pl-5">
-        <li>Not a custodian. It does not hold user keys or send transactions.</li>
-        <li>Not an explorer replacement. Raw chain data stays visible.</li>
-        <li>Not a balance oracle that invents funds. It verifies observed evidence.</li>
-      </ul>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who it is for</h2>
       <p>
-        Live product surface: this unified web app. API: Fastify on Postgres + Redis. Design: POP Trust
-        true-black surfaces and brand blue <code className="otv-mono">#1e6bff</code>.
+        Wallet, exchange, explorer, and support teams that need a status they can show. One HTTP call
+        returns a signed verdict. Your UI decides how to present Spendable, Pending, or Rejected.
       </p>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What you get</h2>
+      <ul className="list-disc space-y-2 pl-5">
+        <li>A verification API that checks inclusion, execution, asset, recipient, balance, and finality.</li>
+        <li>A dashboard for keys, webhooks, usage, and an audit trail.</li>
+        <li>Public lookup of any stored verdict by ID, so a support agent can open the same record.</li>
+      </ul>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What we do not do</h2>
+      <ul className="list-disc space-y-2 pl-5">
+        <li>We do not hold keys or send transactions.</li>
+        <li>We do not replace your explorer. Raw chain data can stay on screen.</li>
+        <li>We do not invent a balance. If the evidence is thin, the verdict says so.</li>
+      </ul>
       <p>
         <Link className="text-[var(--otv-brand)]" to="/whitepaper">
-          Engineering whitepaper →
+          Read the model
         </Link>
       </p>
     </DocArticle>
@@ -43,53 +42,57 @@ export function AboutPage() {
 
 export function WhitepaperPage() {
   return (
-    <DocArticle title="OpenTrust Verify Whitepaper" kicker="ENGINEERING · v0.2">
+    <DocArticle title="How OpenTrust Verify decides" kicker="MODEL">
       <p>
-        Vendor-neutral verification layer. Evaluates whether an observed incoming digital-asset event
-        represents verified, spendable value for a recipient. Produces explainable evidence and a
-        cryptographically signed verdict for wallets, exchanges, explorers, and fintech applications.
+        Wallets already simulate what you are about to sign. OpenTrust Verify works on the inbound
+        side. You tell us what arrived. We say whether that arrival is spendable value for the named
+        recipient.
       </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Problem</h2>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">The failure we exist for</h2>
       <p>
-        Explorers show chain fidelity. Users hear “paid.” Social engineering uses technically true
-        events that are not spendable value. Simulation tools protect outbound signing; OTV addresses
-        inbound interpretation.
+        Explorers are good at chain fidelity. Users hear "paid." A pending transfer, a lookalike token,
+        or an event that never moved a balance can all look like a deposit. Simulation tools stop a bad
+        outbound signature. They do not tell a recipient whether incoming funds can be spent.
       </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Design principles</h2>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What we refuse to mix</h2>
+      <p>
+        Activity on a chain is not the same as a successful execution. A successful execution is not
+        the same as a transfer. A transfer is not the same as a balance increase. A balance increase
+        is not the same as finality. Finality is not the same as spendable funds. Each step has to
+        pass on its own.
+      </p>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">How a check runs</h2>
       <ol className="list-decimal space-y-2 pl-5">
-        <li>Never collapse activity / execution / transfer / balance / finality / spendability.</li>
-        <li>Deterministic verification first; narrative only after a verdict.</li>
-        <li>Evidence required for every verdict.</li>
-        <li>Chain-specific policies via adapters.</li>
-        <li>Vendor neutrality.</li>
-        <li>Explicit confidence and mock/live honesty.</li>
+        <li>Find the transaction and confirm it is included.</li>
+        <li>Confirm execution succeeded.</li>
+        <li>Match the asset and the recipient you named.</li>
+        <li>Read the balance change, not only the transfer log. Event sums lie on fee-on-transfer and rebasing tokens.</li>
+        <li>Wait for the finality rule of that network.</li>
+        <li>Only then call the result spendable, or stop earlier with a clear failure.</li>
       </ol>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Trust states</h2>
-      <p className="otv-mono text-sm">
-        OBSERVED · PENDING · EXECUTED · ASSET_CONFIRMED · BALANCE_CONFIRMED · FINAL · SPENDABLE ·
-        REJECTED · SUSPICIOUS · UNVERIFIED
-      </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Signed verdicts</h2>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Statuses you can show</h2>
       <p>
-        Canonical JSON → SHA-256 → Ed25519 → hex signature + <code className="otv-mono">kid</code>. Public
-        check: <code className="otv-mono">POST /v1/verdicts/verify</code>. Production keys persist on the
-        API (optional wrap). HSM remains a documented next step, not a fake claim.
+        Observed, pending, executed, asset confirmed, balance confirmed, final, spendable, rejected,
+        suspicious, or unverified. Your product maps those words to a badge. We keep the evidence
+        that produced them.
       </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Runtime</h2>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Signatures</h2>
       <p>
-        Fastify API, Postgres source of truth, Redis rate limits and webhook queue, file keystore,
-        session cookies plus <code className="otv-mono">X-OTV-Session</code> for cross-origin HTTP
-        dashboards. Set <code className="otv-mono">ETH_RPC_URL</code> for live Ethereum; otherwise mock
-        adapter + <code className="otv-mono">MOCK_ADAPTER</code> signal.
+        The API hashes a stable JSON form of the verdict and signs it with Ed25519. Anyone can POST
+        that payload to <code className="otv-mono">/v1/verdicts/verify</code>. Signing keys stay on the
+        API. This page never signs.
       </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Limitations</h2>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Honesty about live vs mock</h2>
       <p>
-        OIDC/SSO is specified (501 until configured). Billing provider is abstracted. Certification
-        marks require authorization. Market TAM/SAM figures are not published as facts.
+        When a live Ethereum RPC is configured, evidence comes from that node. When it is not, a mock
+        adapter still returns a verdict and marks the result so you do not treat a demo as chain
+        proof. Single sign-on is specified and not switched on. We do not publish market-size figures
+        as facts.
       </p>
       <p>
-        Canonical markdown: <code className="otv-mono">docs/whitepaper/OTV_WHITEPAPER.md</code> in the
-        repository.
+        <Link className="text-[var(--otv-brand)]" to="/docs">
+          First request
+        </Link>
       </p>
     </DocArticle>
   );

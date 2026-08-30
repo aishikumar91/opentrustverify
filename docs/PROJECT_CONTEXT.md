@@ -12,9 +12,10 @@ OTV helps wallets, exchanges, explorers, payment apps, and fintech products dete
 
 - **Parent brand:** POP Trust
 - **Product:** OpenTrust Verify / OTV
-- **Marketing / verifier:** `https://verify.poptrust.me`
-- **API:** `https://api.verify.poptrust.me`
-- **Docs:** `https://docs.verify.poptrust.me`
+- **Canonical host (same origin):** `https://otv.poptrust.me`
+- **API:** `https://otv.poptrust.me/v1`
+- **Docs:** `https://otv.poptrust.me/docs`
+- **OpenAPI:** `https://otv.poptrust.me/api/docs`
 - **Visual:** Shared interlocking-links logo (electric blue on black); OTV wordmark and tagline
 
 ## Human problem

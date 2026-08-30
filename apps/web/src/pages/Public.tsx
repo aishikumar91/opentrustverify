@@ -1,25 +1,28 @@
 import { Link } from "react-router-dom";
 import { DocArticle } from "@/components/DocArticle";
 
+const API_ORIGIN = import.meta.env.VITE_OTV_API_URL ?? "https://otv.poptrust.me";
+
 export function SecurityPage() {
   return (
-    <DocArticle title="Security" kicker="THREAT MODEL">
+    <DocArticle title="Security" kicker="TRUST">
       <p>
-        Primary threat: technically true but economically misleading chain data used in social
-        engineering. Additional threats: forged claims, compromised RPC, malicious tokens, replayed
-        verdicts, API abuse, webhook SSRF and spoofing.
+        The main risk we exist to catch is a true-looking chain event that is not spendable money.
+        Around that sit forged claims, a bad RPC, lookalike tokens, replayed verdicts, and webhook
+        abuse.
       </p>
       <ul className="list-disc space-y-2 pl-5">
-        <li>API keys stored as SHA-256 hashes; raw values shown once at creation.</li>
-        <li>Sessions hashed at rest; browser clients send <code className="otv-mono">X-OTV-Session</code>.</li>
-        <li>Signing keys never leave the API. Optional AES-256-GCM wrap via master key.</li>
-        <li>Webhook URLs SSRF-checked; payloads HMAC-signed with per-endpoint secrets.</li>
-        <li>Helmet, CORS credentials, Redis-backed rate limits.</li>
+        <li>API keys are stored as hashes. The raw secret is shown once when you create it.</li>
+        <li>Sign-in sessions are hashed at rest. Your browser sends a session header or a cookie.</li>
+        <li>Verdict signing keys never leave the API. This site cannot mint a signature.</li>
+        <li>Webhook URLs are checked so they cannot point at private networks. Each body is HMAC-signed.</li>
+        <li>Request volume is limited so one key cannot knock the service over.</li>
       </ul>
       <p>
-        OIDC/SSO is specified but not enabled until an identity provider is configured. See{" "}
+        Email and password work today. Single sign-on is designed and not enabled until an identity
+        provider is configured. See{" "}
         <Link className="text-[var(--otv-brand)]" to="/docs">
-          authentication docs
+          how you authenticate
         </Link>
         .
       </p>
@@ -29,7 +32,7 @@ export function SecurityPage() {
 
 export function ContactPage() {
   return (
-    <DocArticle title="Contact" kicker="SUPPORT">
+    <DocArticle title="Contact" kicker="TALK TO US">
       <p>
         Product and enterprise:{" "}
         <a className="text-[var(--otv-brand)]" href="mailto:enterprise@poptrust.me">
@@ -37,11 +40,15 @@ export function ContactPage() {
         </a>
       </p>
       <p>
-        API host in this deployment:{" "}
-        <code className="otv-mono">{import.meta.env.VITE_OTV_API_URL ?? "https://otv.poptrust.me"}</code>
+        Interactive API:{" "}
+        <a className="text-[var(--otv-brand)]" href={`${API_ORIGIN}/api/docs`}>
+          {API_ORIGIN}/api/docs
+        </a>
       </p>
       <p>
-        OpenAPI: append <code className="otv-mono">/docs</code> to the API base URL.
+        <Link className="text-[var(--otv-brand)]" to="/docs">
+          Written integration guide
+        </Link>
       </p>
     </DocArticle>
   );

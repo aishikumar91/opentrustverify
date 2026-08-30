@@ -22,7 +22,7 @@ export function TrustState({
   evidence?: EvidenceItem[];
 }) {
   return (
-    <div className="rounded-[16px] border border-[var(--otv-border)] bg-[var(--otv-surface)] p-6">
+    <div className="otv-card otv-trust">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">VERIFICATION</h3>
         <StatusBadge status={status} />
@@ -51,7 +51,7 @@ export function TrustState({
           );
         })}
       </ul>
-      <div className="mt-6 border-t border-[var(--otv-border)] pt-4 text-center text-lg font-bold tracking-[0.18em] text-[var(--otv-brand)]">
+      <div className="otv-trust-status mt-6 border-t border-[var(--otv-border)] pt-4 text-center text-lg font-bold tracking-[0.18em] text-[var(--otv-brand)]">
         {String(status)}
       </div>
     </div>

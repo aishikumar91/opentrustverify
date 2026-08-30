@@ -42,3 +42,11 @@ curl -s http://localhost:4080/v1/ready
 ```
 
 See `OPERATIONS.md` for SLOs and incident steps.
+
+## HTTPS on `otv.poptrust.me`
+
+Append `infra/caddy/otv.poptrust.me.caddy` to the edge Caddyfile and reload `edge-caddy`.
+
+If the hostname is orange-clouded on Cloudflare, visitors hit **525** until origin TLS exists for that name. Grey-cloud the A record until Caddy has a certificate, then proxy again with SSL mode **Full**. Do not point Cloudflare at origin HTTP-only with Full/Full (strict).
+
+Swagger UI is served by the API at `/api/docs`. Caddy must proxy `/api/docs*` without stripping `/api`, and should also rewrite legacy `/docs/static*` and `/docs/json` to `/api/...` so the SPA at `/docs` does not swallow those assets.

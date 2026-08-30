@@ -7,7 +7,7 @@ verification call — raw chain activity is never spendability.
 import 'package:open_trust_verify/open_trust_verify.dart';
 
 final otv = OpenTrustVerify(
-  baseUrl: 'https://api.verify.poptrust.me',
+  baseUrl: 'https://otv.poptrust.me',
   apiKey: Platform.environment['OTV_API_KEY']!,
 );
 
