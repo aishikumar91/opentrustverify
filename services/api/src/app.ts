@@ -8,7 +8,25 @@ import swaggerUi from "@fastify/swagger-ui";
 import { Redis } from "ioredis";
 import { product, defaultPorts } from "@otv/config";
 import { IncomingClaimSchema, VerdictSchema } from "@otv/verdict-schema";
-import { createAdapter } from "@otv/chain-adapters";
+import {
+  BITCOIN_DEMO,
+  SOLANA_DEMO,
+  TRON_DEMO,
+  catalogAssets,
+  catalogChains,
+  catalogNetworks,
+  createAdapter,
+} from "@otv/chain-adapters";
+import {
+  authorizeUrl,
+  createOidcCookie,
+  exchangeCode,
+  fetchDiscovery,
+  oidcConfigured,
+  oidcCookieName,
+  oidcIssuer,
+  parseOidcCookie,
+} from "./lib/oidc.js";
 import { verifyIncomingTransfer } from "@otv/verification-engine";
 import { verifyPayload, type SigningKeyStore } from "@otv/crypto-signatures";
 import { ZodError } from "zod";
@@ -201,31 +219,28 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.get("/v1/keys", { schema: openapi.keys }, async () => ({ keys: keyStore.listPublic() }));
 
-  app.get("/v1/chains", { schema: openapi.chains }, async () => [
-    { id: "ethereum", networks: ["mainnet", "sepolia"], adapter: "ethereum" },
-    { id: "mock", networks: ["local"], adapter: "mock" },
-  ]);
+  app.get("/v1/chains", { schema: openapi.chains }, async () => catalogChains());
 
-  app.get("/v1/networks", { schema: openapi.networks }, async () => [
-    { chain: "ethereum", id: "mainnet", finalityConfirmations: 12 },
-    { chain: "ethereum", id: "sepolia", finalityConfirmations: 12 },
-  ]);
+  app.get("/v1/networks", { schema: openapi.networks }, async (req) => {
+    const chain = typeof (req.query as { chain?: string }).chain === "string"
+      ? (req.query as { chain: string }).chain
+      : undefined;
+    return catalogNetworks(chain);
+  });
 
-  app.get("/v1/assets", { schema: openapi.assets }, async () => [
-    {
-      chain: "ethereum",
-      type: "erc20",
-      symbol: "USDC",
-      contract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      decimals: 6,
-    },
-  ]);
+  app.get("/v1/assets", { schema: openapi.assets }, async (req) => {
+    const q = req.query as { chain?: string; network?: string };
+    return catalogAssets(
+      typeof q.chain === "string" ? q.chain : undefined,
+      typeof q.network === "string" ? q.network : undefined
+    );
+  });
 
   app.post("/v1/verify/incoming", { schema: openapi.verifyIncoming }, async (req, reply) => {
     const auth = await resolveProject(req);
     const claim = IncomingClaimSchema.parse(req.body);
-    const adapter = createAdapter(claim.chain, claim.network, process.env.ETH_RPC_URL);
-    const live = Boolean(process.env.ETH_RPC_URL) && claim.chain !== "mock";
+    const adapter = createAdapter(claim.chain, claim.network);
+    const live = adapter.isLive === true;
     const stopTimer = verificationDuration.startTimer();
     const verdict = await verifyIncomingTransfer(claim, {
       adapter,
@@ -239,13 +254,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         {
           code: "MOCK_ADAPTER",
           severity: "LOW",
-          message: "Verdict produced via mock chain adapter; not live RPC evidence",
+          message: "Verdict produced via mock chain adapter; not live chain evidence",
         },
       ];
       if (verdict.risk.level === "LOW") verdict.risk.level = "MEDIUM";
     }
     await store.saveVerdict(verdict, auth.projectId, claim);
-    verificationTotal.inc({ status: verdict.status, adapter: live ? "ethereum" : "mock" });
+    verificationTotal.inc({ status: verdict.status, adapter: live ? adapter.chainId : "mock" });
     await dispatchWebhooks(store, redis, mapStatusToEvent(verdict.status), verdict);
     return reply.send(verdict);
   });
@@ -313,18 +328,69 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { user, projectId, orgId };
   });
 
-  app.get("/v1/auth/oidc/login", { schema: openapi.oidc }, async (_req, reply) => {
-    if (!process.env.OIDC_ISSUER || !process.env.OIDC_CLIENT_ID) {
+  app.get("/v1/auth/oidc/status", { schema: openapi.oidcStatus }, async () => ({
+    enabled: oidcConfigured(),
+    issuer: oidcConfigured() ? oidcIssuer() : undefined,
+  }));
+
+  app.get("/v1/auth/oidc/login", { schema: openapi.oidc }, async (req, reply) => {
+    if (!oidcConfigured()) {
       return reply.code(501).send({
         error: "oidc_not_configured",
-        message: "SSO is out of MVP scope. Configure OIDC_ISSUER and OIDC_CLIENT_ID. See docs/security/OIDC.md",
+        message: "Set OIDC_ISSUER and OIDC_CLIENT_ID to enable SSO. See docs/security/OIDC.md",
       });
     }
-    return reply.code(501).send({
-      error: "oidc_not_implemented",
-      issuer: process.env.OIDC_ISSUER,
-      message: "OIDC authorization-code flow is specified; enable after identity-provider review.",
-    });
+    try {
+      const returnTo = typeof (req.query as { return_to?: string }).return_to === "string"
+        ? (req.query as { return_to: string }).return_to
+        : "/dashboard";
+      const cookie = createOidcCookie(returnTo);
+      const discovery = await fetchDiscovery();
+      reply.setCookie(oidcCookieName(), cookie.value, {
+        path: "/",
+        httpOnly: true,
+        sameSite: cookieSameSite(),
+        secure: cookieSecure(),
+        maxAge: 10 * 60,
+      });
+      return reply.redirect(authorizeUrl(discovery, cookie.state, cookie.verifier));
+    } catch (err) {
+      return reply.code(502).send({
+        error: "oidc_discovery_failed",
+        message: err instanceof Error ? err.message : "OIDC discovery failed",
+      });
+    }
+  });
+
+  app.get("/v1/auth/oidc/callback", { schema: openapi.oidcCallback }, async (req, reply) => {
+    if (!oidcConfigured()) {
+      return reply.code(501).send({ error: "oidc_not_configured" });
+    }
+    const q = req.query as { code?: string; state?: string; error?: string };
+    const publicUrl = (process.env.OTV_PUBLIC_URL ?? "").replace(/\/$/, "");
+    const fail = `${publicUrl || ""}/login?sso=error`;
+    if (q.error || !q.code || !q.state) return reply.redirect(fail);
+    const parsed = parseOidcCookie(req.cookies?.[oidcCookieName()]);
+    if (!parsed || parsed.state !== q.state) return reply.redirect(fail);
+    try {
+      const discovery = await fetchDiscovery();
+      const identity = await exchangeCode(discovery, q.code, parsed.verifier);
+      const user = await store.findOrCreateOidcUser(identity.email, identity.name);
+      const session = await store.createSession(user.id);
+      reply.clearCookie(oidcCookieName(), { path: "/" });
+      reply.setCookie("otv_session", session.token, {
+        path: "/",
+        httpOnly: true,
+        sameSite: cookieSameSite(),
+        secure: cookieSecure(),
+        maxAge: 12 * 60 * 60,
+      });
+      await store.addAudit({ actor: user.email, action: "auth.oidc" });
+      const dest = `${publicUrl}${parsed.returnTo}`;
+      return reply.redirect(dest || parsed.returnTo);
+    } catch {
+      return reply.redirect(fail);
+    }
   });
 
   app.post("/v1/organizations", { schema: openapi.createOrg }, async (req) => {
@@ -431,6 +497,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       decimals: 6,
     },
     expectedAmount: "1000000",
+    bitcoin: BITCOIN_DEMO,
+    solana: SOLANA_DEMO,
+    tron: TRON_DEMO,
   }));
 
   if (embedWorker && redis) {

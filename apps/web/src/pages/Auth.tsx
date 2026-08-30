@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Alert, Button, Card, Input } from "@otv/ui";
 import { OtvApiError } from "@otv/api-client";
+import { API_BASE, publicClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export function LoginPage() {
@@ -11,8 +12,15 @@ export function LoginPage() {
   const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    new URLSearchParams(location.search).get("sso") === "error" ? "SSO sign-in failed." : null
+  );
   const [loading, setLoading] = useState(false);
+  const [sso, setSso] = useState(false);
+
+  useEffect(() => {
+    publicClient.oidcStatus().then((s) => setSso(s.enabled)).catch(() => undefined);
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +75,14 @@ export function LoginPage() {
               {loading ? "Signing in…" : "Log in"}
             </Button>
           </form>
+          {sso && (
+            <a
+              className="block text-center text-sm font-semibold text-[var(--otv-brand)]"
+              href={`${API_BASE}/v1/auth/oidc/login?return_to=${encodeURIComponent(from)}`}
+            >
+              Continue with SSO
+            </a>
+          )}
           <p className="text-sm text-[var(--otv-text-secondary)]">
             No account?{" "}
             <Link className="text-[var(--otv-brand)]" to="/register">

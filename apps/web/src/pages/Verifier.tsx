@@ -13,17 +13,13 @@ import {
 } from "@otv/ui";
 import { publicClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ClaimFields, EMPTY_CLAIM, buildIncomingClaim } from "@/components/ClaimFields";
 
 export function VerifierPage() {
   const { user, client } = useAuth();
   const [params] = useSearchParams();
   const [lookupId, setLookupId] = useState(params.get("id") ?? "");
-  const [chain, setChain] = useState("ethereum");
-  const [network, setNetwork] = useState("sepolia");
-  const [tx, setTx] = useState("");
-  const [recipient, setRecipient] = useState("");
-  const [asset, setAsset] = useState("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
-  const [amount, setAmount] = useState("");
+  const [form, setForm] = useState(EMPTY_CLAIM);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [sigValid, setSigValid] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,14 +65,7 @@ export function VerifierPage() {
     setLoading(true);
     setError(null);
     try {
-      const next = await client.verifyIncoming({
-        chain,
-        network,
-        transactionHash: tx,
-        recipient,
-        asset: { type: "erc20", contract: asset, symbol: "USDC", decimals: 6 },
-        expectedAmount: amount || undefined,
-      });
+      const next = await client.verifyIncoming(buildIncomingClaim(form));
       await showVerdict(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -105,7 +94,7 @@ export function VerifierPage() {
           <Card>
             <h2 className="text-xl font-bold">Submit a claim</h2>
             <p className="mt-2 text-sm text-[var(--otv-text-secondary)]">
-              Sign in to check a new hash. The signature is created on the API, not in your browser.
+              Any listed chain. Native coin or any token. The signature is created on the API, not in your browser.
             </p>
             {!user && (
               <div className="mt-4">
@@ -122,30 +111,7 @@ export function VerifierPage() {
               </div>
             )}
             <form className="mt-6 space-y-4" onSubmit={onVerify}>
-              <label className="block text-sm">
-                <span className="mb-1 block text-[var(--otv-text-muted)]">Blockchain</span>
-                <Input value={chain} onChange={(e) => setChain(e.target.value)} required />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-[var(--otv-text-muted)]">Network</span>
-                <Input value={network} onChange={(e) => setNetwork(e.target.value)} required />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-[var(--otv-text-muted)]">Transaction hash</span>
-                <Input className="otv-mono" value={tx} onChange={(e) => setTx(e.target.value)} required />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-[var(--otv-text-muted)]">Recipient</span>
-                <Input className="otv-mono" value={recipient} onChange={(e) => setRecipient(e.target.value)} required />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-[var(--otv-text-muted)]">Expected asset (optional)</span>
-                <Input className="otv-mono" value={asset} onChange={(e) => setAsset(e.target.value)} />
-              </label>
-              <label className="block text-sm">
-                <span className="mb-1 block text-[var(--otv-text-muted)]">Expected amount (optional)</span>
-                <Input className="otv-mono" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              </label>
+              <ClaimFields form={form} onChange={setForm} />
               <Button type="submit" size="sm" disabled={loading || !user} className="w-full">
                 {loading ? "Verifying…" : "Verify"}
               </Button>

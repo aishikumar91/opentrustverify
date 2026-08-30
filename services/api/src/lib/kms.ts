@@ -1,8 +1,15 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { resolveAwsKmsOps } from "./aws-kms.js";
 
 const PREFIX = "otv-kms-v1";
+const DEK_FILE = ".otv-kms-dek";
 
-function masterKey(): Buffer | null {
+let dek: Buffer | null = null;
+let providerName: "none" | "local" | "aws" = "none";
+
+function localMasterKey(): Buffer | null {
   const hex = process.env.OTV_KMS_MASTER_KEY;
   if (!hex) return null;
   if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
@@ -11,13 +18,50 @@ function masterKey(): Buffer | null {
   return Buffer.from(hex, "hex");
 }
 
-export function kmsConfigured(): boolean {
-  return Boolean(process.env.OTV_KMS_MASTER_KEY);
+function chosenProvider(): "none" | "local" | "aws" {
+  const raw = (process.env.OTV_KMS_PROVIDER ?? "").toLowerCase();
+  if (raw === "aws" || process.env.AWS_KMS_KEY_ID) return "aws";
+  if (raw === "local" || process.env.OTV_KMS_MASTER_KEY) return "local";
+  return "none";
 }
 
-/** AES-256-GCM envelope wrap. Production should swap this for a cloud KMS. */
+export function kmsConfigured(): boolean {
+  return chosenProvider() !== "none";
+}
+
+export function kmsProvider(): "none" | "local" | "aws" {
+  return providerName;
+}
+
+export async function initKms(keysDir: string): Promise<void> {
+  providerName = chosenProvider();
+  if (providerName === "none") {
+    dek = null;
+    return;
+  }
+  if (providerName === "local") {
+    dek = localMasterKey();
+    return;
+  }
+  mkdirSync(keysDir, { recursive: true });
+  const ops = await resolveAwsKmsOps();
+  const dekPath = path.join(keysDir, DEK_FILE);
+  if (existsSync(dekPath)) {
+    dek = await ops.decrypt(readFileSync(dekPath));
+    return;
+  }
+  const generated = await ops.generateDataKey();
+  writeFileSync(dekPath, generated.ciphertext, { encoding: undefined, mode: 0o600 });
+  dek = generated.plaintext;
+}
+
+function activeKey(): Buffer | null {
+  return dek ?? localMasterKey();
+}
+
+/** AES-256-GCM envelope wrap. Root key is local master or an AWS-generated DEK. */
 export function wrapPrivateKey(plaintextHex: string): string {
-  const key = masterKey();
+  const key = activeKey();
   if (!key) return plaintextHex;
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
@@ -28,9 +72,9 @@ export function wrapPrivateKey(plaintextHex: string): string {
 
 export function unwrapPrivateKey(stored: string): string {
   if (!stored.startsWith(`${PREFIX}:`)) return stored;
-  const key = masterKey();
+  const key = activeKey();
   if (!key) {
-    throw new Error("Encrypted signing key present but OTV_KMS_MASTER_KEY is not set");
+    throw new Error("Encrypted signing key present but no KMS key is loaded");
   }
   const [, ivHex, tagHex, dataHex] = stored.split(":");
   const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivHex!, "hex"));

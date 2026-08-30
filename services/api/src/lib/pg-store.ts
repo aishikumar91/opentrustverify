@@ -513,6 +513,64 @@ export class PostgresStore implements OtvStore {
     }
   }
 
+  async findUserByEmail(email: string): Promise<UserRecord | null> {
+    const { rows } = await this.pool.query(
+      "SELECT id, email, name FROM users WHERE lower(email) = lower($1)",
+      [email]
+    );
+    const row = rows[0];
+    return row ? { id: row.id, email: row.email, name: row.name ?? undefined } : null;
+  }
+
+  async findOrCreateOidcUser(email: string, name?: string): Promise<UserRecord> {
+    const existing = await this.findUserByEmail(email);
+    if (existing) return existing;
+    const normalized = email.trim().toLowerCase();
+    const display = name?.trim() || normalized.split("@")[0];
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `INSERT INTO roles (id, name) VALUES ('role_owner', 'owner') ON CONFLICT (id) DO NOTHING`
+      );
+      const userId = hexId("user");
+      await client.query(
+        `INSERT INTO users (id, email, name, password_hash) VALUES ($1, $2, $3, NULL)`,
+        [userId, normalized, display]
+      );
+      const orgId = hexId("org");
+      const projectId = hexId("proj");
+      await client.query(`INSERT INTO organizations (id, name) VALUES ($1, $2)`, [
+        orgId,
+        `${display}'s organization`,
+      ]);
+      await client.query(
+        `INSERT INTO billing_accounts (id, organization_id, plan) VALUES ($1, $2, 'FREE')`,
+        [hexId("bill"), orgId]
+      );
+      await client.query(
+        `INSERT INTO projects (id, organization_id, name) VALUES ($1, $2, $3)`,
+        [projectId, orgId, "Default Project"]
+      );
+      await client.query(
+        `INSERT INTO memberships (id, organization_id, user_id, role_id) VALUES ($1, $2, $3, 'role_owner')`,
+        [hexId("mem"), orgId, userId]
+      );
+      await client.query("COMMIT");
+      return { id: userId, email: normalized, name: display };
+    } catch (err) {
+      await client.query("ROLLBACK");
+      const code = (err as { code?: string }).code;
+      if (code === "23505") {
+        const again = await this.findUserByEmail(email);
+        if (again) return again;
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   async defaultProjectId(userId: string): Promise<string | null> {
     const { rows } = await this.pool.query(
       `SELECT p.id FROM projects p

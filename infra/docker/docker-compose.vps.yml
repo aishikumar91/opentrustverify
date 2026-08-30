@@ -55,6 +55,17 @@ services:
       COOKIE_SAMESITE: "lax"
       OTV_PUBLIC_URL: ${OTV_PUBLIC_URL:-https://otv.poptrust.me}
       ETH_RPC_URL: ${ETH_RPC_URL:-}
+      EVM_PUBLIC_RPC: ${EVM_PUBLIC_RPC:-1}
+      BTC_ESPLORA_URL: ${BTC_ESPLORA_URL:-}
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-}
+      TRON_API_URL: ${TRON_API_URL:-}
+      OTV_KMS_PROVIDER: ${OTV_KMS_PROVIDER:-local}
+      AWS_KMS_KEY_ID: ${AWS_KMS_KEY_ID:-}
+      AWS_REGION: ${AWS_REGION:-}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
     ports:
       - "4080:4080"

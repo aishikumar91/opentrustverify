@@ -9,6 +9,14 @@ import {
 } from "@otv/verdict-schema";
 import { type SigningKeyStore, signPayload } from "@otv/crypto-signatures";
 
+function addressesMatch(left: string, right: string): boolean {
+  if (left.startsWith("0x") || right.startsWith("0x")) return left.toLowerCase() === right.toLowerCase();
+  if (/^(bc1|tb1|bcrt1)/i.test(left) || /^(bc1|tb1|bcrt1)/i.test(right)) {
+    return left.toLowerCase() === right.toLowerCase();
+  }
+  return left === right;
+}
+
 function id(): string {
   return `vr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -46,10 +54,12 @@ export async function verifyIncomingTransfer(
 
   status = pushStatus(status, "PENDING", trail);
 
+  const assetHint =
+    claim.asset?.type === "native" ? "native" : claim.asset?.contract;
   const normalized = await opts.adapter.normalizeEvidence(
     claim.transactionHash,
     claim.recipient,
-    claim.asset?.contract
+    assetHint
   );
 
   const included = normalized.transaction.status === "included";
@@ -76,11 +86,23 @@ export async function verifyIncomingTransfer(
   status = pushStatus(status, "EXECUTED", trail);
   confidence = 0.55;
 
-  const transfer = normalized.transfers.find(
-    (t) => t.to.toLowerCase() === claim.recipient.toLowerCase()
-  );
+  const transfer = normalized.transfers.find((t) => {
+    if (!addressesMatch(t.to, claim.recipient)) return false;
+    if (claim.asset?.tokenId && t.tokenId && t.tokenId !== claim.asset.tokenId) return false;
+    if (claim.asset?.type === "native") return t.asset === "native";
+    if (claim.asset?.contract) {
+      return t.asset.toLowerCase() === claim.asset.contract.toLowerCase();
+    }
+    return true;
+  });
+  const typeOk =
+    !claim.asset?.type ||
+    claim.asset.type === "other" ||
+    normalized.asset?.type === claim.asset.type ||
+    (claim.asset.type === "native" && (!normalized.asset || normalized.asset.type === "native"));
   const assetOk =
     Boolean(normalized.asset) &&
+    typeOk &&
     (!claim.asset?.contract ||
       normalized.asset?.contract?.toLowerCase() === claim.asset.contract.toLowerCase()) &&
     (!claim.asset?.symbol ||
@@ -106,7 +128,9 @@ export async function verifyIncomingTransfer(
   });
 
   const amountOk =
-    !claim.expectedAmount || (transfer && transfer.amount === claim.expectedAmount);
+    !claim.expectedAmount ||
+    (transfer &&
+      (transfer.amount === claim.expectedAmount || transfer.tokenId === claim.expectedAmount));
   evidence.push({
     type: "AMOUNT_MATCH",
     result: Boolean(amountOk),
@@ -221,6 +245,7 @@ function finalize(
       contract: normalized.asset?.contract ?? claim.asset?.contract,
       symbol: normalized.asset?.symbol ?? claim.asset?.symbol,
       decimals: normalized.asset?.decimals ?? claim.asset?.decimals,
+      tokenId: claim.asset?.tokenId ?? normalized.transfers.find((t) => t.tokenId)?.tokenId,
     },
     amount: claim.expectedAmount ?? normalized.transfers[0]?.amount,
     balanceDelta,

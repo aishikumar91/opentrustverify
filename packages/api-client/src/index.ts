@@ -172,9 +172,46 @@ export class OtvApiClient {
     return this.parse(res, "verifySignature");
   }
 
-  async listChains(): Promise<Array<{ id: string; networks: string[] }>> {
+  async listChains(): Promise<
+    Array<{ id: string; name?: string; family?: string; nativeSymbol?: string; networks: string[]; adapter?: string }>
+  > {
     const res = await this.fetchImpl(`${this.baseUrl}/v1/chains`);
     return this.parse(res, "listChains");
+  }
+
+  async listNetworks(chain?: string): Promise<
+    Array<{ chain: string; id: string; finalityConfirmations: number; liveDefault?: boolean }>
+  > {
+    const qs = chain ? `?chain=${encodeURIComponent(chain)}` : "";
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/networks${qs}`);
+    return this.parse(res, "listNetworks");
+  }
+
+  async listAssets(
+    chain?: string,
+    network?: string
+  ): Promise<
+    Array<{
+      chain: string;
+      network: string;
+      type: string;
+      symbol: string;
+      decimals: number;
+      contract?: string;
+      name?: string;
+    }>
+  > {
+    const params = new URLSearchParams();
+    if (chain) params.set("chain", chain);
+    if (network) params.set("network", network);
+    const qs = params.toString() ? `?${params}` : "";
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/assets${qs}`);
+    return this.parse(res, "listAssets");
+  }
+
+  async oidcStatus(): Promise<{ enabled: boolean; issuer?: string }> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/auth/oidc/status`);
+    return this.parse(res, "oidcStatus");
   }
 
   async listApiKeys(): Promise<PublicApiKey[]> {

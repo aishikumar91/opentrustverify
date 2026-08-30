@@ -129,4 +129,41 @@ describe("API app", () => {
     expect(init.statusCode).toBe(200);
     expect(init.body).toContain("/v1/openapi.json");
   });
+
+  it("lists multi-chain catalog including bitcoin", async () => {
+    const res = await app.inject({ method: "GET", url: "/v1/chains" });
+    expect(res.statusCode).toBe(200);
+    const ids = (res.json() as Array<{ id: string }>).map((c) => c.id);
+    expect(ids).toContain("ethereum");
+    expect(ids).toContain("bitcoin");
+    expect(ids).toContain("solana");
+    expect(ids).toContain("tron");
+    expect(ids).toContain("base");
+  });
+
+  it("verifies a mock bitcoin payment", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/verify/incoming",
+      headers: { authorization: `Bearer ${DEMO_API_KEY}` },
+      payload: {
+        chain: "bitcoin",
+        network: "mock",
+        transactionHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        recipient: "tb1qdemo000000000000000000000000000000000",
+        asset: { type: "native", symbol: "BTC" },
+        expectedAmount: "100000",
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().status).toBe("SPENDABLE");
+    expect(res.json().asset.symbol).toBe("BTC");
+  });
+
+  it("returns 501 for SSO until an issuer is configured", async () => {
+    const res = await app.inject({ method: "GET", url: "/v1/auth/oidc/login" });
+    expect(res.statusCode).toBe(501);
+    const status = await app.inject({ method: "GET", url: "/v1/auth/oidc/status" });
+    expect(status.json().enabled).toBe(false);
+  });
 });

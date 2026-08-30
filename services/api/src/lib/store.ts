@@ -122,6 +122,8 @@ export interface OtvStore {
   listVerdicts(projectId: string, limit?: number, query?: string): Promise<Verdict[]>;
   listApiKeys(projectId: string): Promise<ApiKeyRecord[]>;
   createUser(email: string, password: string, name?: string): Promise<UserRecord>;
+  findUserByEmail(email: string): Promise<UserRecord | null>;
+  findOrCreateOidcUser(email: string, name?: string): Promise<UserRecord>;
   defaultProjectId(userId: string): Promise<string | null>;
   defaultOrgId(userId: string): Promise<string | null>;
   orgIdForProject(projectId: string): Promise<string | null>;
@@ -295,6 +297,7 @@ export class MemoryStore implements OtvStore {
   async authenticateUser(email: string, password: string): Promise<UserRecord | null> {
     for (const user of this.users.values()) {
       if (user.email.toLowerCase() === email.toLowerCase()) {
+        if (!user.passwordHash || user.passwordHash === "oidc") return null;
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
         return { id: user.id, email: user.email, name: user.name };
@@ -393,6 +396,28 @@ export class MemoryStore implements OtvStore {
       email: email.toLowerCase(),
       name: name?.trim() || email.split("@")[0],
       passwordHash: await hashPassword(password),
+    };
+    this.users.set(user.id, user);
+    const org = await this.createOrg(`${user.name}'s organization`);
+    const project = await this.createProject(org.id, "Default Project");
+    this.userOrgs.set(user.id, org.id);
+    this.userProjects.set(user.id, project.id);
+    return { id: user.id, email: user.email, name: user.name };
+  }
+
+  async findUserByEmail(email: string): Promise<UserRecord | null> {
+    const found = [...this.users.values()].find((u) => u.email.toLowerCase() === email.toLowerCase());
+    return found ? { id: found.id, email: found.email, name: found.name } : null;
+  }
+
+  async findOrCreateOidcUser(email: string, name?: string): Promise<UserRecord> {
+    const existing = await this.findUserByEmail(email);
+    if (existing) return existing;
+    const user: UserRecord & { passwordHash: string } = {
+      id: hexId("user"),
+      email: email.toLowerCase(),
+      name: name?.trim() || email.split("@")[0],
+      passwordHash: "oidc",
     };
     this.users.set(user.id, user);
     const org = await this.createOrg(`${user.name}'s organization`);

@@ -43,6 +43,7 @@ export interface TransferEvidence {
   amount: string;
   asset: string;
   logIndex: number;
+  tokenId?: string;
 }
 
 export interface FinalityEvidence {
@@ -65,10 +66,11 @@ export interface NormalizedEvidence {
 export interface ChainAdapter {
   readonly chainId: string;
   readonly network: string;
+  readonly isLive?: boolean;
   getTransaction(hash: string): Promise<TransactionEvidence>;
   getReceipt(hash: string): Promise<ReceiptEvidence | null>;
   getBlock(number: number): Promise<BlockEvidence>;
-  getBalance(address: string, asset: string, block?: number): Promise<BalanceEvidence>;
+  getBalance(address: string, asset: string, block?: number, tokenId?: string): Promise<BalanceEvidence>;
   getTokenMetadata(contract: string): Promise<AssetEvidence>;
   getTransferEvents(hash: string): Promise<TransferEvidence[]>;
   getFinalityState(blockNumber: number): Promise<FinalityEvidence>;

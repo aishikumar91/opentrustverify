@@ -4,6 +4,7 @@ import { Alert, Button, Card, EmptyState, Input, StatusBadge } from "@otv/ui";
 import type { Verdict } from "@otv/verdict-schema";
 import type { PublicApiKey, PublicWebhook } from "@otv/api-client";
 import { useAuth } from "@/lib/auth";
+import { ClaimFields, EMPTY_CLAIM, buildIncomingClaim } from "@/components/ClaimFields";
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -91,14 +92,7 @@ export function DashboardVerifications() {
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    chain: "ethereum",
-    network: "sepolia",
-    transactionHash: "",
-    recipient: "",
-    contract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    amount: "",
-  });
+  const [form, setForm] = useState(EMPTY_CLAIM);
   const [created, setCreated] = useState<Verdict | null>(null);
 
   async function refresh(q?: string) {
@@ -126,14 +120,7 @@ export function DashboardVerifications() {
     setLoading(true);
     setError(null);
     try {
-      const verdict = await client.verifyIncoming({
-        chain: form.chain,
-        network: form.network,
-        transactionHash: form.transactionHash,
-        recipient: form.recipient,
-        asset: { type: "erc20", contract: form.contract, symbol: "USDC", decimals: 6 },
-        expectedAmount: form.amount || undefined,
-      });
+      const verdict = await client.verifyIncoming(buildIncomingClaim(form));
       setCreated(verdict);
       await refresh(query);
     } catch (err) {
@@ -157,12 +144,7 @@ export function DashboardVerifications() {
         <Card>
           <h2 className="text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">New claim</h2>
           <form className="mt-4 space-y-3" onSubmit={onVerify}>
-            <Input placeholder="Chain" value={form.chain} onChange={(e) => setForm({ ...form, chain: e.target.value })} />
-            <Input placeholder="Network" value={form.network} onChange={(e) => setForm({ ...form, network: e.target.value })} />
-            <Input className="otv-mono" placeholder="Transaction hash" value={form.transactionHash} onChange={(e) => setForm({ ...form, transactionHash: e.target.value })} required />
-            <Input className="otv-mono" placeholder="Recipient" value={form.recipient} onChange={(e) => setForm({ ...form, recipient: e.target.value })} required />
-            <Input className="otv-mono" placeholder="Asset contract" value={form.contract} onChange={(e) => setForm({ ...form, contract: e.target.value })} />
-            <Input className="otv-mono" placeholder="Expected amount (optional)" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            <ClaimFields form={form} onChange={setForm} />
             <Button type="submit" size="sm" disabled={loading}>
               {loading ? "Verifying…" : "Verify incoming transfer"}
             </Button>

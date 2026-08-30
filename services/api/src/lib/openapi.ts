@@ -131,7 +131,7 @@ export const openapiInfo = {
   tags: [
     { name: "ops", description: "Health, readiness, metrics, OpenAPI" },
     { name: "catalog", description: "Public chain, network, asset, and key catalogs" },
-    { name: "auth", description: "Register, login, session, OIDC placeholder" },
+    { name: "auth", description: "Register, login, session, OIDC/SSO" },
     { name: "verify", description: "Submit an incoming-transfer claim" },
     { name: "verdicts", description: "Lookup and signature check" },
     { name: "admin", description: "Orgs, projects, keys, usage, billing, audit" },
@@ -223,11 +223,22 @@ export const routes: Record<string, FastifySchema> = {
   networks: {
     tags: ["catalog"],
     summary: "Supported networks",
+    querystring: {
+      type: "object",
+      properties: { chain: { type: "string", examples: ["ethereum"] } },
+    },
     response: { 200: { type: "array", items: { type: "object", additionalProperties: true } } },
   },
   assets: {
     tags: ["catalog"],
-    summary: "Known assets",
+    summary: "Known assets. Any contract still verifies on a supported chain.",
+    querystring: {
+      type: "object",
+      properties: {
+        chain: { type: "string", examples: ["ethereum"] },
+        network: { type: "string", examples: ["mainnet"] },
+      },
+    },
     response: { 200: { type: "array", items: { type: "object", additionalProperties: true } } },
   },
   verifyIncoming: {
@@ -337,10 +348,46 @@ export const routes: Record<string, FastifySchema> = {
       },
     }),
   },
+  oidcStatus: {
+    tags: ["auth"],
+    summary: "Whether SSO is configured",
+    response: ok({
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        enabled: { type: "boolean" },
+        issuer: { type: "string" },
+      },
+    }),
+  },
   oidc: {
     tags: ["auth"],
-    summary: "OIDC login (501 until configured)",
-    response: ok(errorBody),
+    summary: "Start OIDC login (redirects when configured)",
+    querystring: {
+      type: "object",
+      properties: { return_to: { type: "string", examples: ["/dashboard"] } },
+    },
+    response: {
+      302: { description: "Redirect to identity provider" },
+      501: errorBody,
+      502: errorBody,
+    },
+  },
+  oidcCallback: {
+    tags: ["auth"],
+    summary: "OIDC authorization-code callback",
+    querystring: {
+      type: "object",
+      properties: {
+        code: { type: "string" },
+        state: { type: "string" },
+        error: { type: "string" },
+      },
+    },
+    response: {
+      302: { description: "Redirect to app session" },
+      501: errorBody,
+    },
   },
   createOrg: {
     tags: ["admin"],

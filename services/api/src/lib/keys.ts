@@ -7,7 +7,7 @@ import {
   type KeyPairRecord,
   type SigningKeyStore,
 } from "@otv/crypto-signatures";
-import { kmsConfigured, unwrapPrivateKey, wrapPrivateKey } from "./kms.js";
+import { initKms, kmsConfigured, unwrapPrivateKey, wrapPrivateKey } from "./kms.js";
 import type { OtvStore } from "./store.js";
 
 export class FileKeyStore extends InMemoryKeyStore implements SigningKeyStore {
@@ -66,6 +66,7 @@ export async function createKeyStore(store?: OtvStore): Promise<SigningKeyStore>
   const kid = process.env.OTV_KID ?? "otv-dev-1";
   const dir = process.env.OTV_KEYS_DIR ?? path.resolve(process.cwd(), "keys");
   const fileStore = new FileKeyStore(dir);
+  await initKms(dir);
   await fileStore.load();
   try {
     fileStore.getActive();

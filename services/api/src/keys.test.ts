@@ -4,7 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FileKeyStore } from "./lib/keys.js";
 import { generateKeyPair } from "@otv/crypto-signatures";
-import { wrapPrivateKey, unwrapPrivateKey } from "./lib/kms.js";
+import { initKms, wrapPrivateKey, unwrapPrivateKey } from "./lib/kms.js";
+import { setAwsKmsOps } from "./lib/aws-kms.js";
 
 describe("FileKeyStore", () => {
   it("persists and reloads an active key", async () => {
@@ -31,6 +32,37 @@ describe("local KMS wrap", () => {
     } finally {
       if (prev === undefined) delete process.env.OTV_KMS_MASTER_KEY;
       else process.env.OTV_KMS_MASTER_KEY = prev;
+    }
+  });
+});
+
+describe("AWS KMS envelope", () => {
+  it("wraps with a DEK from the injected AWS ops", async () => {
+    const prevProvider = process.env.OTV_KMS_PROVIDER;
+    const prevKey = process.env.AWS_KMS_KEY_ID;
+    const prevMaster = process.env.OTV_KMS_MASTER_KEY;
+    const dek = Buffer.from("cd".repeat(32), "hex");
+    process.env.OTV_KMS_PROVIDER = "aws";
+    process.env.AWS_KMS_KEY_ID = "test-key";
+    delete process.env.OTV_KMS_MASTER_KEY;
+    setAwsKmsOps({
+      generateDataKey: async () => ({ plaintext: dek, ciphertext: Buffer.from("wrapped-dek") }),
+      decrypt: async () => dek,
+    });
+    const dir = await mkdtemp(path.join(os.tmpdir(), "otv-kms-"));
+    try {
+      await initKms(dir);
+      const wrapped = wrapPrivateKey("aabbcc");
+      expect(wrapped.startsWith("otv-kms-v1:")).toBe(true);
+      expect(unwrapPrivateKey(wrapped)).toBe("aabbcc");
+    } finally {
+      setAwsKmsOps(undefined);
+      if (prevProvider === undefined) delete process.env.OTV_KMS_PROVIDER;
+      else process.env.OTV_KMS_PROVIDER = prevProvider;
+      if (prevKey === undefined) delete process.env.AWS_KMS_KEY_ID;
+      else process.env.AWS_KMS_KEY_ID = prevKey;
+      if (prevMaster === undefined) delete process.env.OTV_KMS_MASTER_KEY;
+      else process.env.OTV_KMS_MASTER_KEY = prevMaster;
     }
   });
 });

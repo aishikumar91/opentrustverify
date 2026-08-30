@@ -8,7 +8,7 @@
 - Public: `GET /v1/health`, `/v1/ready`, `/v1/metrics`, `/v1/keys`, chains/networks/assets, `POST /v1/verdicts/verify`, `GET /v1/verdicts/:id`
 - API key: `Authorization: Bearer otv_live_...` or `X-OTV-Api-Key` for verify, webhooks, usage
 - Session cookie `otv_session` **or** API key for orgs/projects/keys/audit/billing
-- OIDC: specified, `GET /v1/auth/oidc/login` returns 501 until configured
+- OIDC: authorization-code + PKCE when `OIDC_ISSUER` + `OIDC_CLIENT_ID` are set; otherwise 501
 
 ## Endpoints (MVP)
 
