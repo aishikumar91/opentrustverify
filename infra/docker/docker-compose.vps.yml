@@ -67,6 +67,9 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "otv.poptrust.me:host-gateway"
     ports:
       - "4080:4080"
     depends_on:
@@ -91,6 +94,17 @@ services:
         condition: service_healthy
       api:
         condition: service_started
+  dex:
+    image: ghcr.io/dexidp/dex:v2.42.1
+    container_name: otv-dex
+    restart: unless-stopped
+    entrypoint: ["dex"]
+    command: ["serve", "/etc/dex/config.yaml"]
+    ports:
+      - "5556:5556"
+    volumes:
+      - ../oidc/dex.yaml:/etc/dex/config.yaml:ro
+      - otv_dex:/var/dex
   web:
     build:
       context: ../..
@@ -107,3 +121,4 @@ services:
 volumes:
   otv_pg:
   otv_redis:
+  otv_dex:

@@ -8,6 +8,15 @@
 otv.poptrust.me {
 	encode gzip
 
+	handle /dex* {
+		reverse_proxy host.docker.internal:5556 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
 	handle /v1* {
 		reverse_proxy host.docker.internal:4080 {
 			header_up Host {host}

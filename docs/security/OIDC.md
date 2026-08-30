@@ -27,4 +27,6 @@ Disabled until both `OIDC_ISSUER` and `OIDC_CLIENT_ID` are set. Then:
 
 Optional: `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI` (default `${OTV_PUBLIC_URL}/v1/auth/oidc/callback`), `OIDC_SCOPE`.
 
-Without those env vars, login stays email/password and `/v1/auth/oidc/login` returns 501. Hosted OTV does not invent an identity provider.
+Hosted OTV can run a local Dex issuer at `https://otv.poptrust.me/dex` (see `infra/oidc/bootstrap.py`). That is free. Google or Auth0 work the same way if you set the env vars instead.
+
+Without issuer + client id, login stays email/password and `/v1/auth/oidc/login` returns 501.

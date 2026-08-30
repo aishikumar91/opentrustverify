@@ -16,3 +16,5 @@ wiki-vault/
 **/tsconfig.tsbuildinfo
 **/dist
 apps/*/dist
+infra/oidc/dex.yaml
+infra/oidc/SSO_LOGIN.txt

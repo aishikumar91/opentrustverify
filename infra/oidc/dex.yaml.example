@@ -1,0 +1,25 @@
+# Generated on the VPS by infra/oidc/bootstrap.py. Do not commit the live file.
+issuer: https://otv.poptrust.me/dex
+storage:
+  type: sqlite3
+  config:
+    file: /var/dex/dex.db
+web:
+  http: 0.0.0.0:5556
+logger:
+  level: info
+oauth2:
+  skipApprovalScreen: true
+  passwordConnector: local
+staticClients:
+  - id: otv-web
+    redirectURIs:
+      - https://otv.poptrust.me/v1/auth/oidc/callback
+    name: OpenTrust Verify
+    secret: CHANGE_ME
+enablePasswordDB: true
+staticPasswords:
+  - email: sso@poptrust.me
+    hash: CHANGE_ME
+    username: sso
+    userID: "1906"
