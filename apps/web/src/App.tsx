@@ -7,6 +7,7 @@ import { DashboardLayout } from "./layouts/DashboardLayout";
 import { HomePage } from "./pages/Home";
 import { AboutPage, WhitepaperPage } from "./pages/About";
 import { ContactPage, SecurityPage } from "./pages/Public";
+import { PrivacyPage, TermsPage } from "./pages/Legal";
 import { VerifierPage } from "./pages/Verifier";
 import {
   DashboardApi,
@@ -32,6 +33,8 @@ export default function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/whitepaper" element={<WhitepaperPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/verifier" element={<VerifierPage />} />
           </Route>
 
@@ -67,6 +70,10 @@ export default function App() {
           <Route path="/pricing" element={<Navigate to="/" replace />} />
           <Route path="/company" element={<Navigate to="/about" replace />} />
           <Route path="/marketing" element={<Navigate to="/" replace />} />
+          <Route path="/policy" element={<Navigate to="/privacy" replace />} />
+          <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+          <Route path="/terms-of-service" element={<Navigate to="/terms" replace />} />
+          <Route path="/legal" element={<Navigate to="/terms" replace />} />
 
           <Route path="/demo" element={<Navigate to="/wallet" replace />} />
           <Route path="/demo-wallet" element={<Navigate to="/wallet" replace />} />

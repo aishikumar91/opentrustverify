@@ -22,6 +22,10 @@ const FOOTER_LINKS = [
     { to: "/security", label: "Security" },
     { to: "/contact", label: "Contact" },
   ]},
+  { title: "Legal", items: [
+    { to: "/privacy", label: "Privacy policy" },
+    { to: "/terms", label: "Terms of use" },
+  ]},
 ];
 
 function navClass({ isActive }: { isActive: boolean }) {
@@ -69,7 +73,7 @@ export function SiteHeader() {
           </span>
           <button
             type="button"
-            className={buttonClassName("ghost", "lg:hidden")}
+            className={buttonClassName("ghost", "lg:hidden", "sm")}
             aria-expanded={open}
             aria-controls="site-mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -78,18 +82,18 @@ export function SiteHeader() {
             Menu
           </button>
           {ready && user ? (
-            <Link to="/dashboard" className={buttonClassName("primary")}>
+            <Link to="/dashboard" className={buttonClassName("primary", undefined, "sm")}>
               <BtnText>Dashboard</BtnText>
             </Link>
           ) : (
             <>
               {!onLogin && (
-                <Link to="/login" className={buttonClassName("secondary", "hidden sm:inline-flex")}>
+                <Link to="/login" className={buttonClassName("secondary", "hidden sm:inline-flex", "sm")}>
                   <BtnText>Log in</BtnText>
                 </Link>
               )}
               {!onRegister && (
-                <Link to="/register" className={buttonClassName("primary")}>
+                <Link to="/register" className={buttonClassName("primary", undefined, "sm")}>
                   <BtnText>Sign up</BtnText>
                 </Link>
               )}
@@ -158,7 +162,7 @@ export function SiteFooter() {
   const { user } = useAuth();
   return (
     <footer className="otv-footer">
-      <div className="otv-container grid gap-12 py-20 md:grid-cols-[1.2fr_1fr_1fr]">
+      <div className="otv-container grid gap-12 py-20 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
           <BrandLink invert />
           <p className="mt-6 max-w-sm text-sm">
@@ -187,7 +191,10 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-white/10 py-5 text-center text-sm">
-        OpenTrust Verify · POP Trust
+        OpenTrust Verify · POP Trust ·{" "}
+        <Link to="/privacy">Privacy</Link>
+        {" · "}
+        <Link to="/terms">Terms</Link>
       </div>
     </footer>
   );

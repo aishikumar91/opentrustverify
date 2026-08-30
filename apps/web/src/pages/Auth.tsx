@@ -156,6 +156,17 @@ export function RegisterPage() {
             </Button>
           </form>
           <p className="text-sm text-[var(--otv-text-secondary)]">
+            Creating an account means you accept the{" "}
+            <Link className="text-[var(--otv-brand)]" to="/terms">
+              terms of use
+            </Link>{" "}
+            and the{" "}
+            <Link className="text-[var(--otv-brand)]" to="/privacy">
+              privacy policy
+            </Link>
+            .
+          </p>
+          <p className="text-sm text-[var(--otv-text-secondary)]">
             Already registered?{" "}
             <Link className="text-[var(--otv-brand)]" to="/login">
               Log in
