@@ -7,3 +7,5 @@
 apps/web/.env
 *.md
 wiki-vault
+apps/dashboard
+*.png
