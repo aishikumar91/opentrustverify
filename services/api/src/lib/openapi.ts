@@ -358,6 +358,7 @@ export const routes: Record<string, FastifySchema> = {
       properties: {
         enabled: { type: "boolean" },
         issuer: { type: "string" },
+        provider: { type: "string", enum: ["google", "oidc"] },
       },
     }),
   },

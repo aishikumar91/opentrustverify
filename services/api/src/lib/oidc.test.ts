@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createOidcCookie, oidcConfigured, parseOidcCookie, safeReturnTo } from "./oidc.js";
+import { createOidcCookie, oidcConfigured, oidcProvider, parseOidcCookie, safeReturnTo } from "./oidc.js";
 
 describe("oidc helpers", () => {
   it("is disabled without issuer env", () => {
@@ -14,6 +14,14 @@ describe("oidc helpers", () => {
     expect(parsed?.state).toBe(cookie.state);
     expect(parsed?.verifier).toBe(cookie.verifier);
     expect(parsed?.returnTo).toBe("/dashboard");
+  });
+
+  it("labels Google when the issuer is accounts.google.com", () => {
+    process.env.OIDC_ISSUER = "https://accounts.google.com";
+    process.env.OIDC_CLIENT_ID = "test-client";
+    expect(oidcProvider()).toBe("google");
+    delete process.env.OIDC_ISSUER;
+    delete process.env.OIDC_CLIENT_ID;
   });
 
   it("rejects open redirects", () => {

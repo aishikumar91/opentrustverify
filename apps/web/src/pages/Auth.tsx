@@ -16,10 +16,15 @@ export function LoginPage() {
     new URLSearchParams(location.search).get("sso") === "error" ? "SSO sign-in failed." : null
   );
   const [loading, setLoading] = useState(false);
-  const [sso, setSso] = useState(false);
+  const [sso, setSso] = useState<{ enabled: boolean; provider?: "google" | "oidc" }>({
+    enabled: false,
+  });
 
   useEffect(() => {
-    publicClient.oidcStatus().then((s) => setSso(s.enabled)).catch(() => undefined);
+    publicClient
+      .oidcStatus()
+      .then((s) => setSso({ enabled: s.enabled, provider: s.provider }))
+      .catch(() => undefined);
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
@@ -75,12 +80,12 @@ export function LoginPage() {
               {loading ? "Signing in…" : "Log in"}
             </Button>
           </form>
-          {sso && (
+          {sso.enabled && (
             <a
               className="block text-center text-sm font-semibold text-[var(--otv-brand)]"
               href={`${API_BASE}/v1/auth/oidc/login?return_to=${encodeURIComponent(from)}`}
             >
-              Continue with SSO
+              {sso.provider === "google" ? "Continue with Google" : "Continue with SSO"}
             </a>
           )}
           <p className="text-sm text-[var(--otv-text-secondary)]">

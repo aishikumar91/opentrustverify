@@ -20,12 +20,21 @@ type CookiePayload = {
 
 const COOKIE = "otv_oidc";
 
+export type OidcProvider = "google" | "oidc";
+
 export function oidcConfigured(): boolean {
   return Boolean(process.env.OIDC_ISSUER && process.env.OIDC_CLIENT_ID);
 }
 
 export function oidcIssuer(): string {
   return (process.env.OIDC_ISSUER ?? "").replace(/\/$/, "");
+}
+
+export function oidcProvider(): OidcProvider | undefined {
+  if (!oidcConfigured()) return undefined;
+  const issuer = oidcIssuer();
+  if (issuer === "https://accounts.google.com" || issuer.endsWith(".google.com")) return "google";
+  return "oidc";
 }
 
 export function oidcRedirectUri(): string {
@@ -114,6 +123,7 @@ export function authorizeUrl(discovery: OidcDiscovery, state: string, verifier: 
   url.searchParams.set("state", state);
   url.searchParams.set("code_challenge", codeChallenge(verifier));
   url.searchParams.set("code_challenge_method", "S256");
+  if (oidcProvider() === "google") url.searchParams.set("prompt", "select_account");
   return url.toString();
 }
 

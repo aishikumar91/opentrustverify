@@ -27,6 +27,8 @@ Disabled until both `OIDC_ISSUER` and `OIDC_CLIENT_ID` are set. Then:
 
 Optional: `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI` (default `${OTV_PUBLIC_URL}/v1/auth/oidc/callback`), `OIDC_SCOPE`.
 
-Hosted OTV can run a local Dex issuer at `https://otv.poptrust.me/dex` (see `infra/oidc/bootstrap.py`). That is free. Google or Auth0 work the same way if you set the env vars instead.
+Google social login uses issuer `https://accounts.google.com`. In the Google Cloud OAuth client, set the authorized origin to `https://otv.poptrust.me` and the redirect URI to `https://otv.poptrust.me/v1/auth/oidc/callback`. Put the client id and secret only in the server env, not in git.
+
+Hosted OTV can also run a local Dex issuer at `https://otv.poptrust.me/dex` (see `infra/oidc/bootstrap.py`). Dex is free and does not need a Google Cloud project.
 
 Without issuer + client id, login stays email/password and `/v1/auth/oidc/login` returns 501.

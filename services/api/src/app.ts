@@ -25,6 +25,7 @@ import {
   oidcConfigured,
   oidcCookieName,
   oidcIssuer,
+  oidcProvider,
   parseOidcCookie,
 } from "./lib/oidc.js";
 import { verifyIncomingTransfer } from "@otv/verification-engine";
@@ -332,6 +333,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.get("/v1/auth/oidc/status", { schema: openapi.oidcStatus }, async () => ({
     enabled: oidcConfigured(),
     issuer: oidcConfigured() ? oidcIssuer() : undefined,
+    provider: oidcProvider(),
   }));
 
   app.get("/v1/auth/oidc/login", { schema: openapi.oidc }, async (req, reply) => {

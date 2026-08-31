@@ -209,7 +209,7 @@ export class OtvApiClient {
     return this.parse(res, "listAssets");
   }
 
-  async oidcStatus(): Promise<{ enabled: boolean; issuer?: string }> {
+  async oidcStatus(): Promise<{ enabled: boolean; issuer?: string; provider?: "google" | "oidc" }> {
     const res = await this.fetchImpl(`${this.baseUrl}/v1/auth/oidc/status`);
     return this.parse(res, "oidcStatus");
   }
