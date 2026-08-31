@@ -1,0 +1,34 @@
+# OpenTrust Verify
+
+> Trust the balance, not just the blockchain event.
+
+OpenTrust Verify (OTV) is a hosted API from POP Trust. You send an incoming-transfer claim. We return a signed verdict that says whether the named recipient can spend what arrived.
+
+A blockchain explorer can show that something happened. OTV checks inclusion, execution, asset, recipient, balance change, and finality on Ethereum, Bitcoin, Solana, Tron, Base, and other EVM networks.
+
+## Product
+
+- Home: https://otv.poptrust.me/
+- Public verifier: https://otv.poptrust.me/verifier
+- How a check runs: https://otv.poptrust.me/whitepaper
+- About: https://otv.poptrust.me/about
+- Security: https://otv.poptrust.me/security
+
+## Developers
+
+- Integration guide: https://otv.poptrust.me/docs
+- OpenAPI: https://otv.poptrust.me/api/docs
+- Source: https://github.com/aishikumar91/opentrustverify
+
+## API
+
+- POST https://otv.poptrust.me/v1/verify/incoming
+- GET https://otv.poptrust.me/v1/verdicts/{id}
+- POST https://otv.poptrust.me/v1/verdicts/verify
+- GET https://otv.poptrust.me/v1/chains
+
+Authenticate with an API key or a session. Google sign-in is available on the hosted site.
+
+## Do not confuse
+
+OTV does not custody assets, send transactions, or treat a mock adapter result as live chain proof.

@@ -21,11 +21,13 @@ import {
 import { WalletPage } from "./pages/Wallet";
 import { DocsPage } from "./pages/Docs";
 import { LoginPage, RegisterPage } from "./pages/Auth";
+import { RouteSeo } from "./components/RouteSeo";
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <RouteSeo />
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
@@ -75,6 +77,11 @@ export default function App() {
           <Route path="/terms-of-service" element={<Navigate to="/terms" replace />} />
           <Route path="/legal" element={<Navigate to="/terms" replace />} />
 
+          <Route path="/verify" element={<Navigate to="/verifier" replace />} />
+          <Route path="/api" element={<Navigate to="/docs" replace />} />
+          <Route path="/faq" element={<Navigate to="/whitepaper" replace />} />
+          <Route path="/web3" element={<Navigate to="/" replace />} />
+          <Route path="/crypto" element={<Navigate to="/" replace />} />
           <Route path="/demo" element={<Navigate to="/wallet" replace />} />
           <Route path="/demo-wallet" element={<Navigate to="/wallet" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

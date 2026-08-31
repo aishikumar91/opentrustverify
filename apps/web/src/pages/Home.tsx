@@ -142,6 +142,24 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className="otv-section">
+        <div className="otv-container max-w-3xl space-y-4 text-[var(--otv-text-secondary)]">
+          <h2 className="otv-heading text-[var(--otv-text-primary)]">
+            Crypto and web3 payment verification
+          </h2>
+          <p>
+            Wallets, exchanges, explorers, and support desks use OpenTrust Verify to check an incoming
+            crypto transfer before they show Paid. The API covers Ethereum, Bitcoin, Solana, Tron,
+            Base, and other EVM networks, including native assets and tokens such as USDC.
+          </p>
+          <p>
+            A chain event can be true and still worthless. Pending transfers, lookalike tokens, and
+            logs that never moved a balance all fool a raw explorer view. OTV returns a signed
+            verdict you can show: spendable, pending, rejected, or suspicious.
+          </p>
+        </div>
+      </section>
+
       <section className="otv-section otv-section-dark">
         <div className="otv-container grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>

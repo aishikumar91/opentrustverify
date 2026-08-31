@@ -3,26 +3,124 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="OpenTrust Verify — Trust the balance, not just the blockchain event." />
+    <title>OpenTrust Verify | Incoming crypto payment verification</title>
+    <meta
+      name="description"
+      content="OTV by POP Trust verifies incoming crypto transfers. Check Ethereum, Bitcoin, Solana, Tron, and EVM L2s so a wallet or exchange can tell spendable value from a chain event."
+    />
+    <meta
+      name="keywords"
+      content="OpenTrust Verify, OTV, POP Trust, incoming crypto payment verification, web3 payment verification, spendable balance, blockchain event vs payment, Ethereum incoming transfer, Bitcoin payment verify, Solana transfer check, Tron TRX verification, USDC deposit verification, wallet risk API, signed verdict, crypto settlement proof"
+    />
+    <meta name="author" content="POP Trust" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="googlebot" content="index,follow" />
+    <meta name="theme-color" content="#1f1d0d" />
+    <link rel="canonical" href="https://otv.poptrust.me/" />
+    <link rel="sitemap" type="application/xml" href="https://otv.poptrust.me/sitemap.xml" />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="OpenTrust Verify" />
-    <meta property="og:title" content="OpenTrust Verify" />
-    <meta property="og:description" content="Trust the balance, not just the blockchain event." />
+    <meta property="og:title" content="OpenTrust Verify | Incoming crypto payment verification" />
+    <meta
+      property="og:description"
+      content="Verify incoming crypto transfers. A signed verdict for spendable value, not just a blockchain event."
+    />
     <meta property="og:url" content="https://otv.poptrust.me/" />
     <meta property="og:image" content="https://otv.poptrust.me/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Open Trust Verify" />
+    <meta property="og:image:alt" content="OPEN TRUST VERIFY" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="OpenTrust Verify" />
-    <meta name="twitter:description" content="Trust the balance, not just the blockchain event." />
+    <meta name="twitter:title" content="OpenTrust Verify | Incoming crypto payment verification" />
+    <meta
+      name="twitter:description"
+      content="Verify incoming crypto transfers. A signed verdict for spendable value, not just a blockchain event."
+    />
     <meta name="twitter:image" content="https://otv.poptrust.me/og.png" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/og.png" />
-    <title>OpenTrust Verify</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://otv.poptrust.me/#org",
+            "name": "POP Trust",
+            "url": "https://otv.poptrust.me/",
+            "logo": "https://otv.poptrust.me/og.png",
+            "sameAs": ["https://github.com/aishikumar91/opentrustverify"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://otv.poptrust.me/#site",
+            "url": "https://otv.poptrust.me/",
+            "name": "OpenTrust Verify",
+            "alternateName": ["OTV", "Open Trust Verify"],
+            "description": "Incoming crypto payment verification API. Trust the balance, not just the blockchain event.",
+            "publisher": { "@id": "https://otv.poptrust.me/#org" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://otv.poptrust.me/#app",
+            "name": "OpenTrust Verify",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "url": "https://otv.poptrust.me/",
+            "image": "https://otv.poptrust.me/og.png",
+            "description": "API that verifies incoming blockchain transfers and returns a signed spendable verdict for wallets, exchanges, and support desks.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "provider": { "@id": "https://otv.poptrust.me/#org" },
+            "featureList": [
+              "Incoming transfer verification",
+              "Ethereum Bitcoin Solana Tron and EVM L2s",
+              "Signed verdicts",
+              "Public verdict lookup",
+              "Google sign-in"
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://otv.poptrust.me/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What does OpenTrust Verify check?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "You send a chain, network, transaction hash, and recipient. OTV checks inclusion, execution, asset, recipient, balance change, and finality, then returns a signed verdict."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which chains does OTV support?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Ethereum and EVM L2s, Bitcoin, Solana, and Tron, including native assets and common tokens such as USDC. See GET /v1/chains."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is a blockchain event the same as a payment?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. A pending transfer, a lookalike token, or an event that never moved a balance can look paid on an explorer. OTV is built for that gap."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
