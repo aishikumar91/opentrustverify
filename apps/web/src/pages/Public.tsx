@@ -19,8 +19,7 @@ export function SecurityPage() {
         <li>Request volume is limited so one key cannot knock the service over.</li>
       </ul>
       <p>
-        Email and password work today. Single sign-on is designed and not enabled until an identity
-        provider is configured. See{" "}
+        Email and password work. Google sign-in is on for the hosted site. See{" "}
         <Link className="text-[var(--otv-brand)]" to="/docs">
           how you authenticate
         </Link>

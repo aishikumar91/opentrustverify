@@ -86,8 +86,8 @@ export function WhitepaperPage() {
       <p>
         When a live Ethereum RPC is configured, evidence comes from that node. When it is not, a mock
         adapter still returns a verdict and marks the result so you do not treat a demo as chain
-        proof. Single sign-on is specified and not switched on. We do not publish market-size figures
-        as facts.
+        proof. Google sign-in is live on the hosted site. We do not publish market-size figures as
+        facts.
       </p>
       <p>
         <Link className="text-[var(--otv-brand)]" to="/docs">

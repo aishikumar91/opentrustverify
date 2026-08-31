@@ -40,7 +40,7 @@ When a live Ethereum RPC is configured, evidence comes from that node. When it i
 
 ## What we do not claim
 
-Single sign-on is specified and returns 501 until an identity provider is configured. Card capture is not taken in the product UI. We do not publish market-size figures as facts. Certification marks require a written grant. HSM-backed keys are a next step, not a current claim.
+Google sign-in is live on the hosted site. Card capture is not taken in the product UI. We do not publish market-size figures as facts. Certification marks require a written grant. HSM-backed keys are a next step, not a current claim.
 
 ## Limits you should know
 

@@ -59,8 +59,9 @@ export function DocsPage() {
         </p>
         <p>
           <code className="otv-mono">GET /v1/auth/me</code> returns the signed-in user and default
-          project. <code className="otv-mono">POST /v1/auth/logout</code> ends the session. Single
-          sign-on is not on yet.
+          project. <code className="otv-mono">POST /v1/auth/logout</code> ends the session. Google
+          sign-in is available on the hosted site via{" "}
+          <code className="otv-mono">GET /v1/auth/oidc/login</code>.
         </p>
       </section>
 

@@ -14,7 +14,7 @@ design-tokens, ui (explorer components), apps/web Vercel preview.
 - Fastify API with OpenAPI, `/v1/ready`, `/v1/metrics`
 - **Postgres** wired as runtime source of truth (`PostgresStore`; MemoryStore only when `DATABASE_URL` unset in non-production)
 - **Redis** rate limits + webhook queue
-- **Session cookies** + hashed API keys; OIDC specified not live
+- **Session cookies** + hashed API keys; Google OIDC live on the hosted site
 - **File keystore** + optional local KMS wrap
 - Webhooks: HMAC + SSRF deny-list + `webhook_deliveries` + worker
 
