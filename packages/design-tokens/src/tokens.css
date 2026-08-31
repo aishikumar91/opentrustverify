@@ -28,6 +28,7 @@
   --otv-unverified: #8a887c;
   --otv-suspicious: #fd7e14;
 
+  --otv-font-logo: "Gondens DEMO", Gondens, "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-display: "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-heading: "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-body: "Roboto", ui-sans-serif, system-ui, sans-serif;

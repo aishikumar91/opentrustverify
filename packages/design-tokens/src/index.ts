@@ -21,6 +21,7 @@ export const colors = {
 } as const;
 
 export const fonts = {
+  logo: "var(--otv-font-logo)",
   display: "var(--otv-font-display)",
   heading: "var(--otv-font-heading)",
   body: "var(--otv-font-body)",

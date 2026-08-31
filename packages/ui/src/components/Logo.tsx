@@ -1,6 +1,4 @@
 import { clsx } from "clsx";
-import logoUrl from "../assets/logo.png";
-import markUrl from "../assets/otv-mark.svg";
 
 export function Logo({
   className,
@@ -14,12 +12,8 @@ export function Logo({
   invert?: boolean;
 }) {
   const content = (
-    <span className={clsx("otv-logo", invert && "otv-logo-invert", className)}>
-      <img
-        src={showWordmark ? logoUrl : markUrl}
-        alt=""
-        className={clsx("otv-logo-img", !showWordmark && "otv-logo-img-mark")}
-      />
+    <span className={clsx("otv-logo", invert && "otv-logo-invert", !showWordmark && "otv-logo-compact", className)}>
+      <span className="otv-logo-word">{showWordmark ? "Open Trust Verify" : "OTV"}</span>
     </span>
   );
   return href ? (
