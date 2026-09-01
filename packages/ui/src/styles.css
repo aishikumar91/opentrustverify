@@ -28,8 +28,13 @@ a { color: inherit; text-decoration: none; }
 }
 .otv-mono { font-family: var(--otv-font-mono); }
 .otv-container {
-  width: min(1320px, calc(100% - 2.5rem));
+  width: min(1320px, calc(100% - 3rem));
   margin-inline: auto;
+}
+@media (min-width: 768px) {
+  .otv-container {
+    width: min(1320px, calc(100% - 5rem));
+  }
 }
 
 @font-face {
@@ -49,7 +54,7 @@ a { color: inherit; text-decoration: none; }
 .otv-logo-invert { color: var(--otv-logo-accent); }
 .otv-logo-word {
   font-family: var(--otv-font-logo);
-  font-size: clamp(1.55rem, 4.8vw, 2.4rem);
+  font-size: clamp(1.05rem, 2.4vw, 1.28rem);
   font-weight: 400;
   letter-spacing: 0.02em;
   line-height: 0.9;
@@ -57,11 +62,14 @@ a { color: inherit; text-decoration: none; }
   white-space: nowrap;
 }
 .otv-logo-compact .otv-logo-word {
-  font-size: 1.5rem;
+  font-size: 1.05rem;
+}
+.otv-header .otv-logo-word {
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
 }
 .otv-footer .otv-logo-word {
-  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
-  color: var(--otv-logo-accent);
+  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  color: var(--otv-accent);
 }
 
 .otv-btn {
@@ -131,12 +139,15 @@ a { color: inherit; text-decoration: none; }
 }
 .otv-btn-dark {
   color: var(--otv-on-brand);
-  border-color: var(--otv-btn-outline);
+  border-color: var(--otv-ink);
   background-color: var(--otv-brand);
+  box-shadow: 4px 4px 0 0 var(--otv-ink);
 }
+.otv-btn-dark:hover { box-shadow: 6px 6px 0 0 var(--otv-ink); }
+.otv-btn-dark:active { box-shadow: 2px 2px 0 0 var(--otv-ink); }
 .otv-btn-border {
-  color: var(--otv-brand);
-  border-color: var(--otv-btn-outline);
+  color: var(--otv-text-primary);
+  border-color: var(--otv-ink);
   background-color: var(--otv-surface);
 }
 .otv-btn-border:hover {
@@ -177,7 +188,7 @@ a { color: inherit; text-decoration: none; }
   min-height: 40px;
   border: 2px solid var(--otv-border);
   background: var(--otv-surface);
-  color: var(--otv-text-secondary);
+  color: var(--otv-text-primary);
   font-family: var(--otv-font-label);
   font-size: 14px;
   font-weight: 600;
@@ -204,6 +215,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 8px;
   background-color: var(--otv-surface);
   border: 2px solid var(--otv-border);
+  color: var(--otv-text-primary);
 }
 .otv-card-lift {
   overflow: hidden;
@@ -303,7 +315,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   font-weight: 500;
   line-height: 16px;
-  color: var(--otv-brand);
+  color: var(--otv-text-primary);
   padding: 12px 16px;
   text-transform: uppercase;
   border-radius: 8px;
@@ -337,18 +349,40 @@ a { color: inherit; text-decoration: none; }
 }
 
 .otv-hero {
-  background-color: var(--otv-ink);
+  background-color: var(--otv-hero-bg);
   background-image:
     radial-gradient(circle at 12% 20%, var(--otv-hero-spot-a), transparent 42%),
     radial-gradient(circle at 88% 80%, var(--otv-hero-spot-b), transparent 46%);
   padding: 96px 0 110px;
-  color: var(--otv-on-dark);
+  color: var(--otv-hero-copy);
 }
 .otv-hero h1 {
   font-size: clamp(2.4rem, 5vw, 4rem);
   font-weight: 800;
   line-height: 1.05;
-  color: var(--otv-logo-accent);
+  color: var(--otv-hero-title);
+}
+.otv-theme-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid var(--otv-border);
+  border-radius: 8px;
+  background: var(--otv-surface);
+  color: var(--otv-text-primary);
+  cursor: pointer;
+}
+.otv-theme-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .otv-section { padding: 88px 0; }
 .otv-section-tint { background: var(--otv-surface-tint); }

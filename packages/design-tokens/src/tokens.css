@@ -6,7 +6,7 @@
   --otv-brand-muted: rgba(124, 255, 58, 0.16);
   --otv-accent: #7cff3a;
   --otv-accent-warm: #7cff3a;
-  --otv-logo-accent: #7cff3a;
+  --otv-logo-accent: #000000;
   --otv-on-brand: #000000;
   --otv-inverse: #ffffff;
   --otv-on-inverse: #000000;
@@ -28,8 +28,11 @@
 
   --otv-header-bg: rgba(255, 255, 255, 0.96);
   --otv-header-shadow: rgba(0, 0, 0, 0.08);
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.28);
-  --otv-hero-spot-b: rgba(124, 255, 58, 0.18);
+  --otv-hero-bg: #ffffff;
+  --otv-hero-title: #000000;
+  --otv-hero-copy: #111111;
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.16);
+  --otv-hero-spot-b: rgba(0, 0, 0, 0.04);
   --otv-btn-shadow: #000000;
   --otv-btn-outline: #000000;
 
@@ -107,9 +110,12 @@
 
   --otv-header-bg: rgba(0, 0, 0, 0.92);
   --otv-header-shadow: rgba(0, 0, 0, 0.45);
+  --otv-hero-bg: #000000;
+  --otv-hero-title: #7cff3a;
+  --otv-hero-copy: #7cff3a;
   --otv-hero-spot-a: rgba(124, 255, 58, 0.22);
   --otv-hero-spot-b: rgba(124, 255, 58, 0.14);
-  --otv-btn-shadow: #7cff3a;
+  --otv-btn-shadow: #000000;
   --otv-btn-outline: #7cff3a;
 
   --otv-info: #6ea8fe;

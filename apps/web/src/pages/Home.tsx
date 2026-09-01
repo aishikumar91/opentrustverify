@@ -51,31 +51,14 @@ export function HomePage() {
         <div className="otv-container grid items-center gap-12 lg:grid-cols-2">
           <div>
             <h1 className="banner_big_title">{product.tagline}</h1>
-            <p className="mt-5 max-w-xl text-base text-[var(--otv-brand)]">
+            <p className="mt-5 max-w-xl text-base text-[var(--otv-hero-copy)]">
               A transaction hash can look paid while the recipient still cannot spend the asset. Send
               us the claim. We return a signed verdict your wallet or risk desk can show.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className={buttonClassName("primary")}>
-                <BtnText>Create an account</BtnText>
-              </Link>
-              <Link to="/docs" className={buttonClassName("secondary")}>
-                <BtnText>Read the API</BtnText>
-              </Link>
-            </div>
-            <ul className="mt-8 flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <li key={tag.label}>
-                  <Link className="otv-tag" to={tag.to}>
-                    {tag.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </div>
           <LandingArt
-            src="/marketing/otv-hero-globe.png"
-            alt="OpenTrust Verify globe showing incoming claim evidence, Ed25519 signature, and SPENDABLE verdict states"
+            src="/marketing/otv-verdict-dashboard.png"
+            alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
             size="md"
           />
         </div>
@@ -86,6 +69,23 @@ export function HomePage() {
 
       <section className="otv-section">
         <div className="otv-container">
+          <ul className="mb-8 flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <li key={tag.label}>
+                <Link className="otv-tag" to={tag.to}>
+                  {tag.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mb-12 flex flex-wrap gap-3">
+            <Link to="/register" className={buttonClassName("primary")}>
+              <BtnText>Create an account</BtnText>
+            </Link>
+            <Link to="/docs" className={buttonClassName("secondary")}>
+              <BtnText>Read the API</BtnText>
+            </Link>
+          </div>
           <div className="mb-10 flex items-end justify-between gap-6">
             <h2 className="otv-heading mb-0">What you get</h2>
             <Link to="/docs" className={`${buttonClassName("secondary")} hidden lg:inline-flex`}>

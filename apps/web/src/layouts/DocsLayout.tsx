@@ -29,7 +29,7 @@ export function DocsLayout() {
               <a
                 key={id}
                 href={`#${id}`}
-                className="block rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] hover:bg-[var(--otv-accent)] hover:text-[var(--otv-brand)]"
+                className="block rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] hover:bg-[var(--otv-brand)] hover:text-[var(--otv-ink)]"
               >
                 {label}
               </a>

@@ -70,9 +70,7 @@ export function SiteHeader() {
           )}
         </nav>
         <div className="flex items-center justify-end gap-2">
-          <span className="hidden lg:inline-flex">
-            <ThemeSwitcher compact />
-          </span>
+          <ThemeSwitcher />
           <span className="hidden sm:inline-flex">
             <GithubStar />
           </span>
@@ -153,9 +151,6 @@ export function SiteHeader() {
                 Log in
               </Link>
             )}
-            <div className="px-3 py-2">
-              <ThemeSwitcher />
-            </div>
             <div className="px-3 py-2 sm:hidden">
               <GithubStar />
             </div>

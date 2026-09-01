@@ -56,24 +56,16 @@ export function FeaturesPage() {
       <section className="otv-hero">
         <div className="otv-container grid items-center gap-12 lg:grid-cols-2">
           <div>
-            <p className="mb-3 text-xs font-semibold tracking-[0.28em] text-[var(--otv-brand)]">PRODUCT</p>
+            <p className="mb-3 text-xs font-semibold tracking-[0.28em] text-[var(--otv-hero-copy)]">PRODUCT</p>
             <h1 className="banner_big_title">What {product.shortName} actually does</h1>
-            <p className="mt-5 max-w-xl text-base text-[var(--otv-brand)]">
+            <p className="mt-5 max-w-xl text-base text-[var(--otv-hero-copy)]">
               {product.tagline} One HTTP call. A signed status your wallet or risk desk can show. No
               custody. No LLM deciding spendability.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/docs" className={buttonClassName("primary")}>
-                <BtnText>Read the API</BtnText>
-              </Link>
-              <Link to="/whitepaper" className={buttonClassName("secondary")}>
-                <BtnText>How a check runs</BtnText>
-              </Link>
-            </div>
           </div>
           <LandingArt
-            src="/marketing/otv-hero-globe.png"
-            alt="OpenTrust Verify evidence globe with incoming claim, Ed25519 signature, and verdict states"
+            src="/marketing/otv-verdict-dashboard.png"
+            alt="Incoming verdicts dashboard for spendability summaries"
             size="md"
           />
         </div>
@@ -84,6 +76,14 @@ export function FeaturesPage() {
 
       <section className="otv-section">
         <div className="otv-container">
+          <div className="mb-10 flex flex-wrap gap-3">
+            <Link to="/docs" className={buttonClassName("primary")}>
+              <BtnText>Read the API</BtnText>
+            </Link>
+            <Link to="/whitepaper" className={buttonClassName("secondary")}>
+              <BtnText>How a check runs</BtnText>
+            </Link>
+          </div>
           <h2 className="otv-heading mb-10">Capabilities</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((x) => (

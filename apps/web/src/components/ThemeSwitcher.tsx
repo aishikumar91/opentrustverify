@@ -1,32 +1,26 @@
-import { buttonClassName } from "@otv/ui";
-import { useTheme, type ThemePreference } from "@/lib/theme";
+import { useTheme } from "@/lib/theme";
 
-const OPTIONS: { id: ThemePreference; label: string }[] = [
-  { id: "system", label: "Device" },
-  { id: "light", label: "Light" },
-  { id: "dark", label: "Dark" },
-];
-
-export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
-  const { preference, setPreference } = useTheme();
+export function ThemeSwitcher({ compact: _compact = false }: { compact?: boolean }) {
+  const { resolved, setPreference } = useTheme();
+  const toDark = resolved !== "dark";
 
   return (
-    <div
-      className="inline-flex items-center gap-1"
-      role="group"
-      aria-label="Color theme"
+    <button
+      type="button"
+      className="otv-theme-icon"
+      aria-label={toDark ? "Switch to dark theme" : "Switch to light theme"}
+      onClick={() => setPreference(toDark ? "dark" : "light")}
     >
-      {OPTIONS.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          className={buttonClassName("ghost", undefined, "sm")}
-          aria-pressed={preference === opt.id}
-          onClick={() => setPreference(opt.id)}
-        >
-          {compact && opt.id === "system" ? "Auto" : opt.label}
-        </button>
-      ))}
-    </div>
+      {toDark ? (
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5z" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
+        </svg>
+      )}
+    </button>
   );
 }
