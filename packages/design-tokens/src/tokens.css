@@ -31,8 +31,8 @@
   --otv-hero-bg: #ffffff;
   --otv-hero-title: #000000;
   --otv-hero-copy: #111111;
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.16);
-  --otv-hero-spot-b: rgba(0, 0, 0, 0.04);
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.09);
+  --otv-hero-spot-b: rgba(0, 0, 0, 0.02);
   --otv-btn-shadow: #000000;
   --otv-btn-outline: #000000;
 
@@ -113,8 +113,8 @@
   --otv-hero-bg: #000000;
   --otv-hero-title: #7cff3a;
   --otv-hero-copy: #7cff3a;
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.22);
-  --otv-hero-spot-b: rgba(124, 255, 58, 0.14);
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.12);
+  --otv-hero-spot-b: rgba(124, 255, 58, 0.04);
   --otv-btn-shadow: #000000;
   --otv-btn-outline: #7cff3a;
 

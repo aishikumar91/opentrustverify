@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Logo, buttonClassName, BtnText } from "@otv/ui";
+import { product } from "@otv/config";
 import { useAuth } from "@/lib/auth";
 import { GithubStar } from "@/components/GithubStar";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
@@ -194,7 +195,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-[var(--otv-inverse-muted)] py-5 text-center text-sm">
-        OpenTrust Verify · POP Trust ·{" "}
+        {product.name} · a product of {product.legalEntity} · RC {product.rcNumber} ·{" "}
         <Link to="/privacy">Privacy</Link>
         {" · "}
         <Link to="/terms">Terms</Link>

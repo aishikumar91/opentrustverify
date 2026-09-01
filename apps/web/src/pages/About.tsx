@@ -6,11 +6,6 @@ import { LandingArt } from "@/components/LandingArt";
 export function AboutPage() {
   return (
     <DocArticle title="About OpenTrust Verify" kicker="POP TRUST">
-      <LandingArt
-        src="/marketing/otv-hero-globe.png"
-        alt="OpenTrust Verify globe with incoming claim, evidence, and SPENDABLE states"
-        size="md"
-      />
       <p>
         {product.name} is how {product.parentBrand} answers a question explorers leave open: did this
         incoming transfer become money the recipient can actually spend?
@@ -19,6 +14,18 @@ export function AboutPage() {
         A hash, a pending transfer, or a token event can be technically true and still worthless to the
         person who thinks they were paid. Attackers lean on that gap. Product teams should not ask a
         customer to decode logs.
+      </p>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who builds it</h2>
+      <p>
+        {product.builderName} built {product.shortName}. Write to{" "}
+        <a className="text-[var(--otv-brand)]" href={`mailto:${product.builderEmail}`}>
+          {product.builderEmail}
+        </a>
+        .
+      </p>
+      <p>
+        {product.name} is a product of {product.legalEntity}, RC {product.rcNumber}. The public brand
+        is {product.parentBrand}.
       </p>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who it is for</h2>
       <p>
@@ -55,11 +62,6 @@ export function AboutPage() {
 export function WhitepaperPage() {
   return (
     <DocArticle title="How OpenTrust Verify decides" kicker="MODEL">
-      <LandingArt
-        src="/marketing/otv-verdict-dashboard.png"
-        alt="Incoming verdicts dashboard: spendability summary and evidence themes"
-        size="md"
-      />
       <p>
         Wallets already simulate what you are about to sign. OpenTrust Verify works on the inbound
         side. You tell us what arrived. We say whether that arrival is spendable value for the named

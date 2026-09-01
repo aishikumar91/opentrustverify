@@ -1,17 +1,12 @@
 import { Link } from "react-router-dom";
+import { product } from "@otv/config";
 import { DocArticle } from "@/components/DocArticle";
-import { LandingArt } from "@/components/LandingArt";
 
 const API_ORIGIN = import.meta.env.VITE_OTV_API_URL ?? "https://otv.poptrust.me";
 
 export function SecurityPage() {
   return (
     <DocArticle title="Security" kicker="TRUST">
-      <LandingArt
-        src="/marketing/otv-hero-globe.png"
-        alt="OpenTrust Verify globe: keys stay on the host, verdicts are signed evidence"
-        size="md"
-      />
       <p>
         The main risk we exist to catch is a true-looking chain event that is not spendable money.
         Around that sit forged claims, a bad RPC, lookalike tokens, replayed verdicts, and webhook
@@ -40,6 +35,12 @@ export function SecurityPage() {
 export function ContactPage() {
   return (
     <DocArticle title="Contact" kicker="TALK TO US">
+      <p>
+        Builder, {product.builderName}:{" "}
+        <a className="text-[var(--otv-brand)]" href={`mailto:${product.builderEmail}`}>
+          {product.builderEmail}
+        </a>
+      </p>
       <p>
         Product and enterprise:{" "}
         <a className="text-[var(--otv-brand)]" href="mailto:enterprise@poptrust.me">

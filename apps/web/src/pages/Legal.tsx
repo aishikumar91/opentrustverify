@@ -11,12 +11,14 @@ export function PrivacyPage() {
     <DocArticle title="Privacy policy" kicker="LEGAL">
       <p>
         This policy is for the hosted {product.name} service at {product.domain}, operated by{" "}
-        {product.parentBrand}. Last updated {UPDATED}.
+        {product.legalEntity} (RC {product.rcNumber}) under the {product.parentBrand} brand. Last
+        updated {UPDATED}.
       </p>
 
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who we are</h2>
       <p>
-        {product.parentBrand} runs {product.name} ({product.shortName}). We are the controller of
+        {product.legalEntity} runs {product.name} ({product.shortName}) as a {product.parentBrand}{" "}
+        product. We are the controller of
         account and workspace data you give us. A signed verdict is a record we store so you, or anyone
         with the verdict ID, can look it up later.
       </p>
@@ -123,7 +125,8 @@ export function TermsPage() {
     <DocArticle title="Terms of use" kicker="LEGAL">
       <p>
         These terms cover the hosted {product.name} API and this website at {product.domain}.{" "}
-        {product.parentBrand} operates the service. Last updated {UPDATED}. By creating an account or
+        {product.legalEntity} (RC {product.rcNumber}) operates the service under the{" "}
+        {product.parentBrand} brand. Last updated {UPDATED}. By creating an account or
         calling the API you accept them.
       </p>
 

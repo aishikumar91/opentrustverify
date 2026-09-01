@@ -48,22 +48,22 @@ export function HomePage() {
   return (
     <>
       <section className="otv-hero">
-        <div className="otv-container grid items-center gap-12 lg:grid-cols-2">
+        <div className="otv-container grid items-center gap-8 lg:grid-cols-2">
           <div>
             <h1 className="banner_big_title">{product.tagline}</h1>
             <p className="mt-5 max-w-xl text-base text-[var(--otv-hero-copy)]">
               A transaction hash can look paid while the recipient still cannot spend the asset. Send
               us the claim. We return a signed verdict your wallet or risk desk can show.
             </p>
+            <ExplorerSearchBar compact className="mt-6" />
           </div>
-          <LandingArt
-            src="/marketing/otv-verdict-dashboard.png"
-            alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
-            size="md"
-          />
-        </div>
-        <div className="otv-container mt-10 max-w-4xl">
-          <ExplorerSearchBar />
+          <div className="otv-hero-glow lg:justify-end">
+            <LandingArt
+              src="/marketing/otv-verdict-dashboard.png"
+              alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
+              size="sm"
+            />
+          </div>
         </div>
       </section>
 
@@ -161,12 +161,14 @@ export function HomePage() {
       </section>
 
       <section className="otv-section otv-section-tint">
-        <div className="otv-container">
-          <h2 className="otv-heading mb-4">Wallets that can call the API</h2>
-          <p className="mb-8 max-w-2xl text-[var(--otv-text-secondary)]">
-            Any wallet, exchange, or custody product that can POST a claim. The marks below are
-            examples of that market, not a partnership list and not an OTV certification.
-          </p>
+        <div className="otv-container grid items-center gap-10 lg:grid-cols-2">
+          <div>
+            <h2 className="otv-heading mb-4">Wallets that can call the API</h2>
+            <p className="mb-0 max-w-2xl text-[var(--otv-text-secondary)]">
+              Any wallet, exchange, or custody product that can POST a claim. The marks below are
+              examples of that market, not a partnership list and not an OTV certification.
+            </p>
+          </div>
           <LandingArt
             src="/marketing/otv-wallet-integrations.png"
             alt="Example crypto wallet products that can integrate OpenTrust Verify: MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and others"
