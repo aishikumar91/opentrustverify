@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "OTV verdict statuses",
+    "locale": "en",
+    "output": "otv-verdict.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "happy-path",
+        "label": "Happy path",
+        "focus": ["observed", "pending", "executed", "final", "spendable"],
+        "note": "HAPPY_PATH in @otv/verdict-schema. ASSET_CONFIRMED and BALANCE_CONFIRMED sit inside FINAL."
+      },
+      {
+        "id": "rejects",
+        "label": "Reject",
+        "focus": ["observed", "pending", "executed", "rejected"],
+        "note": "REJECTED is terminal. It can fire as soon as OBSERVED if the claim is invalid."
+      },
+      {
+        "id": "open-exits",
+        "label": "Open exits",
+        "focus": ["executed", "final", "suspicious", "unverified"],
+        "note": "SUSPICIOUS and UNVERIFIED stay visible. They are not spendable and not rejected."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "main", "label": "Happy path" },
+    { "id": "exits", "label": "Terminal exits" }
+  ],
+  "states": [
+    { "id": "observed", "type": "start", "label": "OBSERVED", "sublabel": "claim accepted", "lane": "main", "col": 0, "step": "01", "tag": "entry" },
+    { "id": "pending", "type": "active", "label": "PENDING", "sublabel": "await inclusion", "lane": "main", "col": 1, "step": "02" },
+    { "id": "executed", "type": "active", "label": "EXECUTED", "sublabel": "tx on chain", "lane": "main", "col": 2, "step": "03" },
+    { "id": "final", "type": "decision", "label": "FINAL", "sublabel": "asset + balance", "lane": "main", "col": 3, "step": "04", "tag": "gate" },
+    { "id": "spendable", "type": "success", "label": "SPENDABLE", "sublabel": "signed verdict", "lane": "main", "col": 4, "step": "05", "tag": "done" },
+    { "id": "rejected", "type": "failure", "label": "REJECTED", "sublabel": "invalid claim", "lane": "exits", "col": 0, "tag": "terminal" },
+    { "id": "suspicious", "type": "failure", "label": "SUSPICIOUS", "sublabel": "risk flags", "lane": "exits", "col": 1, "tag": "terminal" },
+    { "id": "unverified", "type": "failure", "label": "UNVERIFIED", "sublabel": "facts missing", "lane": "exits", "col": 2, "tag": "terminal" }
+  ],
+  "transitions": [
+    { "id": "to-rejected", "from": "executed", "to": "rejected", "label": "invalid", "variant": "security", "labelDy": 24 },
+    { "id": "to-suspicious", "from": "final", "to": "suspicious", "label": "risk", "variant": "security", "labelDy": 24 },
+    { "id": "to-unverified", "from": "final", "to": "unverified", "label": "incomplete", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy path", "items": ["OBSERVED → PENDING → EXECUTED → FINAL → SPENDABLE", "ASSET_CONFIRMED and BALANCE_CONFIRMED are required before FINAL", "SPENDABLE is signed and has no outbound transition"] },
+    { "dot": "rose", "title": "Do not collapse", "items": ["A chain event is not a verdict", "REJECTED, SUSPICIOUS, and UNVERIFIED stay distinct", "No LLM writes these statuses"] },
+    { "dot": "cyan", "title": "Schema", "items": ["Enum lives in @otv/verdict-schema", "canTransition enforces the graph", "Clients verify the signature, not the host story"] }
+  ]
+}

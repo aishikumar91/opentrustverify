@@ -6,7 +6,7 @@ Tagline: Trust the balance, not just the blockchain event.
 
 Parent brand is POP Trust. Canonical host is `https://otv.poptrust.me`. Local UI is `@otv/web` on port 4090. Local API is `@otv/api` on port 4080.
 
-If this is your first time in the repo, read this file, then `README.md` and `docs/MVP_BOUNDARIES.md`. Do not treat `docs/GAP_ANALYSIS.md` as current. It is a 2026-08-25 snapshot. Postgres, Redis, live adapters, OIDC, and webhook delivery landed after that date. Prefer `docs/PENDING.md` and the code.
+If this is your first time in the repo, read this file, then `README.md` and `docs/README.md`. Architecture maps are the Archify HTML under `docs/architecture/`. Do not treat `docs/GAP_ANALYSIS.md` as current. It is a 2026-08-25 snapshot. Postgres, Redis, live adapters, OIDC, and webhook delivery landed after that date. Prefer `docs/PENDING.md` and the code.
 
 ---
 
@@ -38,12 +38,11 @@ packages/design-tokens   CSS tokens
 packages/sdk-flutter     Dart client, not a certified pub.dev package
 services/api             Fastify API, store, worker loop, OpenAPI
 services/worker          alias: runs @otv/api worker
-services/webhook-service alias: same worker
-services/risk-service, blockchain-indexer, verification-engine  stubs
 database/                Postgres schema, migrations, demo seed
 infra/docker             compose (Postgres 5433, Redis 6380, API 4080)
 tests/conformance        OTV-0010
-docs/                    specs. Root *.md files are mostly pointers into here.
+docs/                    all product docs. Index: docs/README.md
+docs/architecture/       Archify maps (runtime, verify, verdict, evidence)
 ```
 
 Workspace globs are in `pnpm-workspace.yaml`: `apps/*`, `packages/*`, `services/*`, `tests/*`.
@@ -108,14 +107,14 @@ Env template is `.env.example`. Do not commit `.env`, `keys/*.pem`, or `infra/oi
 | Product UI | `apps/web` consuming `@otv/ui` |
 | Public HTTP types | `packages/api-client`, then sdk-core / sdk-react |
 
-`services/worker` and `services/webhook-service` have no separate runtime. They call the API worker. Do not start a second implementation there.
+`services/worker` has no separate runtime. It calls the API worker. Do not start a second implementation there.
 
 ---
 
 ## Gotchas
 
 - **Stale gap analysis.** `docs/GAP_ANALYSIS.md` still says MemoryStore, unused Redis, always-mock Ethereum. Current `createStore()` uses Postgres when `DATABASE_URL` is set. `createAdapter` dispatches EVM / Bitcoin / Solana / Tron. Check `docs/CHAINS.md` for RPC env vars.
-- **Duplicate docs.** Many root markdown files (`ARCHITECTURE.md`, `VERDICT_SPEC.md`, …) are one-line pointers. The real text is under `docs/`.
+- **Docs live under `docs/`.** Start at `docs/README.md`. Root only keeps README, AGENTS, CONTRIBUTING, CHANGELOG, LICENSE, SECURITY, and TRADEMARK_POLICY.
 - **Signature encoding.** Spec text has said base64url. Code emits hex (`packages/crypto-signatures`). Match the code unless you are changing the public contract on purpose, in which case update the spec and conformance tests together.
 - **Mock confidence cap.** Offline / mock adapters cap confidence. Do not remove that to make demos look more certain.
 - **OIDC.** Code is live. Endpoints return 501 until `OIDC_ISSUER` is set.

@@ -23,3 +23,13 @@ infra/oidc/SSO_LOGIN.txt
 docs/handoffs/project-context/*.md
 !docs/handoffs/project-context/README.md
 .context-builder/
+
+# Archify visual-check sidecars (regenerate with `archify visual-check`)
+docs/architecture/*.visual-check.*
+
+# Dropped marketing / phone screenshots (not product assets)
+apis-and-mcp-server-vertical-feature-card.png
+continuous_AI_analysis__*.png
+crm-integrations-horizontal-feature-card.png
+sso-and-admin-controls-vertical-feature-card.png
+services/WhatsApp_Image_*.png

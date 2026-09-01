@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "OpenTrust Verify runtime",
+    "locale": "en",
+    "output": "otv-runtime.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "verify-path",
+        "label": "Incoming verify",
+        "focus": ["clients", "web", "api", "engine", "adapters", "rpc"],
+        "note": "Browser or SDK reaches the API. RPC stays behind ChainAdapter."
+      },
+      {
+        "id": "durable-state",
+        "label": "Durable state",
+        "focus": ["api", "postgres", "redis", "worker"],
+        "note": "Postgres is source of truth. Redis is limits and the webhook queue."
+      },
+      {
+        "id": "trust-boundary",
+        "label": "Signing boundary",
+        "focus": ["web", "api", "keys", "engine"],
+        "note": "Keys never leave the API host. Clients only verify signatures."
+      }
+    ]
+  },
+  "components": [
+    { "id": "clients", "type": "external", "label": "Wallets / apps", "sublabel": "SDK or explorer", "pos": [48, 292], "size": [140, 64] },
+    { "id": "web", "type": "frontend", "label": "@otv/web", "sublabel": "Vite SPA :4090", "pos": [248, 292], "size": [140, 64], "tag": "otv.poptrust.me" },
+    { "id": "api", "type": "backend", "label": "Fastify API", "sublabel": "@otv/api :4080", "pos": [468, 292], "size": [150, 64], "tag": "/v1" },
+    { "id": "engine", "type": "backend", "label": "Engine", "sublabel": "@otv/verification-engine", "pos": [688, 292], "size": [160, 64] },
+    { "id": "adapters", "type": "backend", "label": "Chain adapters", "sublabel": "EVM BTC SOL TRON", "pos": [912, 292], "size": [150, 64] },
+    { "id": "rpc", "type": "external", "label": "Chain RPC", "sublabel": "JSON-RPC / Esplora", "pos": [1124, 292], "size": [140, 64] },
+    { "id": "keys", "type": "security", "label": "Ed25519 keys", "sublabel": "file or KMS wrap", "pos": [468, 112], "size": [150, 64], "tag": "server-only" },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "runtime SoT :5433", "pos": [348, 472], "size": [140, 64] },
+    { "id": "redis", "type": "messagebus", "label": "Redis", "sublabel": "limits + queue :6380", "pos": [548, 472], "size": [150, 64] },
+    { "id": "worker", "type": "backend", "label": "Webhook worker", "sublabel": "node dist/worker.js", "pos": [768, 472], "size": [160, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Hosted OTV", "wraps": ["web", "api", "engine", "adapters", "keys", "postgres", "redis", "worker"] },
+    { "kind": "security-group", "label": "Signing trust boundary", "wraps": ["api", "keys", "engine"] }
+  ],
+  "connections": [
+    { "id": "clients-web", "from": "clients", "to": "web", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "web-api", "from": "web", "to": "api", "label": "session + /v1" },
+    { "id": "api-engine", "from": "api", "to": "engine", "label": "verifyIncoming", "variant": "emphasis", "labelDy": 76 },
+    { "id": "engine-adapters", "from": "engine", "to": "adapters", "label": "ChainAdapter" },
+    { "id": "adapters-rpc", "from": "adapters", "to": "rpc", "label": "JSON-RPC" },
+    { "id": "api-keys", "from": "api", "to": "keys", "label": "sign verdict", "variant": "security" },
+    { "id": "api-postgres", "from": "api", "to": "postgres", "label": "SQL", "fromSide": "bottom", "toSide": "top" },
+    { "id": "api-redis", "from": "api", "to": "redis", "label": "enqueue", "fromSide": "bottom", "toSide": "top" },
+    { "id": "redis-worker", "from": "redis", "to": "worker", "label": "queue", "variant": "dashed", "labelDy": 24 }
+  ],
+  "cards": [
+    { "dot": "rose", "title": "Trust", "items": ["Signing keys stay on the API host", "Clients verify Ed25519 signatures", "No LLM in the spendability path"] },
+    { "dot": "emerald", "title": "Verify path", "items": ["POST /v1/verify/incoming", "Engine walks evidence then signs", "Adapters own all chain RPC"] },
+    { "dot": "cyan", "title": "Runtime", "items": ["Postgres is required in production", "Redis holds limits and webhook jobs", "Worker is the API worker process"] }
+  ]
+}

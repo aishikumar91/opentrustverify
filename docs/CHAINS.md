@@ -2,6 +2,21 @@
 
 You do not need a dedicated Ethereum RPC to run OTV.
 
+All RPC goes through `ChainAdapter` in `@otv/chain-adapters`. The engine never builds JSON-RPC itself.
+
+```ts
+interface ChainAdapter {
+  getTransaction(hash: string): Promise<TransactionEvidence>;
+  getReceipt(hash: string): Promise<ReceiptEvidence | null>;
+  getBlock(number: number): Promise<BlockEvidence>;
+  getBalance(address: string, asset: string, block?: number): Promise<BalanceEvidence>;
+  getTokenMetadata(contract: string): Promise<AssetEvidence>;
+  getTransferEvents(hash: string): Promise<TransferEvidence[]>;
+  getFinalityState(blockNumber: number): Promise<FinalityEvidence>;
+  normalizeEvidence(hash: string, recipient: string, assetHint?: string): Promise<NormalizedEvidence>;
+}
+```
+
 ## How live vs mock is chosen
 
 - **Bitcoin**: Blockstream/Mempool Esplora by default. Set `BTC_ESPLORA_URL=off` or use network `mock` for offline.

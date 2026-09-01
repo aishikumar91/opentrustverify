@@ -34,7 +34,7 @@ Dashboards: scrape with `infra/monitoring/prometheus.yml`. Alerts: `infra/monito
 
 ```bash
 pnpm docker:up   # Postgres :5433, Redis :6380, API :4080, worker
-pnpm --filter @otv/api run dev   # or attach to compose API
+pnpm --filter @otv/api run dev
 ```
 
 Demo login: `demo@poptrust.me` / `otv-demo-change-me`. Demo API key: `otv_test_demo_key_change_me`.
@@ -43,8 +43,8 @@ Demo login: `demo@poptrust.me` / `otv-demo-change-me`. Demo API key: `otv_test_d
 
 1. **Not ready** — check Postgres, `DATABASE_URL`, `keys/` kid. `GET /v1/ready` body has the error.
 2. **Rotate API keys** — `POST /v1/api-keys/rotate` (session or admin key).
-3. **Rotate signing kid** — `docs/security/KMS.md`.
+3. **Rotate signing kid** — [security/KMS.md](security/KMS.md).
 4. **Webhook flood / SSRF** — deny-list already rejects private hosts; disable the hook row in `webhooks`.
 5. **Queue backup** — scale worker replicas; inspect `otv:webhook:queue`.
 
-See `SECURITY.md` and `docs/THREAT_MODEL.md`.
+See root `SECURITY.md` and [THREAT_MODEL.md](THREAT_MODEL.md).

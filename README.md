@@ -30,12 +30,14 @@ Blockchain activity
 
 ```
 opentrust-verify/
-├── apps/web        # Canonical product UI (port 4090)
-├── packages/       # sdk, verdict-schema, crypto, adapters, ui, tokens
-├── services/api    # Fastify API + webhook worker
-├── database/       # migrations, seeds, schema
-├── docs/           # specs, RFCs, whitepaper, research
-└── infra/docker/   # compose + Dockerfiles
+├── apps/web              # Canonical product UI (port 4090)
+├── packages/             # sdk, verdict-schema, crypto, adapters, ui, tokens
+├── services/api          # Fastify API + webhook worker
+├── services/worker       # alias: pnpm --filter @otv/api run worker
+├── database/             # migrations, seeds, schema
+├── docs/                 # index in docs/README.md
+├── docs/architecture/    # Archify runtime / sequence / lifecycle / dataflow
+└── infra/docker/         # compose + Dockerfiles
 ```
 
 The product UI is `@otv/web` on port 4090. Dashboard, verifier, docs, and wallet are routes in that app.
@@ -97,13 +99,20 @@ Start at [AGENTS.md](AGENTS.md). Refresh a full-tree dump with [context-builder]
 
 ## Documentation
 
-- [PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md)
+Index: [docs/README.md](docs/README.md).
+
+Architecture (open the HTML):
+
+- [Runtime](docs/architecture/otv-runtime.html)
+- [Verify sequence](docs/architecture/otv-verify.html)
+- [Verdict lifecycle](docs/architecture/otv-verdict.html)
+- [Evidence pipeline](docs/architecture/otv-evidence.html)
+
 - [PRODUCT_REQUIREMENTS.md](docs/PRODUCT_REQUIREMENTS.md)
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [THREAT_MODEL.md](docs/THREAT_MODEL.md)
 - [VERDICT_SPEC.md](docs/VERDICT_SPEC.md)
 - [Whitepaper](docs/whitepaper/OTV_WHITEPAPER.md)
-- [Competitor analysis](docs/research/COMPETITOR_ANALYSIS.md)
 
 ## License
 

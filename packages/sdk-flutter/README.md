@@ -21,7 +21,7 @@ final verdict = await otv.verifyIncomingTransfer(
 );
 ```
 
-Map `status` using `WALLET_INTEGRATION.md`. Do not ship signing keys in the app.
+Map `status` using `docs/sdk/SDK_GUIDE.md`. Do not ship signing keys in the app.
 
 ```bash
 cd packages/sdk-flutter

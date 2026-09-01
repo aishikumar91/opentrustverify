@@ -41,7 +41,7 @@ pnpm docker:up
 curl -s http://localhost:4080/v1/ready
 ```
 
-See `OPERATIONS.md` for SLOs and incident steps.
+See `docs/OPERATIONS.md` for SLOs and incident steps.
 
 ## HTTPS on `otv.poptrust.me`
 

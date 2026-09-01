@@ -1,48 +1,36 @@
 # Architecture — OpenTrust Verify
 
-## System context
+Interactive maps (Archify, showcase):
 
-```mermaid
-flowchart LR
-  Wallet[Wallet / App] --> SDK[OTV SDK]
-  Explorer[Explorer] --> SDK
-  SDK --> API[OTV API]
-  VerifierUI[Public Verifier] --> API
-  Dashboard[Enterprise Dashboard] --> API
-  API --> Engine[Verification Engine]
-  Engine --> Adapters[Chain Adapters]
-  Adapters --> RPC[Blockchain RPC]
-  Engine --> Sign[Signing Service]
-  API --> PG[(PostgreSQL — runtime SoT)]
-  API --> Redis[(Redis — limits + queue)]
-  API --> WH[Webhook Service]
-```
+- [Runtime](architecture/otv-runtime.html) — hosted OTV, signing boundary, Postgres, Redis, worker
+- [Verify sequence](architecture/otv-verify.html) — `POST /v1/verify/incoming`
+- [Verdict lifecycle](architecture/otv-verdict.html) — `@otv/verdict-schema` statuses
+- [Evidence pipeline](architecture/otv-evidence.html) — claim → adapters → signed row → consumers
 
-## Verification pipeline
-
-```mermaid
-flowchart TD
-  A[Incoming Claim] --> B[Transaction Lookup]
-  B --> C[Execution Verification]
-  C --> D[Asset Verification]
-  D --> E[Recipient Verification]
-  E --> F[Amount Verification]
-  F --> G[Balance Delta]
-  G --> H[Finality]
-  H --> I[Spendability]
-  I --> J[Risk Intelligence]
-  J --> K[Verdict]
-  K --> L[Cryptographic Signature]
-```
-
-## Monorepo layout
-
-See root `README.md`. Apps consume packages; services own runtime; database owns schema.
+JSON sources sit next to those HTML files. After a map is delivered, do not edit that JSON.
 
 ## Trust boundary
 
-Clients never receive signing keys. Verdicts are signed server-side. Signature verification is public.
+Clients never receive signing keys. Verdicts are signed server-side (`otv.verdict.v1`, Ed25519). Clients verify the signature. All chain RPC goes through `ChainAdapter` in `@otv/chain-adapters`. No LLM sits on the spendability path.
+
+## Runtime
+
+| Piece | Package | Role |
+|-------|---------|------|
+| Product UI | `@otv/web` | Vite SPA, port 4090 |
+| API | `@otv/api` | Fastify, port 4080, OpenAPI `/api/docs` |
+| Engine | `@otv/verification-engine` | `verifyIncomingTransfer` |
+| Adapters | `@otv/chain-adapters` | EVM, Bitcoin, Solana, Tron, mock |
+| Store | `PostgresStore` | Required in production (`DATABASE_URL`) |
+| Queue | Redis | Rate limits + `otv:webhook:queue` |
+| Worker | `node dist/worker.js` | Same codebase as the API |
+
+There is no NestJS app (ADR-003) and no Next.js app (ADR-002). `services/worker` is an alias that runs the API worker. Stub packages (`risk-service`, `blockchain-indexer`, a second verification-engine service) are not in the workspace.
 
 ## Tenancy
 
-`organizations` → `projects` → `api_keys` / `webhooks` / usage. Row-level tenant filters in `PostgresStore` queries. Production requires `DATABASE_URL`.
+`organizations` → `projects` → `api_keys` / `webhooks` / usage. `PostgresStore` keeps row-level tenant filters.
+
+## Monorepo
+
+See root `README.md` and `AGENTS.md`. Decisions: [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md).

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "POST /v1/verify/incoming",
+    "locale": "en",
+    "output": "otv-verify.html",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "claim-in",
+        "label": "Claim in",
+        "focus": ["wallet", "api", "engine"],
+        "note": "The wallet posts a transfer claim. The API hands it to verifyIncomingTransfer."
+      },
+      {
+        "id": "chain-facts",
+        "label": "Chain facts",
+        "focus": ["engine", "adapters", "rpc"],
+        "note": "All RPC stays behind ChainAdapter. The engine never talks to a node directly."
+      },
+      {
+        "id": "signed-out",
+        "label": "Signed verdict",
+        "focus": ["engine", "keys", "postgres", "api", "wallet"],
+        "note": "Ed25519 signing stays on the API host. Postgres stores the signed verdict."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "wallet", "type": "external", "label": "Wallet / SDK", "sublabel": "claim in" },
+    { "id": "api", "type": "backend", "label": "Fastify API", "sublabel": "@otv/api" },
+    { "id": "engine", "type": "backend", "label": "Engine", "sublabel": "verifyIncomingTransfer" },
+    { "id": "adapters", "type": "backend", "label": "Adapters", "sublabel": "@otv/chain-adapters" },
+    { "id": "rpc", "type": "external", "label": "Chain RPC", "sublabel": "JSON-RPC" },
+    { "id": "keys", "type": "security", "label": "Ed25519", "sublabel": "server-only" },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "runtime SoT" }
+  ],
+  "segments": [
+    { "from": 160, "to": 250, "label": "Ingress" },
+    { "from": 270, "to": 430, "label": "Evidence" },
+    { "from": 450, "to": 640, "label": "Sign + persist" }
+  ],
+  "messages": [
+    { "id": "post-verify", "from": "wallet", "to": "api", "y": 185, "label": "POST /v1/verify/incoming", "variant": "emphasis" },
+    { "id": "call-engine", "from": "api", "to": "engine", "y": 228, "label": "verifyIncomingTransfer" },
+    { "id": "adapter-read", "from": "engine", "to": "adapters", "y": 290, "label": "getTx / getBalance" },
+    { "id": "rpc-call", "from": "adapters", "to": "rpc", "y": 332, "label": "JSON-RPC" },
+    { "id": "rpc-facts", "from": "rpc", "to": "adapters", "y": 370, "label": "tx + balances", "variant": "return" },
+    { "id": "evidence-back", "from": "adapters", "to": "engine", "y": 408, "label": "evidence", "variant": "return" },
+    { "id": "sign-verdict", "from": "engine", "to": "keys", "y": 470, "label": "sign otv.verdict.v1", "variant": "security" },
+    { "id": "sig-back", "from": "keys", "to": "engine", "y": 508, "label": "signature", "variant": "return" },
+    { "id": "verdict-back", "from": "engine", "to": "api", "y": 546, "label": "Verdict", "variant": "return" },
+    { "id": "persist", "from": "api", "to": "postgres", "y": 584, "label": "INSERT verdict" },
+    { "id": "persist-ok", "from": "postgres", "to": "api", "y": 618, "label": "ok", "variant": "return" },
+    { "id": "respond", "from": "api", "to": "wallet", "y": 656, "label": "200 signed verdict", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "api", "from": 185, "to": 662, "type": "backend" },
+    { "participant": "engine", "from": 228, "to": 552, "type": "backend" },
+    { "participant": "adapters", "from": 285, "to": 414, "type": "backend" },
+    { "participant": "rpc", "from": 327, "to": 376, "type": "external" },
+    { "participant": "keys", "from": 465, "to": 514, "type": "security" },
+    { "participant": "postgres", "from": 579, "to": 624, "type": "database" }
+  ],
+  "cards": [
+    { "dot": "rose", "title": "Trust", "items": ["Signing keys never leave the API host", "The wallet only verifies the Ed25519 signature", "No LLM decides spendability"] },
+    { "dot": "emerald", "title": "Evidence", "items": ["ChainAdapter owns every RPC call", "Engine walks OBSERVED through the verdict enum", "Statuses are not collapsed to a chain event"] },
+    { "dot": "cyan", "title": "Persist", "items": ["Postgres is required in production", "The stored row is the signed verdict", "Clients re-check the signature, not the host"] }
+  ]
+}

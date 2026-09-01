@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "OTV evidence pipeline",
+    "locale": "en",
+    "output": "otv-evidence.html",
+    "quality_profile": "showcase",
+    "viewBox": [1068, 720],
+    "views": [
+      {
+        "id": "claim-to-facts",
+        "label": "Claim to facts",
+        "focus": ["claim", "api", "adapters", "rpc"],
+        "note": "A transfer claim becomes chain evidence only through ChainAdapter."
+      },
+      {
+        "id": "sign-store",
+        "label": "Sign and store",
+        "focus": ["engine", "keys", "postgres"],
+        "note": "The engine walks statuses, signs otv.verdict.v1, and Postgres keeps the row."
+      },
+      {
+        "id": "consumers",
+        "label": "Consumers",
+        "focus": ["postgres", "webhooks", "explorer", "sdk"],
+        "note": "Explorer, SDK, and webhook subscribers consume the signed verdict."
+      }
+    ]
+  },
+  "stages": [
+    { "label": "Ingress" },
+    { "label": "Evidence" },
+    { "label": "Decide" },
+    { "label": "Record" },
+    { "label": "Consume" }
+  ],
+  "nodes": [
+    { "id": "claim", "type": "external", "label": "Transfer claim", "sublabel": "SDK", "stage": 0, "row": 0, "tag": "POST /v1" },
+    { "id": "api", "type": "backend", "label": "Fastify API", "sublabel": "@otv/api", "stage": 0, "row": 2, "tag": "session" },
+    { "id": "adapters", "type": "backend", "label": "Chain adapters", "sublabel": "EVM BTC SOL TRON", "stage": 1, "row": 0, "tag": "ChainAdapter" },
+    { "id": "rpc", "type": "external", "label": "Chain RPC", "sublabel": "JSON-RPC / Esplora", "stage": 1, "row": 2 },
+    { "id": "engine", "type": "backend", "label": "Engine", "sublabel": "verifyIncomingTransfer", "stage": 2, "row": 0, "tag": "deterministic" },
+    { "id": "keys", "type": "security", "label": "Ed25519 keys", "sublabel": "file or KMS", "stage": 2, "row": 2, "tag": "server-only" },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "signed verdicts", "stage": 3, "row": 0, "tag": "SoT" },
+    { "id": "webhooks", "type": "messagebus", "label": "Redis queue", "sublabel": "otv:webhook:queue", "stage": 3, "row": 2 },
+    { "id": "explorer", "type": "frontend", "label": "@otv/web", "sublabel": "explorer UI", "stage": 4, "row": 0 },
+    { "id": "sdk", "type": "external", "label": "SDK clients", "sublabel": "verify signature", "stage": 4, "row": 2 }
+  ],
+  "flows": [
+    { "from": "claim", "to": "api", "label": "verify incoming", "classification": "claim", "variant": "emphasis", "labelDy": 24 },
+    { "from": "api", "to": "adapters", "label": "request evidence", "classification": "in-process", "variant": "emphasis" },
+    { "from": "adapters", "to": "rpc", "label": "JSON-RPC", "classification": "provider", "labelDy": 24 },
+    { "from": "adapters", "to": "engine", "label": "evidence", "classification": "ChainAdapter", "variant": "emphasis" },
+    { "from": "engine", "to": "keys", "label": "canonical bytes", "classification": "otv.verdict.v1", "variant": "security", "labelDy": 24 },
+    { "from": "keys", "to": "postgres", "label": "signed verdict", "classification": "Ed25519", "variant": "emphasis" },
+    { "from": "postgres", "to": "webhooks", "label": "enqueue", "classification": "async", "labelDy": 24 },
+    { "from": "postgres", "to": "explorer", "label": "GET verdict", "classification": "signed JSON", "variant": "emphasis", "route": "straight", "labelDy": -24 },
+    { "from": "postgres", "to": "sdk", "label": "GET verdict", "classification": "signed JSON" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Lineage", "items": ["Claim in, evidence from adapters, signed verdict out", "Postgres is the only runtime source of truth", "RPC never reaches the engine except through adapters"] },
+    { "dot": "rose", "title": "Trust", "items": ["Keys stay on the API host", "Consumers verify Ed25519, they do not trust the host", "No LLM sits on this pipeline"] },
+    { "dot": "cyan", "title": "Fan-out", "items": ["Explorer renders VerdictCard from the signed row", "SDK clients re-check the signature locally", "Redis only queues webhook delivery"] }
+  ]
+}
