@@ -23,7 +23,7 @@ export function ExplorerSearchBar({ className = "" }: { className?: string }) {
   return (
     <form
       onSubmit={onSubmit}
-      className={`rounded-[8px] border-2 border-[var(--otv-border-strong)] bg-white p-2 shadow-sm ${className}`}
+      className={`rounded-[8px] border-2 border-[var(--otv-border-strong)] bg-[var(--otv-surface)] p-2 ${className}`}
       role="search"
       aria-label="Look up a verdict or transaction"
     >

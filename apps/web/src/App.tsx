@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./lib/auth";
+import { ThemeProvider } from "./lib/theme";
 import { RequireAuth } from "./components/RequireAuth";
 import { PublicLayout, AuthLayout } from "./layouts/PublicLayout";
 import { DocsLayout } from "./layouts/DocsLayout";
@@ -19,6 +20,17 @@ import {
   DashboardVerifications,
   DashboardWebhooks,
 } from "./pages/Dashboard";
+import {
+  AdminAnalytics,
+  AdminHub,
+  AdminManagement,
+  AdminMonitoring,
+  AdminNotifications,
+  AdminSecurity,
+  AdminSettings,
+  AdminTickets,
+  AdminUsers,
+} from "./pages/Admin";
 import { WalletPage } from "./pages/Wallet";
 import { DocsPage } from "./pages/Docs";
 import { LoginPage, RegisterPage } from "./pages/Auth";
@@ -26,6 +38,7 @@ import { RouteSeo } from "./components/RouteSeo";
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <RouteSeo />
@@ -63,6 +76,15 @@ export default function App() {
               <Route path="/dashboard/billing" element={<DashboardBilling />} />
               <Route path="/dashboard/security" element={<DashboardAudit />} />
               <Route path="/dashboard/settings" element={<DashboardSettings />} />
+              <Route path="/dashboard/admin" element={<AdminHub />} />
+              <Route path="/dashboard/admin/monitoring" element={<AdminMonitoring />} />
+              <Route path="/dashboard/admin/analytics" element={<AdminAnalytics />} />
+              <Route path="/dashboard/admin/settings" element={<AdminSettings />} />
+              <Route path="/dashboard/admin/management" element={<AdminManagement />} />
+              <Route path="/dashboard/admin/users" element={<AdminUsers />} />
+              <Route path="/dashboard/admin/tickets" element={<AdminTickets />} />
+              <Route path="/dashboard/admin/security" element={<AdminSecurity />} />
+              <Route path="/dashboard/admin/notifications" element={<AdminNotifications />} />
             </Route>
           </Route>
 
@@ -90,5 +112,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

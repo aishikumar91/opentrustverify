@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Logo, Sidebar, buttonClassName } from "@otv/ui";
 import { useAuth } from "@/lib/auth";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const NAV = [
   { href: "/dashboard", label: "Overview" },
@@ -10,16 +11,18 @@ const NAV = [
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/security", label: "Audit" },
   { href: "/dashboard/settings", label: "Settings" },
+  { href: "/dashboard/admin", label: "Admin" },
 ];
 
 export function DashboardLayout() {
   const loc = useLocation();
   const { user, logout } = useAuth();
+  const active = loc.pathname.startsWith("/dashboard/admin") ? "/dashboard/admin" : loc.pathname;
   return (
     <div className="flex min-h-screen bg-[var(--otv-surface-tint)]">
       <Sidebar
         items={NAV}
-        active={loc.pathname}
+        active={active}
         renderLogo={(logo) => (
           <Link to="/" className="mb-8 block" aria-label="OpenTrust Verify by POP Trust">
             {logo}
@@ -40,6 +43,7 @@ export function DashboardLayout() {
           </div>
           <div className="truncate text-sm text-[var(--otv-text-secondary)]">{user?.email}</div>
           <div className="flex h-11 shrink-0 items-center gap-1">
+            <ThemeSwitcher compact />
             <Link to="/verifier" className={buttonClassName("ghost")}>
               Verifier
             </Link>

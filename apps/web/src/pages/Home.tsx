@@ -179,7 +179,7 @@ export function HomePage() {
         <div className="otv-container grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <h2 className="otv-heading">Create a project, then mint a key</h2>
-            <p className="mt-4 max-w-xl text-white/80">
+            <p className="mt-4 max-w-xl text-[var(--otv-footer-muted)]">
               Sign up and you get a team workspace on the free plan. Keep the key in your backend.
               Anyone can still look up a stored verdict by ID.
             </p>

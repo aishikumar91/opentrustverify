@@ -29,11 +29,15 @@ export function RouteSeo() {
   useEffect(() => {
     const page = seoForPath(pathname);
     const url = `${SITE_ORIGIN}${page.path}`;
+    const privatePath = pathname.startsWith("/dashboard") || pathname === "/wallet";
+    const robots = privatePath
+      ? "noindex,nofollow"
+      : "index,follow,max-image-preview:large";
     document.title = page.title;
     setMeta("name", "description", page.description);
     setMeta("name", "keywords", defaultKeywords);
-    setMeta("name", "robots", "index,follow,max-image-preview:large");
-    setMeta("name", "googlebot", "index,follow");
+    setMeta("name", "robots", robots);
+    setMeta("name", "googlebot", privatePath ? "noindex,nofollow" : "index,follow");
     setMeta("property", "og:title", page.title);
     setMeta("property", "og:description", page.description);
     setMeta("property", "og:url", url);

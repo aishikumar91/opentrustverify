@@ -1,7 +1,12 @@
 User-agent: *
 Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+Allow: /sitemap.xml
 Disallow: /dashboard
 Disallow: /dashboard/
+Disallow: /wallet
+Disallow: /wallet/
 
 User-agent: GPTBot
 Allow: /
@@ -23,5 +28,17 @@ Allow: /
 
 User-agent: Applebot-Extended
 Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# LLM context: https://otv.poptrust.me/llms.txt
+# AI policy: https://otv.poptrust.me/ai.txt
 
 Sitemap: https://otv.poptrust.me/sitemap.xml

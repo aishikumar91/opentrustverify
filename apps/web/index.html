@@ -15,9 +15,11 @@
     <meta name="author" content="POP Trust" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="googlebot" content="index,follow" />
-    <meta name="theme-color" content="#1f1d0d" />
+    <meta name="theme-color" content="#000000" />
     <link rel="canonical" href="https://otv.poptrust.me/" />
     <link rel="sitemap" type="application/xml" href="https://otv.poptrust.me/sitemap.xml" />
+    <link rel="alternate" type="text/plain" href="https://otv.poptrust.me/llms.txt" title="LLM context" />
+    <link rel="alternate" type="text/plain" href="https://otv.poptrust.me/ai.txt" title="AI crawler policy" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="OpenTrust Verify" />
@@ -42,7 +44,23 @@
     <link rel="apple-touch-icon" href="/og.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Unica+One&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      (function () {
+        try {
+          var key = "otv-theme";
+          var stored = localStorage.getItem(key);
+          var resolved =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.setAttribute("data-theme", resolved);
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) {}
+      })();
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

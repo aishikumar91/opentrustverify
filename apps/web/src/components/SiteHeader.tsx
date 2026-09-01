@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { Logo, buttonClassName, BtnText } from "@otv/ui";
 import { useAuth } from "@/lib/auth";
 import { GithubStar } from "@/components/GithubStar";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const NAV = [
   { to: "/features", label: "Features" },
@@ -69,6 +70,9 @@ export function SiteHeader() {
           )}
         </nav>
         <div className="flex items-center justify-end gap-2">
+          <span className="hidden lg:inline-flex">
+            <ThemeSwitcher compact />
+          </span>
           <span className="hidden sm:inline-flex">
             <GithubStar />
           </span>
@@ -116,7 +120,7 @@ export function SiteHeader() {
                 className={({ isActive }) =>
                   `rounded-[8px] px-3 py-2 text-sm font-semibold ${
                     isActive
-                      ? "bg-[var(--otv-accent)] text-[var(--otv-brand)]"
+                      ? "bg-[var(--otv-brand)] text-[var(--otv-ink)]"
                       : "text-[var(--otv-text-secondary)]"
                   }`
                 }
@@ -131,7 +135,7 @@ export function SiteHeader() {
                 className={({ isActive }) =>
                   `rounded-[8px] px-3 py-2 text-sm font-semibold ${
                     isActive
-                      ? "bg-[var(--otv-accent)] text-[var(--otv-brand)]"
+                      ? "bg-[var(--otv-brand)] text-[var(--otv-ink)]"
                       : "text-[var(--otv-text-secondary)]"
                   }`
                 }
@@ -149,6 +153,9 @@ export function SiteHeader() {
                 Log in
               </Link>
             )}
+            <div className="px-3 py-2">
+              <ThemeSwitcher />
+            </div>
             <div className="px-3 py-2 sm:hidden">
               <GithubStar />
             </div>
@@ -175,8 +182,8 @@ export function SiteFooter() {
         </div>
         {FOOTER_LINKS.map((col) => (
           <div key={col.title}>
-            <h3 className="mb-4 text-lg font-bold text-white">{col.title}</h3>
-            <ul className="space-y-2 text-sm text-white">
+            <h3 className="mb-4 text-lg font-bold text-[var(--otv-on-dark)]">{col.title}</h3>
+            <ul className="space-y-2 text-sm text-[var(--otv-on-dark)]">
               {col.items.map((l) => (
                 <li key={l.to}>
                   <Link to={l.to}>{l.label}</Link>
@@ -191,7 +198,7 @@ export function SiteFooter() {
           </div>
         ))}
       </div>
-      <div className="border-t border-white/10 py-5 text-center text-sm">
+      <div className="border-t border-[var(--otv-inverse-muted)] py-5 text-center text-sm">
         OpenTrust Verify · POP Trust ·{" "}
         <Link to="/privacy">Privacy</Link>
         {" · "}

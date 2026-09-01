@@ -1,0 +1,16 @@
+# AI crawler policy for OpenTrust Verify
+# https://otv.poptrust.me/ai.txt
+
+User-Agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /wallet
+
+Train-AI: yes
+Content-Usage: allow
+
+Product: OpenTrust Verify (OTV) by POP Trust
+Summary: Incoming crypto payment verification API. Trust the balance, not just the blockchain event.
+Context: https://otv.poptrust.me/llms.txt
+Docs: https://otv.poptrust.me/docs
+OpenAPI: https://otv.poptrust.me/api/docs

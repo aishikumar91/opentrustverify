@@ -1,37 +1,51 @@
 :root {
-  /* Collab template (index_2) — ink, lime, gold */
-  --otv-brand: #1f1d0d;
-  --otv-brand-hover: #3a3720;
-  --otv-brand-muted: rgba(31, 29, 13, 0.08);
-  --otv-accent: #f7ff62;
-  --otv-accent-warm: #ffd32b;
+  /* Black + fluorescent green from the wordmark */
+  --otv-ink: #000000;
+  --otv-brand: #7cff3a;
+  --otv-brand-hover: #68e028;
+  --otv-brand-muted: rgba(124, 255, 58, 0.16);
+  --otv-accent: #7cff3a;
+  --otv-accent-warm: #7cff3a;
+  --otv-logo-accent: #7cff3a;
+  --otv-on-brand: #000000;
+  --otv-inverse: #ffffff;
+  --otv-on-inverse: #000000;
+  --otv-inverse-muted: rgba(255, 255, 255, 0.28);
+  --otv-inverse-wash: rgba(255, 255, 255, 0.08);
 
   --otv-background: #ffffff;
   --otv-surface: #ffffff;
   --otv-surface-muted: #f6f6f6;
-  --otv-surface-tint: #f8f8f8;
+  --otv-surface-tint: #f4f7f2;
   --otv-border: #d2d2d2;
-  --otv-border-strong: #1f1d0d;
+  --otv-border-strong: #000000;
 
-  --otv-text-primary: #29281e;
-  --otv-text-secondary: #5c5a4e;
-  --otv-text-muted: #8a887c;
+  --otv-text-primary: #111111;
+  --otv-text-secondary: #3d3d3d;
+  --otv-text-muted: #6b6b6b;
   --otv-on-dark: #ffffff;
   --otv-footer-muted: #c8c8c8;
 
-  --otv-success: #198754;
-  --otv-warning: #e6b800;
+  --otv-header-bg: rgba(255, 255, 255, 0.96);
+  --otv-header-shadow: rgba(0, 0, 0, 0.08);
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.28);
+  --otv-hero-spot-b: rgba(124, 255, 58, 0.18);
+  --otv-btn-shadow: #000000;
+  --otv-btn-outline: #000000;
+
+  --otv-success: #7cff3a;
+  --otv-warning: #fd7e14;
   --otv-danger: #dc3545;
   --otv-info: #0d6efd;
-  --otv-pending: #e6b800;
-  --otv-verified: #198754;
-  --otv-unverified: #8a887c;
+  --otv-pending: #3d7a2a;
+  --otv-verified: #3d7a2a;
+  --otv-unverified: #6b6b6b;
   --otv-suspicious: #fd7e14;
 
   --otv-font-logo: "Gondens DEMO", Gondens, "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-display: "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-heading: "Barlow", ui-sans-serif, system-ui, sans-serif;
-  --otv-font-body: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --otv-font-body: "Unica One", "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-label: "Barlow", ui-sans-serif, system-ui, sans-serif;
   --otv-font-code: "JetBrains Mono", ui-monospace, monospace;
   --otv-font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -64,6 +78,44 @@
   --otv-duration-fast: 120ms;
   --otv-duration-normal: 400ms;
   --otv-ease: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --otv-brand: #7cff3a;
+  --otv-brand-hover: #68e028;
+  --otv-brand-muted: rgba(124, 255, 58, 0.14);
+  --otv-on-brand: #000000;
+  --otv-logo-accent: #7cff3a;
+  --otv-inverse: #f4f4f4;
+  --otv-on-inverse: #000000;
+  --otv-inverse-muted: rgba(244, 244, 244, 0.28);
+  --otv-inverse-wash: rgba(244, 244, 244, 0.08);
+
+  --otv-background: #000000;
+  --otv-surface: #0c0c0c;
+  --otv-surface-muted: #161616;
+  --otv-surface-tint: #080808;
+  --otv-border: #2a2a2a;
+  --otv-border-strong: #7cff3a;
+
+  --otv-text-primary: #f4f4f4;
+  --otv-text-secondary: #c4c4c4;
+  --otv-text-muted: #8a8a8a;
+  --otv-on-dark: #f4f4f4;
+  --otv-footer-muted: #c4c4c4;
+
+  --otv-header-bg: rgba(0, 0, 0, 0.92);
+  --otv-header-shadow: rgba(0, 0, 0, 0.45);
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.22);
+  --otv-hero-spot-b: rgba(124, 255, 58, 0.14);
+  --otv-btn-shadow: #7cff3a;
+  --otv-btn-outline: #7cff3a;
+
+  --otv-info: #6ea8fe;
+  --otv-success: #7cff3a;
+  --otv-verified: #7cff3a;
+  --otv-unverified: #8a8a8a;
 }
 
 @media (prefers-reduced-motion: reduce) {
