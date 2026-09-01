@@ -65,6 +65,15 @@ export function DocsPage() {
         </p>
       </section>
 
+      <section id="statuses" className="mt-12 space-y-3 text-[var(--otv-text-secondary)]">
+        <h2 className="text-2xl font-semibold text-[var(--otv-text-primary)]">Statuses</h2>
+        <p>
+          Use the enum as-is: OBSERVED, PENDING, EXECUTED, ASSET_CONFIRMED, BALANCE_CONFIRMED, FINAL,
+          SPENDABLE, REJECTED, SUSPICIOUS, UNVERIFIED. Transitions are enforced by the schema. Do not
+          show SPENDABLE as “paid”.
+        </p>
+      </section>
+
       <section id="verification-api" className="mt-12 space-y-3 text-[var(--otv-text-secondary)]">
         <h2 className="text-2xl font-semibold text-[var(--otv-text-primary)]">Verify a transfer</h2>
         <p>

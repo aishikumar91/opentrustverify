@@ -1,10 +1,15 @@
 import { Link } from "react-router-dom";
 import { product } from "@otv/config";
 import { DocArticle } from "@/components/DocArticle";
+import { LandingArt } from "@/components/LandingArt";
 
 export function AboutPage() {
   return (
     <DocArticle title="About OpenTrust Verify" kicker="POP TRUST">
+      <LandingArt
+        src="/marketing/otv-hero-globe.png"
+        alt="OpenTrust Verify globe with incoming claim, evidence, and SPENDABLE states"
+      />
       <p>
         {product.name} is how {product.parentBrand} answers a question explorers leave open: did this
         incoming transfer become money the recipient can actually spend?
@@ -19,11 +24,16 @@ export function AboutPage() {
         Wallet, exchange, explorer, and support teams that need a status they can show. One HTTP call
         returns a signed verdict. Your UI decides how to present Spendable, Pending, or Rejected.
       </p>
+      <LandingArt
+        src="/marketing/otv-wallet-integrations.png"
+        alt="Example wallet products that can integrate OTV. Not a partnership list."
+      />
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What you get</h2>
       <ul className="list-disc space-y-2 pl-5">
         <li>A verification API that checks inclusion, execution, asset, recipient, balance, and finality.</li>
-        <li>A dashboard for keys, webhooks, usage, and an audit trail.</li>
+        <li>A dashboard for keys, webhooks, usage, and an audit trail. Organizations stay isolated.</li>
         <li>Public lookup of any stored verdict by ID, so a support agent can open the same record.</li>
+        <li>Explorer components in @otv/ui. Do not rebuild those badges in your own markup.</li>
       </ul>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What we do not do</h2>
       <ul className="list-disc space-y-2 pl-5">
@@ -43,6 +53,10 @@ export function AboutPage() {
 export function WhitepaperPage() {
   return (
     <DocArticle title="How OpenTrust Verify decides" kicker="MODEL">
+      <LandingArt
+        src="/marketing/otv-verdict-dashboard.png"
+        alt="Incoming verdicts dashboard: spendability summary and evidence themes"
+      />
       <p>
         Wallets already simulate what you are about to sign. OpenTrust Verify works on the inbound
         side. You tell us what arrived. We say whether that arrival is spendable value for the named

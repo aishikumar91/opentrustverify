@@ -6,6 +6,7 @@ const NAV = [
   ["introduction", "Overview"],
   ["first-request", "First request"],
   ["authentication", "Authentication"],
+  ["statuses", "Statuses"],
   ["verification-api", "Verify a transfer"],
   ["verdicts", "Look up a verdict"],
   ["webhooks", "Webhooks"],

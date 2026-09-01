@@ -20,7 +20,10 @@ export function VerifierPage() {
   const { user, client } = useAuth();
   const [params] = useSearchParams();
   const [lookupId, setLookupId] = useState(params.get("id") ?? "");
-  const [form, setForm] = useState(EMPTY_CLAIM);
+  const [form, setForm] = useState(() => ({
+    ...EMPTY_CLAIM,
+    transactionHash: params.get("hash") ?? "",
+  }));
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [sigValid, setSigValid] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,10 @@ export function VerifierPage() {
 
   useEffect(() => {
     const id = params.get("id");
+    const hash = params.get("hash");
+    if (hash) {
+      setForm((prev) => ({ ...prev, transactionHash: hash }));
+    }
     if (!id) return;
     setLookupId(id);
     publicClient

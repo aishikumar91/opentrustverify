@@ -1,24 +1,26 @@
 import { Link } from "react-router-dom";
-import { TrustState, buttonClassName, BtnText } from "@otv/ui";
+import { buttonClassName, BtnText } from "@otv/ui";
 import { product } from "@otv/config";
 import { useAuth } from "@/lib/auth";
+import { LandingArt } from "@/components/LandingArt";
+import { ExplorerSearchBar } from "@/components/ExplorerSearchBar";
 
 const FEATURES = [
   {
     t: "A hash is not a payment",
     d: "An explorer can show that something happened. We check whether the recipient's spendable balance actually moved.",
     tag: "Problem",
-    href: "/about",
+    href: "/features",
   },
   {
     t: "A verdict you can check",
-    d: "Each result is signed on our servers. Your wallet or risk desk can verify the signature without trusting this page.",
+    d: "Each result is signed on our servers as otv.verdict.v1. Your wallet or risk desk can verify the Ed25519 signature without trusting this page.",
     tag: "Proof",
     href: "/whitepaper",
   },
   {
     t: "One request from your app",
-    d: "Send the chain, hash, and recipient. Get a status your product can show. Keys for servers. A session for your team.",
+    d: "Send the chain, hash, and recipient. Get a status from the verdict enum. Keys for servers. A session for your team.",
     tag: "Build",
     href: "/docs",
   },
@@ -26,15 +28,15 @@ const FEATURES = [
 
 const STEPS = [
   { n: "01", t: "Send what you saw", d: "Chain, network, transaction hash, and the wallet that should have received the asset." },
-  { n: "02", t: "We check the evidence", d: "Inclusion, successful execution, the right asset and recipient, a balance change, then finality." },
-  { n: "03", t: "You get a signed status", d: "Spendable, pending, rejected, or suspicious, with the checks that led there." },
-  { n: "04", t: "Show that status", d: "Your wallet, support tool, or explorer can display the verdict instead of a raw log." },
+  { n: "02", t: "We check the evidence", d: "Adapters read the chain. The engine walks OBSERVED → PENDING → EXECUTED → ASSET_CONFIRMED → BALANCE_CONFIRMED → FINAL." },
+  { n: "03", t: "You get a signed status", d: "SPENDABLE, or a terminal REJECTED, SUSPICIOUS, or UNVERIFIED, with the evidence that led there." },
+  { n: "04", t: "Show that status", d: "Use @otv/ui primitives. Keep raw explorer data visible. Do not relabel SPENDABLE as paid." },
 ];
 
 const PUBLIC_TAGS = [
+  { to: "/features", label: "Features" },
   { to: "/verifier", label: "Verifier" },
   { to: "/docs", label: "API" },
-  { to: "/whitepaper", label: "Whitepaper" },
 ];
 
 export function HomePage() {
@@ -71,23 +73,13 @@ export function HomePage() {
               ))}
             </ul>
           </div>
-          <div>
-            <TrustState
-              status="SPENDABLE"
-              evidence={[
-                { type: "TRANSACTION_INCLUDED", result: true },
-                { type: "EXECUTION_SUCCESS", result: true },
-                { type: "ASSET_MATCH", result: true },
-                { type: "RECIPIENT_MATCH", result: true },
-                { type: "BALANCE_DELTA", result: true },
-                { type: "FINALITY", result: true },
-                { type: "SPENDABILITY", result: true },
-              ]}
-            />
-            <p className="mt-3 text-center text-xs font-medium uppercase tracking-wide text-[var(--otv-brand)]">
-              Signed verdict · Incoming Transfer
-            </p>
-          </div>
+          <LandingArt
+            src="/marketing/otv-hero-globe.png"
+            alt="OpenTrust Verify globe showing incoming claim evidence, Ed25519 signature, and SPENDABLE verdict states"
+          />
+        </div>
+        <div className="otv-container mt-10 max-w-4xl">
+          <ExplorerSearchBar />
         </div>
       </section>
 
@@ -143,20 +135,40 @@ export function HomePage() {
       </section>
 
       <section className="otv-section">
-        <div className="otv-container max-w-3xl space-y-4 text-[var(--otv-text-secondary)]">
-          <h2 className="otv-heading text-[var(--otv-text-primary)]">
-            Crypto and web3 payment verification
-          </h2>
-          <p>
-            Wallets, exchanges, explorers, and support desks use OpenTrust Verify to check an incoming
-            crypto transfer before they show Paid. The API covers Ethereum, Bitcoin, Solana, Tron,
-            Base, and other EVM networks, including native assets and tokens such as USDC.
+        <div className="otv-container grid items-center gap-10 lg:grid-cols-2">
+          <div className="space-y-4 text-[var(--otv-text-secondary)]">
+            <h2 className="otv-heading text-[var(--otv-text-primary)]">
+              Crypto and web3 payment verification
+            </h2>
+            <p>
+              Wallets, exchanges, explorers, and support desks use OpenTrust Verify to check an incoming
+              crypto transfer before they show Paid. The API covers Ethereum, Bitcoin, Solana, Tron,
+              Base, and other EVM networks, including native assets and tokens such as USDC.
+            </p>
+            <p>
+              A chain event can be true and still worthless. Pending transfers, lookalike tokens, and
+              logs that never moved a balance all fool a raw explorer view. OTV returns a signed
+              verdict you can show: SPENDABLE, REJECTED, SUSPICIOUS, or UNVERIFIED.
+            </p>
+          </div>
+          <LandingArt
+            src="/marketing/otv-verdict-dashboard.png"
+            alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
+          />
+        </div>
+      </section>
+
+      <section className="otv-section otv-section-tint">
+        <div className="otv-container">
+          <h2 className="otv-heading mb-4">Wallets that can call the API</h2>
+          <p className="mb-8 max-w-2xl text-[var(--otv-text-secondary)]">
+            Any wallet, exchange, or custody product that can POST a claim. The marks below are
+            examples of that market, not a partnership list and not an OTV certification.
           </p>
-          <p>
-            A chain event can be true and still worthless. Pending transfers, lookalike tokens, and
-            logs that never moved a balance all fool a raw explorer view. OTV returns a signed
-            verdict you can show: spendable, pending, rejected, or suspicious.
-          </p>
+          <LandingArt
+            src="/marketing/otv-wallet-integrations.png"
+            alt="Example crypto wallet products that can integrate OpenTrust Verify: MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and others"
+          />
         </div>
       </section>
 

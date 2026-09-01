@@ -13,6 +13,12 @@ const pages: Record<string, SeoPage> = {
     description:
       "OTV by POP Trust verifies incoming crypto transfers. Check Ethereum, Bitcoin, Solana, Tron, and EVM L2s so a wallet or exchange can tell spendable value from a chain event.",
   },
+  "/features": {
+    path: "/features",
+    title: "OTV features | Signed incoming transfer verification",
+    description:
+      "Incoming claim API, Ed25519 verdicts, chain adapters for EVM Bitcoin Solana Tron, explorer UI primitives, HMAC webhooks, and the verdict status enum.",
+  },
   "/docs": {
     path: "/docs",
     title: "OTV API docs | Verify incoming web3 transfers",
@@ -45,12 +51,14 @@ const pages: Record<string, SeoPage> = {
   "/privacy": {
     path: "/privacy",
     title: "Privacy policy | OpenTrust Verify",
-    description: "What OTV collects for accounts, Google sign-in, verification claims, and stored verdicts.",
+    description:
+      "What POP Trust collects for OTV accounts, Google sign-in, verification claims, cookies, retention, and how to export or delete a workspace.",
   },
   "/terms": {
     path: "/terms",
     title: "Terms of use | OpenTrust Verify",
-    description: "Hosted OTV API terms. Verdicts are evidence, not custody, legal advice, or a payment instruction.",
+    description:
+      "Hosted OTV API terms. Verdicts are signed evidence, not custody, legal advice, or a payment instruction. Mock adapters are not chain proof.",
   },
   "/verifier": {
     path: "/verifier",

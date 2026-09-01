@@ -6,6 +6,7 @@ import { DocsLayout } from "./layouts/DocsLayout";
 import { DashboardLayout } from "./layouts/DashboardLayout";
 import { HomePage } from "./pages/Home";
 import { AboutPage, WhitepaperPage } from "./pages/About";
+import { FeaturesPage } from "./pages/Features";
 import { ContactPage, SecurityPage } from "./pages/Public";
 import { PrivacyPage, TermsPage } from "./pages/Legal";
 import { VerifierPage } from "./pages/Verifier";
@@ -31,6 +32,7 @@ export default function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/features" element={<FeaturesPage />} />
             <Route path="/security" element={<SecurityPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/whitepaper" element={<WhitepaperPage />} />
@@ -64,8 +66,8 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="/product" element={<Navigate to="/" replace />} />
-          <Route path="/how-it-works" element={<Navigate to="/" replace />} />
+          <Route path="/product" element={<Navigate to="/features" replace />} />
+          <Route path="/how-it-works" element={<Navigate to="/features" replace />} />
           <Route path="/developers" element={<Navigate to="/docs" replace />} />
           <Route path="/standards" element={<Navigate to="/whitepaper" replace />} />
           <Route path="/research" element={<Navigate to="/about" replace />} />

@@ -5,14 +5,15 @@ import { useAuth } from "@/lib/auth";
 import { GithubStar } from "@/components/GithubStar";
 
 const NAV = [
+  { to: "/features", label: "Features" },
   { to: "/docs", label: "Docs" },
   { to: "/whitepaper", label: "Whitepaper" },
-  { to: "/about", label: "About" },
   { to: "/verifier", label: "Verifier" },
 ];
 
 const FOOTER_LINKS = [
   { title: "Product", items: [
+    { to: "/features", label: "Features" },
     { to: "/docs", label: "Docs" },
     { to: "/verifier", label: "Verifier" },
     { to: "/whitepaper", label: "Whitepaper" },
