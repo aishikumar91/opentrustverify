@@ -24,8 +24,20 @@ export function VerdictCard({ verdict }: { verdict: Verdict }) {
           <span>{verdict.asset.symbol ?? "—"}</span>
         </div>
         <div className="flex justify-between text-sm">
+          <span className="text-[var(--otv-text-muted)]">Amount</span>
+          <span className="otv-mono">{verdict.amount ?? "—"}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-[var(--otv-text-muted)]">Balance change</span>
+          <span className="otv-mono">{verdict.balanceDelta ?? "—"}</span>
+        </div>
+        <div className="flex justify-between text-sm">
           <span className="text-[var(--otv-text-muted)]">Finality</span>
           <span>{verdict.finality.state}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-[var(--otv-text-muted)]">Checked</span>
+          <span>{new Date(verdict.checkedAt).toLocaleString()}</span>
         </div>
       </div>
     </Card>

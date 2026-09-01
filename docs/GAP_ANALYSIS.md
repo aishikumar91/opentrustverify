@@ -1,6 +1,10 @@
 # OpenTrust Verify — Gap Analysis
 
-**Date:** 2026-08-25  
+**Date:** 2026-08-25 (historical)  
+**Status:** Superseded for implementation. Do not treat the tables below as the current backlog.
+
+Postgres, Redis, live chain adapters, session/OIDC, file/KMS keystore, webhook retries, explorer primitives, and OTV-0010 conformance landed after this snapshot. Current truth is `AGENTS.md`, `docs/PENDING.md`, `docs/MVP_BOUNDARIES.md`, and the code.
+
 **Scope:** `opentrust-verify/` vs whitepaper + specs + code  
 **Method:** Evidence-based file comparison only; no invented capabilities.
 

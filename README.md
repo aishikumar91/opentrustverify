@@ -91,6 +91,10 @@ pnpm docker:up
 - **Crypto:** Ed25519 signed verdicts (`otv.verdict.v1`)
 - **Chains:** Adapter abstraction; Ethereum + mock for MVP
 
+## Agent context
+
+Start at [AGENTS.md](AGENTS.md). Refresh a full-tree dump with [context-builder](https://github.com/igorls/context-builder) using `context-builder.toml`. See [docs/handoffs/project-context](docs/handoffs/project-context).
+
 ## Documentation
 
 - [PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md)

@@ -1,0 +1,37 @@
+# Context Builder — OpenTrust Verify (OTV)
+# Snapshot the monorepo for LLM / agent context. CLI flags override this file.
+# https://github.com/igorls/context-builder
+
+output = "00-context.md"
+output_folder = "docs/handoffs/project-context"
+
+timestamped_output = true
+auto_diff = true
+diff_only = false
+diff_context_lines = 3
+
+# Source + config + schema. Images and lockfiles are excluded.
+filter = ["ts", "tsx", "js", "mjs", "cjs", "sql", "yml", "yaml", "toml", "md", "dart", "py", "css"]
+
+ignore = [
+  "node_modules",
+  "dist",
+  "build",
+  "coverage",
+  "target",
+  ".git",
+  "brand",
+  "keys",
+  "wiki-vault",
+  "pnpm-lock.yaml",
+  "package-lock.json",
+  "handoffs",
+]
+
+line_numbers = false
+preview = false
+token_count = false
+encoding = "o200k_base"
+yes = true
+encoding_strategy = "detect"
+max_tokens = 120000

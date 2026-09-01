@@ -1,0 +1,20 @@
+---
+description: OTV non-negotiables for every change in this repo
+alwaysApply: true
+---
+
+# OTV invariants
+
+Verification is deterministic. No LLM in the spendability path.
+
+Do not collapse states. A chain event is not execution, a transfer, a balance increase, finality, or spendable funds. Use the `@otv/verdict-schema` enum as-is in API and UI copy.
+
+All RPC goes through `ChainAdapter` in `@otv/chain-adapters`. The engine never builds JSON-RPC.
+
+Signing keys stay on the server. Clients verify signatures. They do not mint verdicts.
+
+Production requires `DATABASE_URL`. `MemoryStore` is local and test only.
+
+`docs/GAP_ANALYSIS.md` is a 2026-08-25 snapshot. Prefer `AGENTS.md`, `docs/PENDING.md`, and the code.
+
+Explorer embedding uses `@otv/ui` (`VerificationBadge`, `TransactionTrustPanel`, `EvidenceTimeline`, `VerdictCard`, `SignatureVerification`). Do not duplicate those in `apps/web`.

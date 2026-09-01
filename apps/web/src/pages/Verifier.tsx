@@ -5,11 +5,12 @@ import {
   Alert,
   Button,
   Card,
-  EvidenceItemView,
-  HashDisplay,
+  EvidenceTimeline,
   Input,
-  StatusBadge,
-  TrustState,
+  SignatureVerification,
+  TransactionTrustPanel,
+  VerdictCard,
+  VerificationBadge,
 } from "@otv/ui";
 import { publicClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -129,65 +130,34 @@ export function VerifierPage() {
         <div className="space-y-4">
           {verdict ? (
             <>
-              <Card>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-xs tracking-widest text-[var(--otv-text-muted)]">VERDICT</div>
-                    <div className="mt-1 text-3xl font-bold tracking-wide">{verdict.status}</div>
-                  </div>
-                  <StatusBadge status={verdict.status} />
-                </div>
-                <div className="mt-6 space-y-4">
-                  <HashDisplay label="Transaction" value={verdict.transactionHash} />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--otv-text-muted)]">Asset</span>
-                    <span>{verdict.asset.symbol ?? "-"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--otv-text-muted)]">Amount</span>
-                    <span className="otv-mono">{verdict.amount ?? "-"}</span>
-                  </div>
-                  <HashDisplay label="Recipient" value={verdict.recipient} />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--otv-text-muted)]">Finality</span>
-                    <span>{verdict.finality.state}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--otv-text-muted)]">Balance change</span>
-                    <span className="otv-mono">{verdict.balanceDelta ?? "-"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--otv-text-muted)]">Checked</span>
-                    <span>{new Date(verdict.checkedAt).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--otv-text-muted)]">Signature</span>
-                    <span>{sigValid == null ? "…" : sigValid ? "Valid" : "Invalid"}</span>
-                  </div>
-                </div>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <Button variant="secondary" size="sm" type="button" onClick={() => setShowEvidence((s) => !s)}>
-                    View evidence
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(JSON.stringify(verdict, null, 2))}
-                  >
-                    Copy verdict
-                  </Button>
-                </div>
-              </Card>
-              <TrustState status={verdict.status} evidence={verdict.evidence} />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-semibold tracking-wide text-[var(--otv-text-muted)]">
+                  Blockchain explorer data stays separate. This column is OTV VERIFICATION.
+                </p>
+                <VerificationBadge status={verdict.status} />
+              </div>
+              <VerdictCard verdict={verdict} />
+              <SignatureVerification valid={sigValid} kid={verdict.kid} />
+              <TransactionTrustPanel verdict={verdict} />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" type="button" onClick={() => setShowEvidence((s) => !s)}>
+                  {showEvidence ? "Hide evidence" : "View evidence"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(JSON.stringify(verdict, null, 2))}
+                >
+                  Copy verdict
+                </Button>
+              </div>
               {showEvidence && (
                 <Card>
-                  <h2 className="mb-2 text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">
+                  <h2 className="mb-3 text-sm font-semibold tracking-wide text-[var(--otv-text-secondary)]">
                     Evidence
                   </h2>
-                  {verdict.evidence.map((item) => (
-                    <EvidenceItemView key={item.type} item={item} />
-                  ))}
+                  <EvidenceTimeline evidence={verdict.evidence} />
                 </Card>
               )}
             </>

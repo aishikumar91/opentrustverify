@@ -1,6 +1,14 @@
 import { useState } from "react";
 import type { Verdict } from "@otv/verdict-schema";
-import { Alert, Button, Card, Input, StatusBadge } from "@otv/ui";
+import {
+  Alert,
+  Button,
+  Card,
+  Input,
+  TransactionTrustPanel,
+  VerdictCard,
+  VerificationBadge,
+} from "@otv/ui";
 import { useAuth } from "@/lib/auth";
 
 export function WalletPage() {
@@ -75,25 +83,21 @@ export function WalletPage() {
         )}
 
         {verdict && (
-          <Card>
+          <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-xs tracking-widest text-[var(--otv-brand)]">OTV VERIFICATION</div>
-              <StatusBadge status={verdict.status} />
+              <p className="text-xs font-semibold tracking-wide text-[var(--otv-brand)]">
+                OTV VERIFICATION
+              </p>
+              <VerificationBadge status={verdict.status} compact />
             </div>
-            <p className="mt-3 text-lg font-semibold">
+            <p className="text-lg font-semibold">
               {verdict.status === "SPENDABLE"
                 ? "Funds look spendable for this recipient."
                 : `Status: ${verdict.status}`}
             </p>
-            <ul className="mt-4 space-y-2 text-sm text-[var(--otv-text-secondary)]">
-              {verdict.evidence.map((e) => (
-                <li key={e.type} className="flex justify-between">
-                  <span>{e.type}</span>
-                  <span>{e.result ? "YES" : "NO"}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+            <TransactionTrustPanel verdict={verdict} />
+            <VerdictCard verdict={verdict} />
+          </div>
         )}
       </main>
   );

@@ -28,7 +28,7 @@ Conformance CLI (`pnpm conformance`), Prometheus exporters, Docker images runnin
 
 ### Remaining (non-MVP)
 
-- Cloud HSM/KMS provider
-- OIDC/SSO
-- Payment billing
-- Additional production chains
+- Attach AWS KMS credentials on the VPS (envelope encryption is already in the API)
+- Attach an OIDC issuer on the VPS (`infra/oidc/bootstrap.py`; API returns 501 until `OIDC_ISSUER` is set)
+- Payment-provider billing (plan enum + usage meters only)
+- Additional L1s beyond EVM, Bitcoin, Solana, and Tron

@@ -18,3 +18,8 @@ wiki-vault/
 apps/*/dist
 infra/oidc/dex.yaml
 infra/oidc/SSO_LOGIN.txt
+
+# Context Builder snapshots (regenerate; see docs/handoffs/project-context/README.md)
+docs/handoffs/project-context/*.md
+!docs/handoffs/project-context/README.md
+.context-builder/
