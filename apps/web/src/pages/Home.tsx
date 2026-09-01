@@ -76,6 +76,7 @@ export function HomePage() {
           <LandingArt
             src="/marketing/otv-hero-globe.png"
             alt="OpenTrust Verify globe showing incoming claim evidence, Ed25519 signature, and SPENDABLE verdict states"
+            size="md"
           />
         </div>
         <div className="otv-container mt-10 max-w-4xl">
@@ -154,6 +155,7 @@ export function HomePage() {
           <LandingArt
             src="/marketing/otv-verdict-dashboard.png"
             alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
+            size="md"
           />
         </div>
       </section>
@@ -168,6 +170,7 @@ export function HomePage() {
           <LandingArt
             src="/marketing/otv-wallet-integrations.png"
             alt="Example crypto wallet products that can integrate OpenTrust Verify: MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and others"
+            size="wide"
           />
         </div>
       </section>

@@ -10,6 +10,7 @@ export function SecurityPage() {
       <LandingArt
         src="/marketing/otv-hero-globe.png"
         alt="OpenTrust Verify globe: keys stay on the host, verdicts are signed evidence"
+        size="md"
       />
       <p>
         The main risk we exist to catch is a true-looking chain event that is not spendable money.

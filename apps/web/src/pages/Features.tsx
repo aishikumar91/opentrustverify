@@ -74,6 +74,7 @@ export function FeaturesPage() {
           <LandingArt
             src="/marketing/otv-hero-globe.png"
             alt="OpenTrust Verify evidence globe with incoming claim, Ed25519 signature, and verdict states"
+            size="md"
           />
         </div>
         <div className="otv-container mt-10 max-w-4xl">
@@ -119,6 +120,7 @@ export function FeaturesPage() {
           <LandingArt
             src="/marketing/otv-verdict-dashboard.png"
             alt="Incoming verdicts dashboard for spendability summaries"
+            size="md"
           />
           <div>
             <h2 className="otv-heading">How a desk reads a verdict</h2>
@@ -141,6 +143,7 @@ export function FeaturesPage() {
           <LandingArt
             src="/marketing/otv-wallet-integrations.png"
             alt="Staggered tiles of crypto wallet products that can integrate the OTV API"
+            size="wide"
           />
         </div>
       </section>

@@ -9,6 +9,7 @@ export function AboutPage() {
       <LandingArt
         src="/marketing/otv-hero-globe.png"
         alt="OpenTrust Verify globe with incoming claim, evidence, and SPENDABLE states"
+        size="md"
       />
       <p>
         {product.name} is how {product.parentBrand} answers a question explorers leave open: did this
@@ -27,6 +28,7 @@ export function AboutPage() {
       <LandingArt
         src="/marketing/otv-wallet-integrations.png"
         alt="Example wallet products that can integrate OTV. Not a partnership list."
+        size="wide"
       />
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What you get</h2>
       <ul className="list-disc space-y-2 pl-5">
@@ -56,6 +58,7 @@ export function WhitepaperPage() {
       <LandingArt
         src="/marketing/otv-verdict-dashboard.png"
         alt="Incoming verdicts dashboard: spendability summary and evidence themes"
+        size="md"
       />
       <p>
         Wallets already simulate what you are about to sign. OpenTrust Verify works on the inbound
