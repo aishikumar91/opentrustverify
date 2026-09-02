@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { product } from "@otv/config";
 import { DocArticle } from "@/components/DocArticle";
-import { LandingArt } from "@/components/LandingArt";
 
 export function AboutPage() {
   return (
@@ -48,11 +47,6 @@ export function AboutPage() {
         Wallet, exchange, explorer, and support teams that need a status they can show. One HTTP call
         returns a signed verdict. Your UI decides how to present Spendable, Pending, or Rejected.
       </p>
-      <LandingArt
-        src="/marketing/otv-wallet-integrations.png"
-        alt="Example wallet products that can integrate OTV. Not a partnership list."
-        size="wide"
-      />
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">What you get</h2>
       <ul className="list-disc space-y-2 pl-5">
         <li>A verification API that checks inclusion, execution, asset, recipient, balance, and finality.</li>
