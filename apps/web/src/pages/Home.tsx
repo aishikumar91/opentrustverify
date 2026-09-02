@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { buttonClassName, BtnText } from "@otv/ui";
 import { product } from "@otv/config";
 import { useAuth } from "@/lib/auth";
-import { LandingArt } from "@/components/LandingArt";
 import { ExplorerSearchBar } from "@/components/ExplorerSearchBar";
 
 const FEATURES = [
@@ -48,22 +47,13 @@ export function HomePage() {
   return (
     <>
       <section className="otv-hero">
-        <div className="otv-container grid items-center gap-8 lg:grid-cols-2">
-          <div>
-            <h1 className="banner_big_title">{product.tagline}</h1>
-            <p className="mt-5 max-w-xl text-base text-[var(--otv-hero-copy)]">
-              A transaction hash can look paid while the recipient still cannot spend the asset. Send
-              us the claim. We return a signed verdict your wallet or risk desk can show.
-            </p>
-            <ExplorerSearchBar compact className="mt-6" />
-          </div>
-          <div className="otv-hero-glow lg:justify-end">
-            <LandingArt
-              src="/marketing/otv-verdict-dashboard.png"
-              alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
-              size="sm"
-            />
-          </div>
+        <div className="otv-container">
+          <h1 className="banner_big_title">{product.tagline}</h1>
+          <p className="mt-5 max-w-xl text-base text-[var(--otv-hero-copy)]">
+            A transaction hash can look paid while the recipient still cannot spend the asset. Send
+            us the claim. We return a signed verdict your wallet or risk desk can show.
+          </p>
+          <ExplorerSearchBar compact className="mt-6" />
         </div>
       </section>
 
@@ -136,44 +126,30 @@ export function HomePage() {
       </section>
 
       <section className="otv-section">
-        <div className="otv-container grid items-center gap-10 lg:grid-cols-2">
-          <div className="space-y-4 text-[var(--otv-text-secondary)]">
-            <h2 className="otv-heading text-[var(--otv-text-primary)]">
-              Crypto and web3 payment verification
-            </h2>
-            <p>
-              Wallets, exchanges, explorers, and support desks use OpenTrust Verify to check an incoming
-              crypto transfer before they show Paid. The API covers Ethereum, Bitcoin, Solana, Tron,
-              Base, and other EVM networks, including native assets and tokens such as USDC.
-            </p>
-            <p>
-              A chain event can be true and still worthless. Pending transfers, lookalike tokens, and
-              logs that never moved a balance all fool a raw explorer view. OTV returns a signed
-              verdict you can show: SPENDABLE, REJECTED, SUSPICIOUS, or UNVERIFIED.
-            </p>
-          </div>
-          <LandingArt
-            src="/marketing/otv-verdict-dashboard.png"
-            alt="Incoming verdicts dashboard summarizing spendability and evidence themes"
-            size="md"
-          />
+        <div className="otv-container max-w-3xl space-y-4 text-[var(--otv-text-secondary)]">
+          <h2 className="otv-heading text-[var(--otv-text-primary)]">
+            Crypto and web3 payment verification
+          </h2>
+          <p>
+            Wallets, exchanges, explorers, and support desks use OpenTrust Verify to check an incoming
+            crypto transfer before they show Paid. The API covers Ethereum, Bitcoin, Solana, Tron,
+            Base, and other EVM networks, including native assets and tokens such as USDC.
+          </p>
+          <p>
+            A chain event can be true and still worthless. Pending transfers, lookalike tokens, and
+            logs that never moved a balance all fool a raw explorer view. OTV returns a signed
+            verdict you can show: SPENDABLE, REJECTED, SUSPICIOUS, or UNVERIFIED.
+          </p>
         </div>
       </section>
 
       <section className="otv-section otv-section-tint">
-        <div className="otv-container grid items-center gap-10 lg:grid-cols-2">
-          <div>
-            <h2 className="otv-heading mb-4">Wallets that can call the API</h2>
-            <p className="mb-0 max-w-2xl text-[var(--otv-text-secondary)]">
-              Any wallet, exchange, or custody product that can POST a claim. The marks below are
-              examples of that market, not a partnership list and not an OTV certification.
-            </p>
-          </div>
-          <LandingArt
-            src="/marketing/otv-wallet-integrations.png"
-            alt="Example crypto wallet products that can integrate OpenTrust Verify: MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and others"
-            size="wide"
-          />
+        <div className="otv-container max-w-3xl">
+          <h2 className="otv-heading mb-4">Wallets that can call the API</h2>
+          <p className="mb-0 text-[var(--otv-text-secondary)]">
+            Any wallet, exchange, or custody product that can POST a claim. Naming those products is
+            not a partnership list and not an OTV certification.
+          </p>
         </div>
       </section>
 

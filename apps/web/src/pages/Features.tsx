@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { buttonClassName, BtnText } from "@otv/ui";
 import { product } from "@otv/config";
-import { LandingArt } from "@/components/LandingArt";
 import { ExplorerSearchBar } from "@/components/ExplorerSearchBar";
 
 const FEATURES = [
@@ -109,37 +108,23 @@ export function FeaturesPage() {
       </section>
 
       <section className="otv-section">
-        <div className="otv-container grid items-center gap-10 lg:grid-cols-2">
-          <LandingArt
-            src="/marketing/otv-verdict-dashboard.png"
-            alt="Incoming verdicts dashboard for spendability summaries"
-            size="sm"
-          />
-          <div>
-            <h2 className="otv-heading">How a desk reads a verdict</h2>
-            <p className="mt-4 text-[var(--otv-text-secondary)]">
-              The signed row is the record. Your product maps OBSERVED through SPENDABLE. Do not
-              relabel SPENDABLE as paid.
-            </p>
-          </div>
+        <div className="otv-container max-w-3xl">
+          <h2 className="otv-heading">How a desk reads a verdict</h2>
+          <p className="mt-4 text-[var(--otv-text-secondary)]">
+            The signed row is the record. Your product maps OBSERVED through SPENDABLE. Do not
+            relabel SPENDABLE as paid.
+          </p>
         </div>
       </section>
 
       <section className="otv-section">
-        <div className="otv-container grid items-center gap-10 lg:grid-cols-2">
-          <div>
-            <h2 className="otv-heading mb-4">Wallet integrations</h2>
-            <p className="mb-0 max-w-2xl text-[var(--otv-text-secondary)]">
-              MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and the rest of that market can
-              call POST /v1/verify/incoming. Showing their marks here is not a partnership or an OTV
-              certification.
-            </p>
-          </div>
-          <LandingArt
-            src="/marketing/otv-wallet-integrations.png"
-            alt="Staggered tiles of crypto wallet products that can integrate the OTV API"
-            size="wide"
-          />
+        <div className="otv-container max-w-3xl">
+          <h2 className="otv-heading mb-4">Wallet integrations</h2>
+          <p className="mb-0 text-[var(--otv-text-secondary)]">
+            MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and the rest of that market can
+            call POST /v1/verify/incoming. Naming them here is not a partnership or an OTV
+            certification.
+          </p>
         </div>
       </section>
 
