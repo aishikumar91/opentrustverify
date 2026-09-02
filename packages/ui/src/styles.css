@@ -9,8 +9,8 @@ body {
   font-family: var(--otv-font-body);
   font-size: 16px;
   font-weight: 400;
-  letter-spacing: 0.04em;
-  line-height: 1.65;
+  letter-spacing: 0;
+  line-height: 1.6;
   background: var(--otv-background);
   color: var(--otv-text-primary);
   text-rendering: optimizeLegibility;
