@@ -36,7 +36,7 @@ export function ContactPage() {
   return (
     <DocArticle title="Contact" kicker="TALK TO US">
       <p>
-        Builder, {product.builderName}:{" "}
+        {product.builderTitle}, {product.builderName}:{" "}
         <a className="text-[var(--otv-brand)]" href={`mailto:${product.builderEmail}`}>
           {product.builderEmail}
         </a>

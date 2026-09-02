@@ -15,18 +15,34 @@ export function AboutPage() {
         person who thinks they were paid. Attackers lean on that gap. Product teams should not ask a
         customer to decode logs.
       </p>
-      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who builds it</h2>
-      <p>
-        {product.builderName} built {product.shortName}. Write to{" "}
-        <a className="text-[var(--otv-brand)]" href={`mailto:${product.builderEmail}`}>
-          {product.builderEmail}
-        </a>
-        .
-      </p>
-      <p>
-        {product.name} is a product of {product.legalEntity}, RC {product.rcNumber}. The public brand
-        is {product.parentBrand}.
-      </p>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Founder and CEO</h2>
+      <figure className="grid items-start gap-6 sm:grid-cols-[minmax(0,220px)_1fr]">
+        <img
+          src="/about/ifeanyi-obibi.jpg"
+          alt={`${product.builderName}, ${product.builderTitle} of ${product.parentBrand}`}
+          width={440}
+          height={720}
+          className="w-full max-w-[220px] rounded-[8px] border-2 border-[var(--otv-border-strong)] bg-[var(--otv-surface)] object-cover"
+        />
+        <figcaption className="space-y-3">
+          <p className="mb-0 text-xl font-bold text-[var(--otv-text-primary)]">{product.builderName}</p>
+          <p className="mb-0">
+            {product.builderTitle} of {product.parentBrand}.
+          </p>
+          <p className="mb-0">
+            <a className="text-[var(--otv-brand)]" href={`mailto:${product.builderEmail}`}>
+              {product.builderEmail}
+            </a>
+            {" · "}
+            <a className="text-[var(--otv-brand)]" href={`mailto:${product.builderEmailPersonal}`}>
+              {product.builderEmailPersonal}
+            </a>
+          </p>
+          <p className="mb-0">
+            {product.name} is a product of {product.legalEntity}, RC {product.rcNumber}.
+          </p>
+        </figcaption>
+      </figure>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who it is for</h2>
       <p>
         Wallet, exchange, explorer, and support teams that need a status they can show. One HTTP call
