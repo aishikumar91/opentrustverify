@@ -438,7 +438,7 @@ a { color: inherit; text-decoration: none; }
 .otv-frame-hero {
   min-height: 0;
   padding: 28px 28px 24px;
-  border: 10px solid transparent;
+  border: 10px solid #6f6a62;
   --otv-brand: #f6e7b4;
   --otv-brand-text: #f6e7b4;
 }
