@@ -1,6 +1,6 @@
 # OpenTrust Verify
 
-Version 0.3.1. POP Trust. Product host: otv.poptrust.me.
+Version 0.3.2. POP Trust. Product host: otv.poptrust.me.
 
 Trust the balance, not just the blockchain event.
 
@@ -26,7 +26,7 @@ Indexers already know this. Current balances come from a state read (`balanceOf`
 
 Claim, then lookup, then execution, then asset, then recipient, then amount, then balance change, then finality, then spendability, then risk, then a signed verdict.
 
-Statuses: observed, pending, executed, asset confirmed, balance confirmed, final, spendable, rejected, suspicious, unverified. Happy-path and failure transitions are enforced in the verdict schema.
+Statuses are the verdict enum: OBSERVED, PENDING, EXECUTED, ASSET_CONFIRMED, BALANCE_CONFIRMED, FINAL, SPENDABLE, REJECTED, SUSPICIOUS, UNVERIFIED. Happy-path and failure transitions are enforced in the verdict schema.
 
 ## Signatures
 
@@ -38,9 +38,17 @@ The hosted product is a Fastify API with Postgres as the source of truth, Redis 
 
 When a live Ethereum RPC is configured, evidence comes from that node. When it is not, a mock adapter still returns a verdict and marks the result so a demo cannot be treated as chain proof.
 
+## Accounts
+
+The hosted site signs people in with email and password, or with Google. Google uses issuer `https://accounts.google.com`, authorization code and PKCE. Login and account creation both offer Continue with Google when that issuer is configured. The API stores the email and, when Google sends one, a display name, then issues an `otv_session` cookie. It does not receive a wallet seed, a private key, or a wallet password.
+
+A deployment without `OIDC_ISSUER` and `OIDC_CLIENT_ID` keeps email and password. `GET /v1/auth/oidc/login` returns 501, and the Google control stays off. Workspace roles are owner, admin, and member. Owner and admin can set the public site URL. An API key stays with the caller. The settings request does not accept the key.
+
+A browser wallet on this site is not an account and not a verdict. Native balances are an `eth_getBalance` read. Token balances are `balanceOf`. If those reads disagree, the result needs reconciliation. If every read fails, the balance is unavailable. It is not reported as zero. The in-product verification lab is a labeled simulation. It does not broadcast a transaction and it does not mint a verdict.
+
 ## What we do not claim
 
-Google sign-in is live on the hosted site. Card capture is not taken in the product UI. We do not publish market-size figures as facts. Certification marks require a written grant. HSM-backed keys are a next step, not a current claim.
+Card capture is not taken in the product UI. We do not publish market-size figures as facts. Certification marks require a written grant. HSM-backed keys are a next step, not a current claim.
 
 ## Limits you should know
 

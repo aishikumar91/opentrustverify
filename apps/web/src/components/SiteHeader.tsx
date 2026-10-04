@@ -58,9 +58,9 @@ export function SiteHeader() {
 
   return (
     <header className="otv-header">
-      <div className="otv-container grid grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
+      <div className="otv-container otv-header-row">
         <BrandLink />
-        <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Primary">
+        <nav className="otv-header-nav" aria-label="Primary">
           {NAV.map((l) => (
             <NavLink key={l.to} to={l.to} className={navClass}>
               {l.label}
@@ -72,14 +72,14 @@ export function SiteHeader() {
             </NavLink>
           )}
         </nav>
-        <div className="flex items-center justify-end gap-2">
+        <div className="otv-header-actions">
           <ThemeSwitcher />
           <span className="hidden sm:inline-flex">
             <GithubStar />
           </span>
           <button
             type="button"
-            className={buttonClassName("ghost", "lg:hidden", "sm")}
+            className={buttonClassName("ghost", "otv-menu-btn", "sm")}
             aria-expanded={open}
             aria-controls="site-mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}

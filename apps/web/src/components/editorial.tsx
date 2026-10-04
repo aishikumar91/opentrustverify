@@ -70,36 +70,73 @@ export function VerdictOrbit({ size = "panel" }: { size?: "hero" | "panel" }) {
   const hero = size === "hero";
   return (
     <div className={hero ? "otv-orbit otv-orbit-hero" : "otv-orbit"} aria-hidden>
-      <svg viewBox="0 0 360 360">
-        <circle cx="180" cy="180" r="158" fill="none" stroke="currentColor" strokeOpacity="0.16" />
-        <circle cx="180" cy="180" r="118" fill="none" stroke="currentColor" strokeOpacity="0.32" />
-        <circle cx="180" cy="180" r="76" fill="currentColor" fillOpacity="0.16" />
-        <circle cx="180" cy="180" r="76" fill="none" stroke="currentColor" strokeOpacity="0.85" />
-        <path d="M180 58v24M180 278v24M58 180h24M278 180h24" stroke="currentColor" strokeOpacity="0.7" strokeWidth="2" />
+      <svg viewBox="0 0 480 480">
+        <g className="otv-spin">
+          <circle
+            cx="240"
+            cy="240"
+            r="152"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeOpacity="0.72"
+            strokeDasharray="1.4 8"
+            strokeLinecap="round"
+          />
+          <circle cx="240" cy="88" r="4" fill="currentColor" />
+        </g>
+        <g className="otv-spin otv-spin-reverse">
+          <circle
+            cx="240"
+            cy="240"
+            r="122"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeOpacity="0.85"
+            strokeDasharray="36 730"
+            strokeLinecap="round"
+          />
+        </g>
+        <circle cx="240" cy="240" r="78" fill="currentColor" fillOpacity="0.16" />
+        <circle cx="240" cy="240" r="78" fill="none" stroke="currentColor" strokeOpacity="0.9" strokeWidth="1.4" />
+        <path
+          d="M240 118v22M240 340v22M118 240h22M340 240h22"
+          stroke="currentColor"
+          strokeOpacity="0.7"
+          strokeWidth="2"
+        />
         <text
-          x="180"
-          y="186"
+          x="240"
+          y="240"
           textAnchor="middle"
+          dominantBaseline="middle"
           fill="currentColor"
           fontFamily="Barlow, sans-serif"
-          fontSize="18"
+          fontSize="20"
           fontWeight="800"
           letterSpacing="3"
         >
           OTV
         </text>
         {hero && (
-          <g fill="currentColor" fontFamily="Barlow, sans-serif" fontSize="11" letterSpacing="1.5">
-            <text x="180" y="34" textAnchor="middle" fillOpacity="0.72">
+          <g
+            fill="currentColor"
+            fontFamily="Barlow, sans-serif"
+            fontSize="12"
+            fontWeight="600"
+            letterSpacing="1.4"
+          >
+            <text x="240" y="28" textAnchor="middle" dominantBaseline="middle" fillOpacity="0.82">
               OBSERVED
             </text>
-            <text x="180" y="346" textAnchor="middle" fillOpacity="0.72">
+            <text x="240" y="452" textAnchor="middle" dominantBaseline="middle" fillOpacity="0.82">
               SPENDABLE
             </text>
-            <text x="8" y="184" fillOpacity="0.6">
+            <text x="40" y="240" textAnchor="middle" dominantBaseline="middle" fillOpacity="0.72">
               BALANCE
             </text>
-            <text x="286" y="184" fillOpacity="0.6">
+            <text x="440" y="240" textAnchor="middle" dominantBaseline="middle" fillOpacity="0.72">
               FINAL
             </text>
           </g>

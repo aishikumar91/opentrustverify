@@ -32,6 +32,10 @@ const MODEL_FAQS: FaqItem[] = [
     q: "Who can re-check the signature?",
     a: "Anyone with the verdict payload. POST it to /v1/verdicts/verify. The signing key never leaves the API, and this page does not sign.",
   },
+  {
+    q: "Does Google sign-in change a verdict?",
+    a: "No. Google opens a workspace session on the hosted site. Verdicts are still produced by the API and signed on the server. This page does not mint them.",
+  },
 ];
 
 export function AboutPage() {
@@ -154,9 +158,9 @@ export function WhitepaperPage() {
       </ol>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Statuses you can show</h2>
       <p>
-        Observed, pending, executed, asset confirmed, balance confirmed, final, spendable, rejected,
-        suspicious, or unverified. Your product maps those words to a badge. We keep the evidence
-        that produced them.
+        OBSERVED, PENDING, EXECUTED, ASSET_CONFIRMED, BALANCE_CONFIRMED, FINAL, SPENDABLE, REJECTED,
+        SUSPICIOUS, UNVERIFIED. Your product maps those words to a badge. We keep the evidence that
+        produced them.
       </p>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Signatures</h2>
       <p>
@@ -164,13 +168,29 @@ export function WhitepaperPage() {
         that payload to <code className="otv-mono">/v1/verdicts/verify</code>. Signing keys stay on the
         API. This page never signs.
       </p>
+      <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Accounts</h2>
+      <p>
+        The hosted site signs people in with email and password, or with Google. Google uses issuer{" "}
+        <code className="otv-mono">https://accounts.google.com</code>. Login and account creation both
+        offer Continue with Google when that issuer is configured. The API stores the email and, when
+        Google sends one, a display name. It does not receive a wallet seed, a private key, or a wallet
+        password. A deployment without an OIDC issuer keeps email and password and leaves the Google
+        control off.
+      </p>
+      <p>
+        A browser wallet here is not an account and not a verdict. Native balances are an{" "}
+        <code className="otv-mono">eth_getBalance</code> read. Token balances are{" "}
+        <code className="otv-mono">balanceOf</code>. If those reads disagree, the result needs
+        reconciliation. If every read fails, the balance is unavailable. It is not reported as zero.
+        The verification lab is a labeled simulation. It does not broadcast a transaction and it does
+        not mint a verdict.
+      </p>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Honesty about live vs mock</h2>
       <p>
         When a live Ethereum RPC is configured, evidence comes from that node. When it is not, a mock
         adapter still returns a verdict and marks the result so you do not treat a demo as chain
         proof. The same idea applies on the other chains: public endpoints can rate-limit, and a
-        dedicated RPC is optional. Google sign-in is live on the hosted site. We do not publish
-        market-size figures as facts.
+        dedicated RPC is optional. We do not publish market-size figures as facts.
       </p>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Who should read this</h2>
       <p>

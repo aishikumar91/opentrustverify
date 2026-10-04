@@ -95,9 +95,9 @@ export function HomePage() {
     <>
       <section className="otv-stage">
         <div className="otv-container">
-          <div className="otv-frame otv-frame-hero">
+          <div className="otv-frame otv-frame-hero" data-aos="fade-up">
             <div className="otv-hero-layout">
-              <div className="otv-hero-copy">
+              <div className="otv-hero-copy" data-aos="fade-up" data-aos-delay="40">
                 <p className="otv-kicker">Incoming verification</p>
                 <h1 className="otv-display">
                   Trust the balance,
@@ -122,7 +122,9 @@ export function HomePage() {
                   <Link to="/verifier">Look up a verdict</Link>
                 </p>
               </div>
-              <VerdictOrbit size="hero" />
+              <div data-aos="zoom-in" data-aos-delay="80">
+                <VerdictOrbit size="hero" />
+              </div>
             </div>
           </div>
           <ExplorerSearchBar compact className="otv-hero-search" />
@@ -143,7 +145,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="otv-section">
+      <section className="otv-section" data-aos="fade-up">
         <div className="otv-container">
           <div className="mb-10 flex items-end justify-between gap-6">
             <h2 className="otv-heading mb-0">What you get</h2>
@@ -176,7 +178,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="otv-section">
+      <section className="otv-section" data-aos="fade-up">
         <div className="otv-container">
           <div className="mb-10 max-w-3xl">
             <p className="otv-kicker">Who it is for</p>
@@ -197,7 +199,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="otv-section otv-section-tint">
+      <section className="otv-section otv-section-tint" data-aos="fade-up">
         <div className="otv-container">
           <div className="mb-10 flex flex-wrap items-center justify-between gap-6">
             <h2 className="otv-heading mb-0 max-w-3xl">How a claim becomes a signed verdict</h2>

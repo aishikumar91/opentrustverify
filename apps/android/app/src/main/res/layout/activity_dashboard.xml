@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/paper"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        style="@style/OtvKicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/dash_kicker" />
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/OtvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/dash_title" />
+
+    <TextView
+        android:id="@+id/meta"
+        style="@style/OtvMuted"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/body"
+        style="@style/OtvBody"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_weight="1"
+        android:text="@string/dash_empty" />
+
+    <Button
+        android:id="@+id/sign_out"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:backgroundTint="@color/accent"
+        android:text="@string/dash_sign_out"
+        android:textAllCaps="true"
+        android:textColor="@color/ink"
+        android:textSize="11sp" />
+</LinearLayout>

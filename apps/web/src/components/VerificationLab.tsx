@@ -11,6 +11,20 @@ import { apiBase } from "@/lib/api";
 
 const SCENARIOS = listDemoScenarios();
 
+const SHORT: Record<DemoScenarioId, string> = {
+  phantom_event: "Phantom",
+  balance_mismatch: "Mismatch",
+  valid_payment: "Valid",
+  pending_payment: "Pending",
+};
+
+const BLURB: Record<DemoScenarioId, string> = {
+  phantom_event: "Event reported. No transaction.",
+  balance_mismatch: "Event exists. Balance does not match.",
+  valid_payment: "Transaction and balance agree.",
+  pending_payment: "Waiting on confirmations.",
+};
+
 function mark(state: StepState): string {
   if (state === "success") return "✓";
   if (state === "failed") return "✕";
@@ -115,203 +129,119 @@ export function VerificationLab({ embedded = false }: { embedded?: boolean }) {
     setError(null);
   }
 
+  const verdict =
+    scenario?.evaluation.result === "verified"
+      ? "Verified"
+      : scenario?.evaluation.result === "pending"
+        ? "Pending"
+        : scenario?.evaluation.result === "unavailable"
+          ? "Unavailable"
+          : "Not verified";
+
   return (
     <section className={embedded ? "" : "otv-section"}>
       <div className={embedded ? "" : "otv-container"}>
-        <div className={embedded ? "otv-frame otv-frame-compact" : "otv-frame p-6 md:p-10"}>
+        <div className="otv-frame otv-frame-compact p-4 md:p-6">
           <div className="relative z-[1]">
-          <p className="otv-kicker">Demo mode · simulated blockchain data</p>
-          <h2 className="otv-heading mt-3 text-[var(--otv-ivory)]">OTV Verification Lab</h2>
-          <p className="mt-3 max-w-2xl text-[var(--otv-ivory)]/80">
-            See why event-based payment confirmation can fail. No real transaction is sent. Events tell you what was
-            reported. Blockchain state tells you what exists.
-          </p>
-          <p className="mt-2 text-sm text-[var(--otv-ivory)]/70">Don't trust the event. Verify the state.</p>
-
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button type="button" className="otv-btn otv-btn-dark" onClick={() => start("phantom_event")}>
-              Run demo
-            </button>
-            <button type="button" className="otv-btn otv-btn-invert" onClick={() => start("valid_payment")}>
-              Try valid payment
-            </button>
-            <button type="button" className="otv-btn otv-btn-invert" onClick={() => start("phantom_event")}>
-              Simulate phantom event
-            </button>
-            <button type="button" className="otv-btn otv-btn-invert" onClick={() => start("balance_mismatch")}>
-              Simulate balance mismatch
-            </button>
-            <button type="button" className="otv-btn otv-btn-invert" onClick={() => start("pending_payment")}>
-              Pending payment
-            </button>
-            <button type="button" className="otv-btn otv-btn-ghost text-[var(--otv-ivory)]" onClick={reset}>
-              Reset
-            </button>
-          </div>
-
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-            {SCENARIOS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => start(item.id)}
-                className={`rounded-[14px] border p-4 text-left ${
-                  scenarioId === item.id ? "border-[var(--otv-brand)]" : "border-white/15"
-                }`}
-              >
-                <div className="text-sm font-semibold text-[var(--otv-ivory)]">{item.title}</div>
-                <p className="mt-1 text-sm text-[var(--otv-ivory)]/70">{item.description}</p>
-              </button>
-            ))}
-          </div>
-
-          {error && <p className="mt-4 text-sm text-[var(--otv-danger)]">{error}</p>}
-
-          {scenario && (
-            <div className="mt-8 space-y-6">
-              <div className="rounded-[14px] border border-white/15 p-4 text-sm text-[var(--otv-ivory)]/80">
-                SIMULATION. Expected {formatBaseUnits(scenario.expectedAmountBaseUnits, scenario.decimals)}{" "}
-                {scenario.tokenSymbol} on {scenario.network}. Recipient label {scenario.recipientLabel}. Reference{" "}
-                {scenario.reference}. {source === "browser" ? "Ran in the browser because the demo API was unreachable." : "Ran through the demo API."}
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                <article className="rounded-[14px] border border-white/15 p-5">
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/60">Event stream</h3>
-                  <p className="mt-4 text-lg font-semibold text-[var(--otv-success)]">Event detected</p>
-                  <p className="mt-2 text-[var(--otv-ivory)]">Incoming transfer</p>
-                  <p className="font-[family-name:var(--otv-font-display)] text-3xl font-extrabold text-[var(--otv-ivory)]">
-                    {formatBaseUnits(scenario.expectedAmountBaseUnits, scenario.decimals)} {scenario.tokenSymbol}
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--otv-ivory)]/70">Status: DETECTED · Source: event / indexer</p>
-                  <p className="mt-2 font-mono text-xs text-[var(--otv-ivory)]/70">recipient {scenario.recipient}</p>
-                </article>
-                <article className="rounded-[14px] border border-white/15 p-5">
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/60">Canonical state</h3>
-                  <dl className="mt-4 space-y-2 text-sm text-[var(--otv-ivory)]">
-                    <div className="flex justify-between gap-4"><dt>Network</dt><dd>Ethereum</dd></div>
-                    <div className="flex justify-between gap-4"><dt>Latest block</dt><dd>{scenario.blockNumber ? scenario.blockNumber.toLocaleString() : "Not found"}</dd></div>
-                    <div className="flex justify-between gap-4"><dt>Observed balance</dt><dd>{formatBaseUnits(observed, scenario.decimals)} {scenario.tokenSymbol}</dd></div>
-                    <div className="flex justify-between gap-4"><dt>Expected balance</dt><dd>{formatBaseUnits(scenario.expectedBalance, scenario.decimals)} {scenario.tokenSymbol}</dd></div>
-                    <div className="flex justify-between gap-4"><dt>Difference</dt><dd>{difference ?? "Unchanged"}</dd></div>
-                    <div className="flex justify-between gap-4"><dt>Transaction</dt><dd className="truncate">{scenario.transactionHash ?? "Not found"}</dd></div>
-                    <div className="flex justify-between gap-4"><dt>State</dt><dd>{scenario.evaluation.result === "verified" ? "VERIFIED" : scenario.evaluation.result === "pending" ? "PENDING" : "NOT VERIFIED"}</dd></div>
-                  </dl>
-                </article>
-              </div>
-
-              <ol className="space-y-2">
-                {shown.map((item) => (
-                  <li key={item.step} className="flex gap-3 rounded-[14px] border border-white/10 px-4 py-3">
-                    <span className={`font-mono ${tone(item.state)}`} aria-hidden>{mark(item.state)}</span>
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--otv-ivory)]">{item.label}</div>
-                      <p className="text-sm text-[var(--otv-ivory)]/70">{item.detail}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-
-              {finished && (
-                <>
-                  <div className="rounded-[14px] border border-white/20 p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--otv-ivory)]/60">OTV decision</p>
-                    <p className="mt-2 font-[family-name:var(--otv-font-display)] text-4xl font-extrabold tracking-tight text-[var(--otv-ivory)]">
-                      {scenario.evaluation.result === "verified"
-                        ? "Payment verified"
-                        : scenario.evaluation.result === "pending"
-                          ? "Payment pending"
-                          : scenario.evaluation.result === "unavailable"
-                            ? "State unavailable"
-                            : "Verification failed"}
-                    </p>
-                    <p className="mt-3 max-w-2xl text-[var(--otv-ivory)]/80">{scenario.evaluation.decision}</p>
-                    <div className="mt-4 grid gap-2 text-sm text-[var(--otv-ivory)] sm:grid-cols-3">
-                      <p>Event: detected</p>
-                      <p>Transaction: {scenario.transactionHash ? `${scenario.confirmations} confirmations` : "not confirmed"}</p>
-                      <p>Balance: {scenario.evaluation.balanceUnchanged ? "unchanged" : scenario.evaluation.result === "verified" ? "verified" : "does not match"}</p>
-                    </div>
-                    {scenario.evaluation.result !== "verified" && (
-                      <p className="mt-4 text-sm font-semibold text-[var(--otv-ivory)]">
-                        Merchant funds stay protected. OTV kept this unverified payment from being accepted.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <article className="rounded-[14px] border border-white/15 p-5">
-                      <h3 className="text-sm font-semibold text-[var(--otv-ivory)]">Event-only system</h3>
-                      <p className="mt-3 text-sm text-[var(--otv-success)]">✓ Event received</p>
-                      <p className="text-sm text-[var(--otv-success)]">✓ Transfer reported</p>
-                      <p className="mt-3 text-sm text-[var(--otv-ivory)]">
-                        {scenario.evaluation.eventOnlyWouldAccept ? "→ Payment confirmed" : "→ No event, so this system stays silent"}
-                      </p>
-                      {scenario.evaluation.result !== "verified" && scenario.evaluation.eventOnlyWouldAccept && (
-                        <p className="mt-2 text-sm text-[var(--otv-danger)]">That confirmation is not backed by chain state.</p>
-                      )}
-                    </article>
-                    <article className="rounded-[14px] border border-[var(--otv-brand)]/40 p-5">
-                      <h3 className="text-sm font-semibold text-[var(--otv-ivory)]">OpenTrust Verify</h3>
-                      <ol className="mt-3 space-y-1">
-                        {scenario.evaluation.steps.map((item) => (
-                          <li key={item.step} className={`text-sm ${tone(item.state)}`}>
-                            {mark(item.state)} {item.label}
-                          </li>
-                        ))}
-                      </ol>
-                    </article>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/60">Timeline</h3>
-                    <ol className="mt-3 space-y-1 font-mono text-xs text-[var(--otv-ivory)]/80">
-                      {scenario.evaluation.steps.map((item, index) => (
-                        <li key={item.step}>
-                          {`00:${String(index).padStart(2, "0")} ${item.label} · ${item.state}`}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  {(scenario.evaluation.result === "rejected" || scenario.evaluation.result === "mismatch") && (
-                    <article className="rounded-[14px] border border-white/15 p-5">
-                      <h3 className="text-sm font-semibold text-[var(--otv-ivory)]">Why did OTV reject it?</h3>
-                      <p className="mt-2 text-sm text-[var(--otv-ivory)]/80">
-                        An event is an observation. A blockchain balance is state. An event can be delayed, duplicated,
-                        dropped, malformed, stale, or produced by an indexer that is disconnected from the transaction.
-                        OTV does not treat an event alone as proof of payment.
-                      </p>
-                    </article>
-                  )}
-
-                  <div className="grid gap-3 sm:grid-cols-4">
-                    <Stat label="Checks" value={String(scenario.evaluation.checks)} />
-                    <Stat label="State queries" value={String(scenario.evaluation.stateQueries)} />
-                    <Stat label="Events" value={String(scenario.evaluation.eventCount)} />
-                    <Stat label="Trust assumptions" value={String(scenario.evaluation.trustAssumptions)} />
-                  </div>
-                  <p className="text-sm text-[var(--otv-ivory)]/70">Result: {scenario.evaluation.result}</p>
-
-                  <button type="button" className="otv-btn otv-btn-invert" onClick={() => setShowDetails((value) => !value)}>
-                    {showDetails ? "Hide verification details" : "View verification details"}
-                  </button>
-                  {showDetails && (
-                    <dl className="grid gap-2 text-sm text-[var(--otv-ivory)] sm:grid-cols-2">
-                      <div>Payment: {formatBaseUnits(scenario.expectedAmountBaseUnits, scenario.decimals)} {scenario.tokenSymbol}</div>
-                      <div>Network: Ethereum</div>
-                      <div>Token contract: {scenario.tokenContract}</div>
-                      <div>Recipient: {scenario.recipient}</div>
-                      <div>Transaction: {scenario.transactionHash ?? "Not found"}</div>
-                      <div>Block: {scenario.blockNumber?.toLocaleString() ?? "Not found"}</div>
-                      <div>Confirmations: {scenario.confirmations}</div>
-                      <div>Balance state: {scenario.evaluation.result}</div>
-                    </dl>
-                  )}
-                </>
+            <p className="otv-kicker">Demo · simulation</p>
+            <div className="mt-2 flex items-end justify-between gap-3">
+              <h2 className="m-0 text-lg font-bold uppercase tracking-tight text-[var(--otv-ivory)] md:text-2xl">
+                Verification lab
+              </h2>
+              {scenario && (
+                <button type="button" className="text-xs font-semibold uppercase tracking-wide text-[var(--otv-brand)]" onClick={reset}>
+                  Reset
+                </button>
               )}
-              {running && !finished && <p className="text-sm text-[var(--otv-ivory)]/70">Checking simulated blockchain state…</p>}
             </div>
-          )}
+            <p className="mt-2 mb-0 max-w-xl text-xs text-[var(--otv-ivory)]/75 md:text-sm">
+              Simulated chain data. No transaction is sent.
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {SCENARIOS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => start(item.id)}
+                  className={`rounded-[12px] border px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--otv-ivory)] md:text-xs ${
+                    scenarioId === item.id ? "border-[var(--otv-brand)] bg-[var(--otv-brand)]/10" : "border-white/15"
+                  }`}
+                >
+                  {SHORT[item.id]}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 mb-0 text-[11px] leading-snug text-[var(--otv-ivory)]/65">
+              {BLURB[scenarioId]}
+            </p>
+
+            {error && <p className="mt-3 mb-0 text-xs text-[var(--otv-danger)]">{error}</p>}
+
+            {scenario && (
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <article className="rounded-[12px] border border-white/15 p-3">
+                    <h3 className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/55">Event</h3>
+                    <p className="mt-1 mb-0 text-sm font-semibold text-[var(--otv-ivory)]">
+                      {formatBaseUnits(scenario.expectedAmountBaseUnits, scenario.decimals)} {scenario.tokenSymbol}
+                    </p>
+                    <p className="mt-1 mb-0 text-[11px] text-[var(--otv-ivory)]/65">Detected</p>
+                  </article>
+                  <article className="rounded-[12px] border border-white/15 p-3">
+                    <h3 className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/55">State</h3>
+                    <p className="mt-1 mb-0 text-sm font-semibold text-[var(--otv-ivory)]">{verdict}</p>
+                    <p className="mt-1 mb-0 text-[11px] text-[var(--otv-ivory)]/65">
+                      {formatBaseUnits(observed, scenario.decimals)} {scenario.tokenSymbol}
+                      {difference ? ` · ${difference}` : ""}
+                    </p>
+                  </article>
+                </div>
+
+                <ol className="space-y-1">
+                  {shown.map((item) => (
+                    <li key={item.step} className="flex items-baseline gap-2 text-xs text-[var(--otv-ivory)]">
+                      <span className={`font-mono ${tone(item.state)}`} aria-hidden>
+                        {mark(item.state)}
+                      </span>
+                      <span>{item.label}</span>
+                    </li>
+                  ))}
+                </ol>
+
+                {finished && (
+                  <>
+                    <p className="mb-0 text-sm font-semibold text-[var(--otv-ivory)]">{scenario.evaluation.decision}</p>
+                    <p className="mb-0 text-[11px] text-[var(--otv-ivory)]/60">
+                      {scenario.confirmations} confirmations · {scenario.evaluation.checks} checks
+                      {source === "browser" ? " · browser simulation" : ""}
+                    </p>
+                    <button
+                      type="button"
+                      className="text-xs font-semibold uppercase tracking-wide text-[var(--otv-brand)]"
+                      onClick={() => setShowDetails((value) => !value)}
+                    >
+                      {showDetails ? "Hide details" : "Details"}
+                    </button>
+                    {showDetails && (
+                      <dl className="grid gap-1 text-[11px] leading-snug text-[var(--otv-ivory)]/80">
+                        <div>Network: Ethereum · block {scenario.blockNumber?.toLocaleString() ?? "not found"}</div>
+                        <div className="break-all">Tx: {scenario.transactionHash ?? "not found"}</div>
+                        <div className="break-all">Recipient: {scenario.recipient}</div>
+                        <div className="break-all">Contract: {scenario.tokenContract}</div>
+                        <div>
+                          Event-only would {scenario.evaluation.eventOnlyWouldAccept ? "accept" : "stay silent"}. Balance{" "}
+                          {scenario.evaluation.balanceUnchanged ? "unchanged" : "moved"}.
+                        </div>
+                      </dl>
+                    )}
+                  </>
+                )}
+                {running && !finished && (
+                  <p className="mb-0 text-[11px] text-[var(--otv-ivory)]/65">Checking simulated state…</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -319,11 +249,3 @@ export function VerificationLab({ embedded = false }: { embedded?: boolean }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[14px] border border-white/10 p-4">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/50">{label}</div>
-      <div className="mt-2 font-[family-name:var(--otv-font-display)] text-2xl font-extrabold text-[var(--otv-ivory)]">{value}</div>
-    </div>
-  );
-}

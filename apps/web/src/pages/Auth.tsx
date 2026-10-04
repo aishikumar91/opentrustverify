@@ -1,9 +1,90 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Alert, Button, Card, Input } from "@otv/ui";
+import { Alert, BtnText, Button, Card, Input, buttonClassName } from "@otv/ui";
 import { OtvApiError } from "@otv/api-client";
-import { apiBase, publicClient } from "@/lib/api";
+import { apiBase, createClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+
+const HOSTED_ORIGIN = "https://otv.poptrust.me";
+
+type SsoLink = { href: string; label: string; hosted: boolean };
+
+function ssoLabel(provider?: string): string {
+  return provider === "oidc" ? "Continue with SSO" : "Continue with Google";
+}
+
+function useAccountSso(returnTo: string): SsoLink | null {
+  const [link, setLink] = useState<SsoLink | null>(null);
+
+  useEffect(() => {
+    let cancel = false;
+    const base = apiBase();
+    const localHref = `${base}/v1/auth/oidc/login?return_to=${encodeURIComponent(returnTo)}`;
+
+    (async () => {
+      try {
+        const status = await createClient().oidcStatus();
+        if (cancel) return;
+        if (status.enabled) {
+          setLink({ href: localHref, label: ssoLabel(status.provider), hosted: false });
+          return;
+        }
+      } catch {
+        if (cancel) return;
+        if (base.startsWith(HOSTED_ORIGIN)) {
+          setLink({ href: localHref, label: "Continue with Google", hosted: false });
+          return;
+        }
+      }
+
+      if (base.startsWith(HOSTED_ORIGIN)) {
+        if (!cancel) setLink(null);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${HOSTED_ORIGIN}/v1/auth/oidc/status`);
+        const status = (await res.json()) as { enabled?: boolean; provider?: string };
+        if (cancel) return;
+        if (res.ok && status.enabled) {
+          setLink({
+            href: `${HOSTED_ORIGIN}/v1/auth/oidc/login?return_to=${encodeURIComponent(returnTo)}`,
+            label: ssoLabel(status.provider),
+            hosted: true,
+          });
+          return;
+        }
+      } catch {
+        /* the connected API has no SSO, and the hosted status call failed */
+      }
+      if (!cancel) setLink(null);
+    })();
+
+    return () => {
+      cancel = true;
+    };
+  }, [returnTo]);
+
+  return link;
+}
+
+function GoogleSignIn({ returnTo }: { returnTo: string }) {
+  const link = useAccountSso(returnTo);
+  if (!link) return null;
+  return (
+    <div className="space-y-3">
+      <a className={buttonClassName("secondary", "w-full no-underline")} href={link.href}>
+        <BtnText>{link.label}</BtnText>
+      </a>
+      {link.hosted && (
+        <p className="text-center text-xs text-[var(--otv-text-muted)]">
+          Signs in on otv.poptrust.me.
+        </p>
+      )}
+      <p className="text-center text-xs font-semibold tracking-[0.16em] text-[var(--otv-text-muted)]">OR</p>
+    </div>
+  );
+}
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -16,16 +97,6 @@ export function LoginPage() {
     new URLSearchParams(location.search).get("sso") === "error" ? "SSO sign-in failed." : null
   );
   const [loading, setLoading] = useState(false);
-  const [sso, setSso] = useState<{ enabled: boolean; provider?: "google" | "oidc" }>({
-    enabled: false,
-  });
-
-  useEffect(() => {
-    publicClient
-      .oidcStatus()
-      .then((s) => setSso({ enabled: s.enabled, provider: s.provider }))
-      .catch(() => undefined);
-  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +137,7 @@ export function LoginPage() {
               {error}
             </Alert>
           )}
+          <GoogleSignIn returnTo={from} />
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Email</span>
@@ -85,14 +157,6 @@ export function LoginPage() {
               {loading ? "Signing in…" : "Log in"}
             </Button>
           </form>
-          {sso.enabled && (
-            <a
-              className="block text-center text-sm font-semibold text-[var(--otv-brand)]"
-              href={`${apiBase()}/v1/auth/oidc/login?return_to=${encodeURIComponent(from)}`}
-            >
-              {sso.provider === "google" ? "Continue with Google" : "Continue with SSO"}
-            </a>
-          )}
           <p className="text-sm text-[var(--otv-text-secondary)]">
             No account?{" "}
             <Link className="text-[var(--otv-brand)]" to="/register">
@@ -143,6 +207,7 @@ export function RegisterPage() {
               {error}
             </Alert>
           )}
+          <GoogleSignIn returnTo="/dashboard" />
           <form className="space-y-4" onSubmit={onSubmit}>
             <label className="block text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--otv-text-muted)]">Name</span>

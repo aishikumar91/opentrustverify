@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Otv" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/ink</item>
+        <item name="android:statusBarColor">@color/paper</item>
+        <item name="android:navigationBarColor">@color/paper</item>
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+
+    <style name="OtvKicker">
+        <item name="android:textSize">9sp</item>
+        <item name="android:textColor">@color/accent_text</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="OtvTitle">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="OtvBody">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+
+    <style name="OtvMuted">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/muted</item>
+    </style>
+</resources>

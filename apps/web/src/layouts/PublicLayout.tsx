@@ -1,7 +1,28 @@
-import { Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import AOS from "aos";
+import "aos/dist/aos.css";
 import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 
+function useAos() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    AOS.init({
+      duration: 650,
+      once: true,
+      offset: 32,
+      easing: "ease-out-cubic",
+      disable: reduce,
+    });
+  }, []);
+  useEffect(() => {
+    AOS.refresh();
+  }, [pathname]);
+}
+
 export function PublicLayout() {
+  useAos();
   return (
     <div className="otv-shell flex min-h-screen flex-col">
       <SiteHeader />
@@ -14,6 +35,7 @@ export function PublicLayout() {
 }
 
 export function AuthLayout() {
+  useAos();
   return (
     <div className="otv-shell flex min-h-screen flex-col">
       <SiteHeader />

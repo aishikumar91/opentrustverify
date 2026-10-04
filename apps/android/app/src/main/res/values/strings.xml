@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenTrust Verify</string>
+    <string name="auth_kicker">Account</string>
+    <string name="auth_title">Log in</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_submit">Log in</string>
+    <string name="auth_working">Signing in</string>
+    <string name="auth_failed">Could not sign in.</string>
+    <string name="dash_kicker">Workspace</string>
+    <string name="dash_title">Dashboard</string>
+    <string name="dash_empty">No verdicts stored for this project yet.</string>
+    <string name="dash_sign_out">Sign out</string>
+</resources>
