@@ -112,6 +112,7 @@ const user = {
     id: { type: "string" },
     email: { type: "string" },
     name: { type: "string" },
+    role: { type: "string", enum: ["owner", "admin", "member"] },
   },
 } as const;
 
@@ -134,7 +135,7 @@ export const openapiInfo = {
     { name: "auth", description: "Register, login, session, OIDC/SSO" },
     { name: "verify", description: "Submit an incoming-transfer claim" },
     { name: "verdicts", description: "Lookup and signature check" },
-    { name: "admin", description: "Orgs, projects, keys, usage, billing, audit" },
+    { name: "admin", description: "Orgs, projects, keys, usage, billing, audit, and owner/admin settings" },
     { name: "webhooks", description: "HMAC webhook endpoints" },
   ],
   components: {
@@ -544,5 +545,126 @@ export const routes: Record<string, FastifySchema> = {
     tags: ["catalog"],
     summary: "Demo claim values for local/try-it-out",
     response: ok({ type: "object", additionalProperties: true }),
+  },
+  walletBalance: {
+    tags: ["catalog"],
+    summary: "Read a canonical balance through the chain adapter",
+    security: secured,
+    headers: authHeaders,
+    querystring: {
+      type: "object",
+      additionalProperties: false,
+      required: ["chain", "network", "address"],
+      properties: {
+        chain: { type: "string" },
+        network: { type: "string" },
+        address: { type: "string" },
+        asset: { type: "string", description: "native, or a verified token contract address" },
+      },
+    },
+    response: ok({ type: "object", additionalProperties: true }),
+  },
+  walletAudit: {
+    tags: ["admin"],
+    summary: "Record a wallet security event without key material",
+    security: secured,
+    headers: authHeaders,
+    body: {
+      type: "object",
+      additionalProperties: false,
+      required: ["action"],
+      properties: {
+        action: {
+          type: "string",
+          enum: ["wallet_created", "wallet_imported", "address_watched", "broadcast_submitted", "balance_read_failed"],
+        },
+      },
+    },
+    response: ok({ type: "object", additionalProperties: true }),
+  },
+  demoRun: {
+    tags: ["catalog"],
+    summary: "Run a simulated verification scenario. Does not touch a chain or a wallet.",
+    body: {
+      type: "object",
+      additionalProperties: false,
+      required: ["scenario"],
+      properties: {
+        scenario: {
+          type: "string",
+          enum: ["phantom_event", "balance_mismatch", "valid_payment", "pending_payment"],
+        },
+      },
+    },
+    response: ok({ type: "object", additionalProperties: true }),
+  },
+  adminSettingsGet: {
+    tags: ["admin"],
+    summary: "Public URL for this API process. Owner or admin. The browser API key is not stored here.",
+    security: [{ Session: [] }, { ApiKey: [] }],
+    headers: authHeaders,
+    response: {
+      ...ok({
+        type: "object",
+        additionalProperties: true,
+        properties: {
+          publicUrl: { type: "string", format: "uri" },
+          role: { type: "string", enum: ["owner", "admin", "member"] },
+        },
+      }),
+      403: { type: "object", additionalProperties: true, properties: { error: { type: "string" } } },
+    },
+  },
+  adminSettingsPut: {
+    tags: ["admin"],
+    summary: "Set the public URL. Does not accept an API key. Owner or admin.",
+    security: [{ Session: [] }, { ApiKey: [] }],
+    headers: authHeaders,
+    body: {
+      type: "object",
+      additionalProperties: false,
+      required: ["publicUrl"],
+      properties: {
+        publicUrl: { type: "string", format: "uri", examples: ["https://otv.poptrust.me"] },
+      },
+    },
+    response: {
+      ...ok({
+        type: "object",
+        additionalProperties: true,
+        properties: {
+          publicUrl: { type: "string" },
+          role: { type: "string", enum: ["owner", "admin"] },
+        },
+      }),
+      403: { type: "object", additionalProperties: true, properties: { error: { type: "string" } } },
+    },
+  },
+  adminMemberPut: {
+    tags: ["admin"],
+    summary: "Change a member role. Session owner only. Cannot demote the last owner.",
+    security: [{ Session: [] }],
+    headers: authHeaders,
+    body: {
+      type: "object",
+      additionalProperties: false,
+      required: ["email", "role"],
+      properties: {
+        email: { type: "string", format: "email" },
+        role: { type: "string", enum: ["owner", "admin", "member"] },
+      },
+    },
+    response: {
+      ...ok({
+        type: "object",
+        additionalProperties: true,
+        properties: {
+          email: { type: "string" },
+          role: { type: "string", enum: ["owner", "admin", "member"] },
+        },
+      }),
+      403: { type: "object", additionalProperties: true, properties: { error: { type: "string" } } },
+      409: { type: "object", additionalProperties: true, properties: { error: { type: "string" } } },
+    },
   },
 };

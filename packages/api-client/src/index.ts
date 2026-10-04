@@ -7,10 +7,13 @@ export interface OtvClientOptions {
   fetch?: typeof fetch;
 }
 
+export type WorkspaceRole = "owner" | "admin" | "member";
+
 export interface OtvUser {
   id: string;
   email: string;
   name?: string;
+  role?: WorkspaceRole;
 }
 
 export interface AuthResponse {
@@ -271,11 +274,84 @@ export class OtvApiClient {
     return this.parse(res, "getBilling");
   }
 
+  async walletBalance(query: {
+    chain: string;
+    network: string;
+    address: string;
+    asset?: string;
+  }): Promise<{
+    mode: "live";
+    network: string;
+    chain: string;
+    address: string;
+    asset: string | null;
+    tokenContract: string | null;
+    decimals: number | null;
+    balanceBaseUnits: string | null;
+    blockNumber: number | null;
+    blockTag: "latest";
+    state: string;
+    verification: "verified" | "unavailable" | "requires_reconciliation";
+    observedAt: string;
+    source: string;
+    sources: number;
+  }> {
+    const params = new URLSearchParams({
+      chain: query.chain,
+      network: query.network,
+      address: query.address,
+    });
+    if (query.asset) params.set("asset", query.asset);
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/wallet/balance?${params.toString()}`, {
+      headers: this.headers(),
+      credentials: "include",
+    });
+    return this.parse(res, "walletBalance");
+  }
+
+  async walletAudit(action: "wallet_created" | "wallet_imported" | "address_watched" | "broadcast_submitted" | "balance_read_failed"): Promise<{ ok: boolean }> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/wallet/audit`, {
+      method: "POST",
+      headers: this.headers(),
+      credentials: "include",
+      body: JSON.stringify({ action }),
+    });
+    return this.parse(res, "walletAudit");
+  }
+
   async getUsage(): Promise<{ verifications: number; webhooks: number }> {
     const res = await this.fetchImpl(`${this.baseUrl}/v1/usage`, {
       headers: this.headers(),
       credentials: "include",
     });
     return this.parse(res, "getUsage");
+  }
+
+  async adminSettings(): Promise<{ publicUrl: string; role: WorkspaceRole }> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/admin/settings`, {
+      headers: this.headers(),
+      credentials: "include",
+    });
+    return this.parse(res, "adminSettings");
+  }
+
+  async saveAdminSettings(publicUrl: string): Promise<{ publicUrl: string; role: WorkspaceRole }> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/admin/settings`, {
+      method: "PUT",
+      headers: this.headers(),
+      credentials: "include",
+      body: JSON.stringify({ publicUrl }),
+    });
+    return this.parse(res, "saveAdminSettings");
+  }
+
+  async setMemberRole(email: string, role: WorkspaceRole): Promise<{ email: string; role: WorkspaceRole }> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/admin/members`, {
+      method: "PUT",
+      headers: this.headers(),
+      credentials: "include",
+      body: JSON.stringify({ email, role }),
+    });
+    return this.parse(res, "setMemberRole");
   }
 }

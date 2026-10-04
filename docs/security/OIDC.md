@@ -15,7 +15,7 @@ curl -c - -s http://localhost:4080/v1/auth/login \
 - Cookie: `HttpOnly`, `SameSite=Lax`, `Secure` in production
 - `SESSION_SECRET` required in production (at least 32 characters)
 
-`GET /v1/auth/me`, `POST /v1/auth/logout`. Org, project, key, audit, and billing routes accept session or API key.
+`GET /v1/auth/me` includes `user.role`. `POST /v1/auth/logout` ends the session. Org, project, key, audit, and billing routes accept session or API key. Admin settings accept owner, admin, or an API key with the `admin` scope. Role changes accept an owner session only.
 
 ## SSO (authorization code + PKCE)
 

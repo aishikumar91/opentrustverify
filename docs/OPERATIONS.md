@@ -37,7 +37,7 @@ pnpm docker:up   # Postgres :5433, Redis :6380, API :4080, worker
 pnpm --filter @otv/api run dev
 ```
 
-Demo login: `demo@poptrust.me` / `otv-demo-change-me`. Demo API key: `otv_test_demo_key_change_me`.
+Demo login: `demo@poptrust.me` / `otv-demo-change-me`. That user is an owner. Demo API key: `otv_test_demo_key_change_me` (scope includes `admin`). Owner and admin can set the process public URL at `PUT /v1/admin/settings`. The dashboard API key stays in the browser.
 
 ## Incidents
 

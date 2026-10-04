@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { OtvApiClient, type OtvUser } from "@otv/api-client";
-import { API_BASE, SESSION_STORAGE_KEY, createClient } from "./api";
+import { apiBase, SESSION_STORAGE_KEY, createClient } from "./api";
 
 type AuthState = {
   ready: boolean;
@@ -24,10 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [projectId, setProjectId] = useState<string>();
   const [orgId, setOrgId] = useState<string>();
+  const [connectionTick, setConnectionTick] = useState(0);
+
+  useEffect(() => {
+    const onChange = () => setConnectionTick((n) => n + 1);
+    window.addEventListener("otv-connection", onChange);
+    return () => window.removeEventListener("otv-connection", onChange);
+  }, []);
 
   const client = useMemo(
     () => createClient(sessionToken),
-    [sessionToken]
+    [sessionToken, connectionTick]
   );
 
   useEffect(() => {
@@ -64,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(SESSION_STORAGE_KEY, token);
     setSessionToken(token);
     setUser(nextUser);
-    const me = await new OtvApiClient({ baseUrl: API_BASE, sessionToken: token }).me();
+    const me = await new OtvApiClient({ baseUrl: apiBase(), sessionToken: token }).me();
     setProjectId(me.projectId);
     setOrgId(me.orgId);
   }
@@ -77,11 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     orgId,
     client,
     login: async (email, password) => {
-      const res = await new OtvApiClient({ baseUrl: API_BASE }).login(email, password);
+      const res = await new OtvApiClient({ baseUrl: apiBase() }).login(email, password);
       await applySession(res.sessionToken, res.user);
     },
     register: async (email, password, name) => {
-      const res = await new OtvApiClient({ baseUrl: API_BASE }).register(email, password, name);
+      const res = await new OtvApiClient({ baseUrl: apiBase() }).register(email, password, name);
       await applySession(res.sessionToken, res.user);
     },
     logout: async () => {

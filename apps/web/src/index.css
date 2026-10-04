@@ -2,9 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-a.text-\[var\(--otv-brand\)\] {
+a.text-\[var\(--otv-brand\)\],
+p.text-\[var\(--otv-brand\)\] {
   color: var(--otv-brand-text);
 }
 a.text-\[var\(--otv-brand\)\]:hover {
+  color: var(--otv-brand-text);
+  text-decoration: underline;
+}
+.otv-frame a.text-\[var\(--otv-brand\)\],
+.otv-frame a.text-\[var\(--otv-brand\)\]:hover,
+.otv-frame p.text-\[var\(--otv-brand\)\],
+.otv-section-dark a.text-\[var\(--otv-brand\)\],
+.otv-section-dark p.text-\[var\(--otv-brand\)\] {
   color: var(--otv-brand);
+  text-decoration: none;
 }

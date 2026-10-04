@@ -32,6 +32,7 @@ import {
   AdminUsers,
 } from "./pages/Admin";
 import { WalletPage } from "./pages/Wallet";
+import { LabPage } from "./pages/Lab";
 import { DocsPage } from "./pages/Docs";
 import { LoginPage, RegisterPage } from "./pages/Auth";
 import { RouteSeo } from "./components/RouteSeo";
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/verifier" element={<VerifierPage />} />
+            <Route path="/lab" element={<LabPage />} />
           </Route>
 
           <Route element={<DocsLayout />}>
@@ -106,7 +108,7 @@ export default function App() {
           <Route path="/faq" element={<Navigate to="/whitepaper" replace />} />
           <Route path="/web3" element={<Navigate to="/" replace />} />
           <Route path="/crypto" element={<Navigate to="/" replace />} />
-          <Route path="/demo" element={<Navigate to="/wallet" replace />} />
+          <Route path="/demo" element={<Navigate to="/lab" replace />} />
           <Route path="/demo-wallet" element={<Navigate to="/wallet" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

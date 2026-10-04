@@ -68,11 +68,11 @@ export function saveTickets(scope: string, tickets: Ticket[]) {
   save(scopeKey(scope, "tickets"), tickets);
 }
 
-export function loadSeats(scope: string, ownerEmail: string): Seat[] {
+export function loadSeats(scope: string, ownerEmail: string, role: SeatRole = "owner"): Seat[] {
   const existing = load<Seat[]>(scopeKey(scope, "seats"), []);
   if (existing.length) return existing;
   if (!ownerEmail) return [];
-  const seed: Seat[] = [{ email: ownerEmail, role: "owner", addedAt: new Date().toISOString() }];
+  const seed: Seat[] = [{ email: ownerEmail, role, addedAt: new Date().toISOString() }];
   save(scopeKey(scope, "seats"), seed);
   return seed;
 }

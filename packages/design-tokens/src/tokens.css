@@ -1,14 +1,14 @@
 :root {
-  /* Fluorescent green stays the brand. The dark frame is a treatment, not a new identity. */
-  --otv-ink: #000000;
-  --otv-brand: #7cff3a;
-  --otv-brand-hover: #68e028;
-  --otv-brand-muted: rgba(124, 255, 58, 0.16);
-  --otv-brand-text: #146614;
-  --otv-accent: #7cff3a;
-  --otv-accent-warm: #7cff3a;
+  /* Milk yellow is the accent in both themes. Text uses the darker gold on light paper. */
+  --otv-ink: #1a1408;
+  --otv-brand: #f3e4a8;
+  --otv-brand-hover: #e7d48a;
+  --otv-brand-muted: rgba(214, 184, 92, 0.24);
+  --otv-brand-text: #6e5310;
+  --otv-accent: #f3e4a8;
+  --otv-accent-warm: #f6e7b4;
   --otv-logo-accent: #14110e;
-  --otv-on-brand: #000000;
+  --otv-on-brand: #1a1408;
   --otv-inverse: #f0ebc6;
   --otv-on-inverse: #100807;
   --otv-inverse-muted: rgba(240, 235, 198, 0.28);
@@ -32,7 +32,7 @@
   --otv-hero-bg: transparent;
   --otv-hero-title: #14110e;
   --otv-hero-copy: #3f3a34;
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.08);
+  --otv-hero-spot-a: rgba(246, 231, 180, 0.45);
   --otv-hero-spot-b: rgba(20, 17, 14, 0.03);
   --otv-btn-shadow: transparent;
   --otv-btn-outline: #14110e;
@@ -43,12 +43,12 @@
   --otv-ivory-dim: #b8b3a3;
   --otv-frame-line: rgba(240, 235, 198, 0.14);
 
-  --otv-success: #7cff3a;
+  --otv-success: #8a6b16;
   --otv-warning: #fd7e14;
   --otv-danger: #dc3545;
   --otv-info: #0d6efd;
-  --otv-pending: #3d7a2a;
-  --otv-verified: #3d7a2a;
+  --otv-pending: #8a6b16;
+  --otv-verified: #6e5310;
   --otv-unverified: #6b6b6b;
   --otv-suspicious: #fd7e14;
 
@@ -95,11 +95,11 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --otv-brand: #7cff3a;
-  --otv-brand-hover: #68e028;
-  --otv-brand-muted: rgba(124, 255, 58, 0.14);
-  --otv-brand-text: #7cff3a;
-  --otv-on-brand: #000000;
+  --otv-brand: #f6e7b4;
+  --otv-brand-hover: #fff3cc;
+  --otv-brand-muted: rgba(246, 231, 180, 0.16);
+  --otv-brand-text: #f6e7b4;
+  --otv-on-brand: #1a1408;
   --otv-logo-accent: #f0ebc6;
   --otv-inverse: #f0ebc6;
   --otv-on-inverse: #100807;
@@ -111,7 +111,7 @@
   --otv-surface-muted: #1a1412;
   --otv-surface-tint: #0c0908;
   --otv-border: #2a2420;
-  --otv-border-strong: #7cff3a;
+  --otv-border-strong: #3a3428;
 
   --otv-text-primary: #f0ebc6;
   --otv-text-secondary: #b8b3a3;
@@ -124,7 +124,7 @@
   --otv-hero-bg: transparent;
   --otv-hero-title: #f0ebc6;
   --otv-hero-copy: #b8b3a3;
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.08);
+  --otv-hero-spot-a: rgba(246, 231, 180, 0.1);
   --otv-hero-spot-b: rgba(42, 8, 8, 0.35);
   --otv-btn-shadow: transparent;
   --otv-btn-outline: rgba(240, 235, 198, 0.28);
@@ -133,8 +133,9 @@
   --otv-shadow-lift: 0 16px 32px rgba(0, 0, 0, 0.34);
 
   --otv-info: #6ea8fe;
-  --otv-success: #7cff3a;
-  --otv-verified: #7cff3a;
+  --otv-success: #f6e7b4;
+  --otv-pending: #f6e7b4;
+  --otv-verified: #f6e7b4;
   --otv-unverified: #8f897e;
 }
 

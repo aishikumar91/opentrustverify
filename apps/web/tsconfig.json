@@ -13,7 +13,10 @@
     "jsx": "react-jsx",
     "strict": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": {
+      "@/*": ["src/*"],
+      "@otv/wallet-core": ["../../packages/wallet-core/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

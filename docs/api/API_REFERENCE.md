@@ -70,12 +70,31 @@ Operational endpoints (API key or session).
 ### POST /v1/organizations · /v1/projects · /v1/api-keys · /v1/api-keys/rotate
 Session or API key.
 
+### GET /v1/auth/me
+Returns `user.role`: `owner`, `admin`, or `member`. The org creator and the demo user are owners. A new account is an owner of the organization it creates.
+
+### GET /v1/wallet/balance
+Authenticated. Query `chain`, `network`, `address`, and `asset` (`native` or a token contract). Balance comes from `ChainAdapter`. If the read fails, `verification` is `unavailable` and `balanceBaseUnits` is null.
+
+### POST /v1/wallet/audit
+Authenticated. Body `{ action }` is one of `wallet_created`, `wallet_imported`, `address_watched`, `broadcast_submitted`, `balance_read_failed`. The route stores the action and actor only.
+
+### POST /v1/demo/verification/run
+Public. Body `{ scenario }` is `phantom_event`, `balance_mismatch`, `valid_payment`, or `pending_payment`. The result is a simulation. It does not broadcast a transaction.
+
+### GET /v1/admin/settings · PUT /v1/admin/settings
+Owner or admin, or an API key whose scopes include `admin`. GET returns `{ publicUrl, role }`. PUT body is `{ publicUrl }` and rejects any other field, including an API key. The URL is the process value, starting from `OTV_PUBLIC_URL`, and resets when the API restarts. The dashboard stores a browser override and an optional API key in local storage. That key is never posted to this route.
+
+### PUT /v1/admin/members
+Owner session. Body `{ email, role }` with role `owner`, `admin`, or `member`. Returns 403 for admin and member sessions, 404 when the email is outside the organization, and 409 when the change would remove the last owner.
+
 ## Errors
 
 | Code | Meaning |
 |------|---------|
 | 400 | Validation / unsafe webhook URL |
 | 401 | Missing/invalid credentials |
+| 403 | Role cannot use the route |
 | 404 | Verdict not found |
 | 429 | Rate limited |
 | 501 | OIDC not configured |

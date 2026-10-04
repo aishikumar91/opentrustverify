@@ -28,7 +28,13 @@
 | GET | `/v1/metrics` | none | Prometheus |
 | POST | `/v1/auth/login` | none | Session cookie |
 | POST | `/v1/auth/logout` | session | Clear cookie |
-| GET | `/v1/auth/me` | session | Current user |
+| GET | `/v1/auth/me` | session | Current user, including `role` (`owner`, `admin`, `member`) |
+| GET | `/v1/wallet/balance` | session or API key | Chain balance via `ChainAdapter`. Unavailable is not zero |
+| POST | `/v1/wallet/audit` | session or API key | Wallet event with no key material |
+| POST | `/v1/demo/verification/run` | none | Simulated lab scenario. No chain, no wallet |
+| GET | `/v1/admin/settings` | owner or admin | Process public URL. No API key field |
+| PUT | `/v1/admin/settings` | owner or admin | Body `{ publicUrl }` only |
+| PUT | `/v1/admin/members` | owner session | Body `{ email, role }`. Cannot demote the last owner |
 | POST | `/v1/organizations` | session or API key | Create org |
 | POST | `/v1/projects` | session or API key | Create project |
 | POST | `/v1/api-keys` | session or API key | Create API key |
@@ -61,6 +67,7 @@ Returns `otv.verdict.v1` (see VERDICT_SPEC). Persisted in Postgres when `DATABAS
 |------|---------|
 | 400 | Validation error |
 | 401 | Missing/invalid API key |
+| 403 | Signed in, but the role cannot use this route |
 | 404 | Transaction not found (may also return REJECTED verdict) |
 | 429 | Rate limited |
 | 500 | Internal |

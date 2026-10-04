@@ -25,7 +25,7 @@ Local ports: Postgres `5433`, Redis `6380`.
 
 ## Tenancy
 
-Every durable verification row is keyed by `project_id` → `organization_id`. API keys hash-lookup to a project. Dashboard sessions bind to `users` + `memberships`.
+Every durable verification row is keyed by `project_id` → `organization_id`. API keys hash-lookup to a project. Dashboard sessions bind to `users` + `memberships`. Membership `role_id` is `role_owner`, `role_admin`, or `role_member`. Signup inserts `role_owner`. The public URL from `PUT /v1/admin/settings` is process memory seeded by `OTV_PUBLIC_URL`, not a Postgres row.
 
 ## Demo seed
 

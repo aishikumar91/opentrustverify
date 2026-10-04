@@ -16,6 +16,8 @@ import {
   type SessionRecord,
   type UsageMeters,
   type UserRecord,
+  type WorkspaceRole,
+  asRole,
   type WebhookDelivery,
   type WebhookRecord,
 } from "./store.js";
@@ -306,7 +308,8 @@ export class PostgresStore implements OtvStore {
     if (!row?.password_hash) return null;
     const ok = await verifyPassword(password, row.password_hash);
     if (!ok) return null;
-    return { id: row.id, email: row.email, name: row.name ?? undefined };
+    const found = await this.findUserByEmail(row.email);
+    return found ?? { id: row.id, email: row.email, name: row.name ?? undefined, role: "member" };
   }
 
   async createSession(userId: string, ttlMs = 12 * 60 * 60 * 1000): Promise<SessionRecord> {
@@ -326,9 +329,13 @@ export class PostgresStore implements OtvStore {
 
   async getSession(token: string): Promise<(SessionRecord & { user: UserRecord }) | null> {
     const { rows } = await this.pool.query(
-      `SELECT s.id, s.user_id, s.expires_at, u.email, u.name
-       FROM sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.token_hash = $1`,
+      `SELECT s.id, s.user_id, s.expires_at, u.email, u.name, r.name AS role
+       FROM sessions s
+       JOIN users u ON u.id = s.user_id
+       LEFT JOIN memberships m ON m.user_id = u.id
+       LEFT JOIN roles r ON r.id = m.role_id
+       WHERE s.token_hash = $1
+       LIMIT 1`,
       [hashSha256(token)]
     );
     const row = rows[0];
@@ -342,7 +349,7 @@ export class PostgresStore implements OtvStore {
       userId: row.user_id,
       token,
       expiresAt: iso(row.expires_at),
-      user: { id: row.user_id, email: row.email, name: row.name ?? undefined },
+      user: { id: row.user_id, email: row.email, name: row.name ?? undefined, role: asRole(row.role) },
     };
   }
 
@@ -504,7 +511,7 @@ export class PostgresStore implements OtvStore {
         [hexId("mem"), orgId, userId]
       );
       await client.query("COMMIT");
-      return { id: userId, email: normalized, name: display };
+      return { id: userId, email: normalized, name: display, role: "owner" };
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;
@@ -515,11 +522,16 @@ export class PostgresStore implements OtvStore {
 
   async findUserByEmail(email: string): Promise<UserRecord | null> {
     const { rows } = await this.pool.query(
-      "SELECT id, email, name FROM users WHERE lower(email) = lower($1)",
+      `SELECT u.id, u.email, u.name, r.name AS role
+       FROM users u
+       LEFT JOIN memberships m ON m.user_id = u.id
+       LEFT JOIN roles r ON r.id = m.role_id
+       WHERE lower(u.email) = lower($1)
+       LIMIT 1`,
       [email]
     );
     const row = rows[0];
-    return row ? { id: row.id, email: row.email, name: row.name ?? undefined } : null;
+    return row ? { id: row.id, email: row.email, name: row.name ?? undefined, role: asRole(row.role) } : null;
   }
 
   async findOrCreateOidcUser(email: string, name?: string): Promise<UserRecord> {
@@ -557,7 +569,7 @@ export class PostgresStore implements OtvStore {
         [hexId("mem"), orgId, userId]
       );
       await client.query("COMMIT");
-      return { id: userId, email: normalized, name: display };
+      return { id: userId, email: normalized, name: display, role: "owner" };
     } catch (err) {
       await client.query("ROLLBACK");
       const code = (err as { code?: string }).code;
@@ -597,5 +609,53 @@ export class PostgresStore implements OtvStore {
       [projectId]
     );
     return rows[0]?.organization_id ?? null;
+  }
+
+  async setMemberRole(actorId: string, email: string, role: WorkspaceRole): Promise<void> {
+    const actor = await this.findUserByEmail(
+      (
+        await this.pool.query("SELECT email FROM users WHERE id = $1", [actorId])
+      ).rows[0]?.email ?? ""
+    );
+    if (!actor || actor.role !== "owner") {
+      const err = new Error("forbidden") as Error & { statusCode: number };
+      err.statusCode = 403;
+      throw err;
+    }
+    const orgId = await this.defaultOrgId(actorId);
+    const target = await this.findUserByEmail(email);
+    const targetOrg = target ? await this.defaultOrgId(target.id) : null;
+    if (!orgId || !target || targetOrg !== orgId) {
+      const err = new Error("user_not_found") as Error & { statusCode: number };
+      err.statusCode = 404;
+      throw err;
+    }
+    if (target.role === "owner" && role !== "owner") {
+      const { rows } = await this.pool.query(
+        `SELECT count(*)::int AS owners FROM memberships WHERE organization_id = $1 AND role_id = 'role_owner'`,
+        [orgId]
+      );
+      if ((rows[0]?.owners ?? 0) < 2) {
+        const err = new Error("last_owner") as Error & { statusCode: number };
+        err.statusCode = 409;
+        throw err;
+      }
+    }
+    await this.pool.query(
+      `INSERT INTO roles (id, name) VALUES
+        ('role_owner', 'owner'),
+        ('role_admin', 'admin'),
+        ('role_member', 'member')
+       ON CONFLICT (id) DO NOTHING`
+    );
+    const updated = await this.pool.query(
+      `UPDATE memberships SET role_id = $1 WHERE organization_id = $2 AND user_id = $3`,
+      [`role_${role}`, orgId, target.id]
+    );
+    if (updated.rowCount === 0) {
+      const err = new Error("user_not_found") as Error & { statusCode: number };
+      err.statusCode = 404;
+      throw err;
+    }
   }
 }

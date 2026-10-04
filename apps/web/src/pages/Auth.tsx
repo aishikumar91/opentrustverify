@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Alert, Button, Card, Input } from "@otv/ui";
 import { OtvApiError } from "@otv/api-client";
-import { API_BASE, publicClient } from "@/lib/api";
+import { apiBase, publicClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export function LoginPage() {
@@ -88,7 +88,7 @@ export function LoginPage() {
           {sso.enabled && (
             <a
               className="block text-center text-sm font-semibold text-[var(--otv-brand)]"
-              href={`${API_BASE}/v1/auth/oidc/login?return_to=${encodeURIComponent(from)}`}
+              href={`${apiBase()}/v1/auth/oidc/login?return_to=${encodeURIComponent(from)}`}
             >
               {sso.provider === "google" ? "Continue with Google" : "Continue with SSO"}
             </a>

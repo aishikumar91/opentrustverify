@@ -63,7 +63,7 @@ a { color: inherit; text-decoration: none; }
 .otv-logo-invert { color: var(--otv-logo-accent); }
 .otv-logo-word {
   font-family: var(--otv-font-logo);
-  font-size: clamp(1.05rem, 2.4vw, 1.28rem);
+  font-size: clamp(0.82rem, 1.6vw, 0.98rem);
   font-weight: 400;
   letter-spacing: 0.02em;
   line-height: 0.9;
@@ -71,13 +71,13 @@ a { color: inherit; text-decoration: none; }
   white-space: nowrap;
 }
 .otv-logo-compact .otv-logo-word {
-  font-size: 1.05rem;
+  font-size: 0.82rem;
 }
 .otv-header .otv-logo-word {
-  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  font-size: clamp(0.78rem, 1.4vw, 0.92rem);
 }
 .otv-footer .otv-logo-word {
-  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  font-size: clamp(0.82rem, 1.5vw, 0.95rem);
   color: var(--otv-ivory);
 }
 
@@ -216,7 +216,7 @@ a { color: inherit; text-decoration: none; }
 }
 .otv-card-feature {
   background:
-    radial-gradient(ellipse 80% 80% at 100% 0%, rgba(124, 255, 58, 0.08), transparent 55%),
+    radial-gradient(ellipse 80% 80% at 100% 0%, rgba(246, 231, 180, 0.08), transparent 55%),
     var(--otv-surface);
 }
 
@@ -292,8 +292,8 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  height: 56px;
-  padding: 0 20px;
+  height: 44px;
+  padding: 0 12px;
   background: color-mix(in srgb, var(--otv-surface) 88%, transparent);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--otv-border);
@@ -405,7 +405,7 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--otv-frame-line);
   color: var(--otv-ivory);
   background:
-    radial-gradient(ellipse 48% 62% at 76% 46%, rgba(124, 255, 58, 0.1), transparent 58%),
+    radial-gradient(ellipse 48% 62% at 76% 46%, rgba(246, 231, 180, 0.1), transparent 58%),
     radial-gradient(ellipse 36% 42% at 12% 100%, rgba(72, 18, 18, 0.45), transparent 62%),
     linear-gradient(165deg, #1c100f 0%, #120908 46%, #0c0707 100%);
   box-shadow:
@@ -505,7 +505,7 @@ a { color: inherit; text-decoration: none; }
   height: 7px;
   border-radius: 50%;
   background: var(--otv-brand);
-  box-shadow: 0 0 0 4px rgba(124, 255, 58, 0.16);
+  box-shadow: 0 0 0 4px rgba(246, 231, 180, 0.16);
 }
 .otv-dot-a { top: 18%; right: 38%; }
 .otv-dot-b { top: 52%; left: 28%; }
@@ -594,7 +594,7 @@ a { color: inherit; text-decoration: none; }
 .otv-section-tint { background: color-mix(in srgb, var(--otv-surface-tint) 80%, transparent); }
 .otv-section-dark {
   background:
-    radial-gradient(ellipse 40% 80% at 90% 50%, rgba(124, 255, 58, 0.08), transparent 55%),
+    radial-gradient(ellipse 40% 80% at 90% 50%, rgba(246, 231, 180, 0.08), transparent 55%),
     #0c0707;
   color: var(--otv-ivory);
 }
@@ -616,7 +616,18 @@ a { color: inherit; text-decoration: none; }
   padding-top: 8px;
   border-top: 1px solid var(--otv-border);
 }
-.otv-metric { padding: 16px 18px; box-shadow: none; }
+.otv-metric { padding: 10px 12px; box-shadow: none; }
+.otv-frame-compact {
+  min-height: 0;
+  padding: 16px;
+  border-radius: 16px;
+}
+.otv-dash-main h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
 .otv-page-hero { padding: 28px 0 8px; }
 .otv-footer {
   color: var(--otv-footer-muted);
@@ -647,7 +658,7 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 10px 0;
+  padding: 6px 0;
   background: var(--otv-header-bg);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid transparent;

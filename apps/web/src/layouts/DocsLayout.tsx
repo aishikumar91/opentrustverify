@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import { API_BASE } from "@/lib/api";
+import { apiBase } from "@/lib/api";
 import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 
 const NAV = [
@@ -37,7 +37,7 @@ export function DocsLayout() {
             ))}
           </nav>
           <div className="mt-8 space-y-2 text-sm">
-            <a className="block text-[var(--otv-brand)]" href={`${API_BASE}/api/docs`}>
+            <a className="block text-[var(--otv-brand)]" href={`${apiBase()}/api/docs`}>
               Interactive API
             </a>
             <Link to="/whitepaper" className="block text-[var(--otv-brand)]">

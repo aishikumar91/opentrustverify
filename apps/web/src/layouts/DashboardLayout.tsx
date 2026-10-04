@@ -11,20 +11,22 @@ const NAV = [
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/security", label: "Audit" },
   { href: "/dashboard/settings", label: "Settings" },
-  { href: "/dashboard/admin", label: "Admin" },
+  { href: "/dashboard/admin", label: "Admin", admin: true },
 ];
 
 export function DashboardLayout() {
   const loc = useLocation();
   const { user, logout } = useAuth();
+  const canAdmin = user?.role === "owner" || user?.role === "admin";
+  const items = NAV.filter((item) => !item.admin || canAdmin);
   const active = loc.pathname.startsWith("/dashboard/admin") ? "/dashboard/admin" : loc.pathname;
   return (
     <div className="flex min-h-screen bg-[var(--otv-surface-tint)]">
       <Sidebar
-        items={NAV}
+        items={items}
         active={active}
         renderLogo={(logo) => (
-          <Link to="/" className="mb-8 block" aria-label="OpenTrust Verify by POP Trust">
+          <Link to="/" className="mb-4 block" aria-label="OpenTrust Verify by POP Trust">
             {logo}
           </Link>
         )}
@@ -42,7 +44,7 @@ export function DashboardLayout() {
             </Link>
           </div>
           <div className="truncate text-sm text-[var(--otv-text-secondary)]">{user?.email}</div>
-          <div className="flex h-11 shrink-0 items-center gap-1">
+          <div className="flex h-8 shrink-0 items-center gap-1">
             <ThemeSwitcher compact />
             <Link to="/verifier" className={buttonClassName("ghost")}>
               Verifier
@@ -52,21 +54,21 @@ export function DashboardLayout() {
             </button>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-8">
+        <main className="otv-dash-main flex-1 p-3 md:p-5">
           <Outlet />
         </main>
         <nav
           className="flex overflow-x-auto border-t border-[var(--otv-border)] bg-[var(--otv-surface)] md:hidden"
           aria-label="Dashboard"
         >
-          {NAV.map((n) => (
+          {items.map((n) => (
             <NavLink
               key={n.href}
               to={n.href}
               end={n.href === "/dashboard"}
               className={({ isActive }) =>
-                `flex h-12 shrink-0 items-center px-3 text-center text-xs font-semibold ${
-                  isActive ? "text-[var(--otv-brand)]" : "text-[var(--otv-text-secondary)]"
+                `flex h-10 shrink-0 items-center px-3 text-center text-[11px] font-semibold ${
+                  isActive ? "text-[var(--otv-brand-text)]" : "text-[var(--otv-text-secondary)]"
                 }`
               }
             >

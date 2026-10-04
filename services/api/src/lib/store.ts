@@ -48,10 +48,18 @@ export interface AuditEvent {
   meta?: Record<string, unknown>;
 }
 
+export type WorkspaceRole = "owner" | "admin" | "member";
+
+export function asRole(value: string | null | undefined): WorkspaceRole {
+  if (value === "owner" || value === "admin" || value === "member") return value;
+  return "member";
+}
+
 export interface UserRecord {
   id: string;
   email: string;
   name?: string;
+  role: WorkspaceRole;
 }
 
 export interface SessionRecord {
@@ -127,6 +135,17 @@ export interface OtvStore {
   defaultProjectId(userId: string): Promise<string | null>;
   defaultOrgId(userId: string): Promise<string | null>;
   orgIdForProject(projectId: string): Promise<string | null>;
+  setMemberRole(actorId: string, email: string, role: WorkspaceRole): Promise<void>;
+}
+
+function published(user: { id: string; email: string; name?: string; role?: WorkspaceRole }): UserRecord {
+  return { id: user.id, email: user.email, name: user.name, role: user.role ?? "member" };
+}
+
+function roleError(message: string, statusCode: number): Error {
+  const err = new Error(message) as Error & { statusCode: number };
+  err.statusCode = statusCode;
+  return err;
 }
 
 export class MemoryStore implements OtvStore {
@@ -175,6 +194,7 @@ export class MemoryStore implements OtvStore {
         id: "user_demo",
         email: DEMO_EMAIL,
         name: "OTV Demo Admin",
+        role: "owner",
         passwordHash: await hashPassword(DEMO_PASSWORD),
       });
     }
@@ -300,7 +320,7 @@ export class MemoryStore implements OtvStore {
         if (!user.passwordHash || user.passwordHash === "oidc") return null;
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
-        return { id: user.id, email: user.email, name: user.name };
+        return published(user);
       }
     }
     return null;
@@ -327,7 +347,7 @@ export class MemoryStore implements OtvStore {
     }
     const user = this.users.get(session.userId);
     if (!user) return null;
-    return { ...session, user: { id: user.id, email: user.email, name: user.name } };
+    return { ...session, user: published(user) };
   }
 
   async destroySession(token: string): Promise<void> {
@@ -395,6 +415,7 @@ export class MemoryStore implements OtvStore {
       id: hexId("user"),
       email: email.toLowerCase(),
       name: name?.trim() || email.split("@")[0],
+      role: "owner",
       passwordHash: await hashPassword(password),
     };
     this.users.set(user.id, user);
@@ -402,12 +423,12 @@ export class MemoryStore implements OtvStore {
     const project = await this.createProject(org.id, "Default Project");
     this.userOrgs.set(user.id, org.id);
     this.userProjects.set(user.id, project.id);
-    return { id: user.id, email: user.email, name: user.name };
+    return published(user);
   }
 
   async findUserByEmail(email: string): Promise<UserRecord | null> {
     const found = [...this.users.values()].find((u) => u.email.toLowerCase() === email.toLowerCase());
-    return found ? { id: found.id, email: found.email, name: found.name } : null;
+    return found ? published(found) : null;
   }
 
   async findOrCreateOidcUser(email: string, name?: string): Promise<UserRecord> {
@@ -417,6 +438,7 @@ export class MemoryStore implements OtvStore {
       id: hexId("user"),
       email: email.toLowerCase(),
       name: name?.trim() || email.split("@")[0],
+      role: "owner",
       passwordHash: "oidc",
     };
     this.users.set(user.id, user);
@@ -424,7 +446,7 @@ export class MemoryStore implements OtvStore {
     const project = await this.createProject(org.id, "Default Project");
     this.userOrgs.set(user.id, org.id);
     this.userProjects.set(user.id, project.id);
-    return { id: user.id, email: user.email, name: user.name };
+    return published(user);
   }
 
   async defaultProjectId(userId: string): Promise<string | null> {
@@ -437,5 +459,20 @@ export class MemoryStore implements OtvStore {
 
   async orgIdForProject(projectId: string): Promise<string | null> {
     return this.projects.get(projectId)?.orgId ?? null;
+  }
+
+  async setMemberRole(actorId: string, email: string, role: WorkspaceRole): Promise<void> {
+    const actor = this.users.get(actorId);
+    if (!actor || actor.role !== "owner") throw roleError("forbidden", 403);
+    const target = [...this.users.values()].find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const orgId = this.userOrgs.get(actorId);
+    if (!target || !orgId || this.userOrgs.get(target.id) !== orgId) throw roleError("user_not_found", 404);
+    if (target.role === "owner" && role !== "owner") {
+      const owners = [...this.users.values()].filter(
+        (u) => this.userOrgs.get(u.id) === orgId && u.role === "owner"
+      );
+      if (owners.length < 2) throw roleError("last_owner", 409);
+    }
+    target.role = role;
   }
 }

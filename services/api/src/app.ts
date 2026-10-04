@@ -16,7 +16,9 @@ import {
   catalogChains,
   catalogNetworks,
   createAdapter,
+  getChain,
 } from "@otv/chain-adapters";
+import { isDemoScenario, isEvmAddress, reconcileBalanceReads, runDemo, type BalanceObservation } from "@otv/wallet-core";
 import {
   authorizeUrl,
   createOidcCookie,
@@ -31,7 +33,8 @@ import {
 import { verifyIncomingTransfer } from "@otv/verification-engine";
 import { verifyPayload, type SigningKeyStore } from "@otv/crypto-signatures";
 import { ZodError } from "zod";
-import { DEMO_API_KEY, DEMO_EMAIL, type ApiKeyRecord, type OtvStore, type UserRecord } from "./lib/store.js";
+import { DEMO_API_KEY, DEMO_EMAIL, type ApiKeyRecord, type OtvStore, type UserRecord, type WorkspaceRole } from "./lib/store.js";
+import { getPublicUrl, setPublicUrl } from "./lib/runtime-settings.js";
 import { dispatchWebhooks, mapStatusToEvent, isSafeWebhookUrl, processWebhookJob } from "./lib/webhooks.js";
 import {
   apiErrors,
@@ -330,6 +333,63 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return { user, projectId, orgId, sessionToken };
   });
 
+  async function workspaceRole(req: FastifyRequest): Promise<{ role: WorkspaceRole; actor: string; user?: UserRecord }> {
+    const auth = await resolveProject(req);
+    if (auth.user) return { role: auth.user.role, actor: auth.user.email, user: auth.user };
+    if (auth.apiKey?.scopes.includes("admin")) return { role: "admin", actor: auth.apiKey.id };
+    throw httpError("forbidden", 403);
+  }
+
+  app.get("/v1/admin/settings", { schema: openapi.adminSettingsGet }, async (req) => {
+    const access = await workspaceRole(req);
+    if (access.role === "member") throw httpError("forbidden", 403);
+    return { publicUrl: getPublicUrl(), role: access.role };
+  });
+
+  app.put("/v1/admin/settings", {
+    schema: openapi.adminSettingsPut,
+    preValidation: async (req) => {
+      const body = req.body as Record<string, unknown> | undefined;
+      const keys = body && typeof body === "object" ? Object.keys(body) : [];
+      if (keys.some((key) => key !== "publicUrl") || typeof body?.publicUrl !== "string") {
+        throw httpError("invalid_public_url", 400);
+      }
+    },
+  }, async (req) => {
+    const access = await workspaceRole(req);
+    if (access.role === "member") throw httpError("forbidden", 403);
+    const body = req.body as { publicUrl: string };
+    const publicUrl = setPublicUrl(body.publicUrl);
+    await store.addAudit({ actor: access.actor, action: "admin.settings" });
+    return { publicUrl, role: access.role };
+  });
+
+  app.put("/v1/admin/members", {
+    schema: openapi.adminMemberPut,
+    preValidation: async (req) => {
+      const body = req.body as Record<string, unknown> | undefined;
+      const keys = body && typeof body === "object" ? Object.keys(body) : [];
+      if (
+        keys.some((key) => key !== "email" && key !== "role") ||
+        typeof body?.email !== "string" ||
+        (body.role !== "owner" && body.role !== "admin" && body.role !== "member")
+      ) {
+        throw httpError("invalid_role", 400);
+      }
+    },
+  }, async (req) => {
+    const access = await workspaceRole(req);
+    if (!access.user) throw httpError("session_required", 403);
+    const body = req.body as { email: string; role: WorkspaceRole };
+    await store.setMemberRole(access.user.id, body.email, body.role);
+    await store.addAudit({
+      actor: access.actor,
+      action: "admin.role",
+      meta: { email: body.email.toLowerCase(), role: body.role },
+    });
+    return { email: body.email.toLowerCase(), role: body.role };
+  });
+
   app.get("/v1/auth/oidc/status", { schema: openapi.oidcStatus }, async () => ({
     enabled: oidcConfigured(),
     issuer: oidcConfigured() ? oidcIssuer() : undefined,
@@ -487,6 +547,93 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.get("/v1/usage", { schema: openapi.usage }, async (req) => {
     const auth = await resolveProject(req);
     return store.getUsage(auth.projectId);
+  });
+
+  app.get("/v1/wallet/balance", { schema: openapi.walletBalance }, async (req, reply) => {
+    await resolveProject(req);
+    const q = req.query as { chain?: string; network?: string; address?: string; asset?: string };
+    const chain = q.chain ?? "";
+    const network = q.network ?? "";
+    const address = q.address ?? "";
+    const asset = q.asset && q.asset.length > 0 ? q.asset : "native";
+    if (!chain || !network || !address) {
+      return reply.code(400).send({ error: "invalid_request", message: "chain, network, and address are required" });
+    }
+    const def = getChain(chain);
+    if (!def || !catalogNetworks(chain).some((item) => item.id === network.toLowerCase())) {
+      return reply.code(400).send({ error: "unsupported_network", message: "That chain or network is not in the registry." });
+    }
+    if (def.family === "evm" && !isEvmAddress(address)) {
+      return reply.code(400).send({ error: "invalid_address", message: "The address is not a valid EVM address." });
+    }
+    const known =
+      asset === "native"
+        ? catalogAssets(chain, network).find((item) => item.type === "native")
+        : catalogAssets(chain, network).find((item) => item.contract?.toLowerCase() === asset.toLowerCase());
+    if (asset !== "native") {
+      if (def.family === "evm" && !isEvmAddress(asset)) {
+        return reply.code(400).send({
+          error: "invalid_token_contract",
+          message: "Token identity is the contract address on this network, not a symbol.",
+        });
+      }
+      if (!known) {
+        return reply.code(400).send({
+          error: "unverified_token",
+          message: "That contract is not in the verified token registry for this network.",
+        });
+      }
+    }
+
+    const observe = async (rpcUrl?: string): Promise<BalanceObservation> => {
+      try {
+        const adapter = createAdapter(chain, network, rpcUrl);
+        if (!adapter.isLive) return { ok: false, error: "live_rpc_unavailable" };
+        const evidence = await adapter.getBalance(address, asset);
+        return { ok: true, balanceBaseUnits: evidence.balance, blockNumber: evidence.blockNumber };
+      } catch {
+        return { ok: false, error: "rpc_failed" };
+      }
+    };
+
+    const observations = [await observe()];
+    const secondary = process.env.OTV_BALANCE_RPC_URL;
+    if (secondary && secondary !== "0" && secondary !== "off") {
+      observations.push(await observe(secondary));
+    }
+    const reconciled = reconcileBalanceReads(observations);
+    return {
+      mode: "live" as const,
+      network,
+      chain: def.id,
+      address,
+      asset: known?.symbol ?? null,
+      tokenContract: asset === "native" ? null : asset,
+      decimals: known?.decimals ?? null,
+      balanceBaseUnits: reconciled.balanceBaseUnits,
+      blockNumber: reconciled.blockNumber,
+      blockTag: "latest" as const,
+      state: reconciled.verification === "verified" ? "latest" : reconciled.verification,
+      verification: reconciled.verification,
+      observedAt: new Date().toISOString(),
+      source: "chain-adapter",
+      sources: observations.length,
+    };
+  });
+
+  app.post("/v1/wallet/audit", { schema: openapi.walletAudit }, async (req) => {
+    const auth = await resolveProject(req);
+    const action = (req.body as { action?: string }).action ?? "";
+    req.log.info({ action, actor: auth.actor }, "wallet_security");
+    return { ok: true };
+  });
+
+  app.post("/v1/demo/verification/run", { schema: openapi.demoRun }, async (req, reply) => {
+    const scenario = (req.body as { scenario?: string }).scenario ?? "";
+    if (!isDemoScenario(scenario)) {
+      return reply.code(400).send({ error: "unknown_scenario", message: "Unknown simulation scenario." });
+    }
+    return runDemo(scenario);
   });
 
   app.get("/v1/demo/meta", { schema: openapi.demoMeta }, async () => ({

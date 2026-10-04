@@ -70,6 +70,18 @@ const pages: Record<string, SeoPage> = {
     description:
       "Hosted OTV API terms. Verdicts are signed evidence, not custody, legal advice, or a payment instruction. Mock adapters are not chain proof.",
   },
+  "/wallet": {
+    path: "/wallet",
+    title: "Open Trust Wallet | OpenTrust Verify",
+    description: "Self-custodial wallet and watch-only addresses. Balances are read from chain state. Recovery material stays on the device.",
+  },
+  "/lab": {
+    path: "/lab",
+    title: "OTV Verification Lab | Event versus blockchain state",
+    description:
+      "A simulated demonstration of why OpenTrust Verify does not treat a payment event as a confirmed balance. No real transaction is sent.",
+    keywords: "OTV verification lab, event versus blockchain state, payment verification demo",
+  },
   "/verifier": {
     path: "/verifier",
     title: "Public crypto verifier | Check an incoming transfer",

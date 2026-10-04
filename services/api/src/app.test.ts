@@ -161,10 +161,112 @@ describe("API app", () => {
     expect(res.json().asset.symbol).toBe("BTC");
   });
 
+  it("does not invent a zero balance when live RPC is unavailable", async () => {
+    const previousEth = process.env.ETH_RPC_URL;
+    const previousGeneric = process.env.EVM_RPC_URL;
+    process.env.ETH_RPC_URL = "off";
+    process.env.EVM_RPC_URL = "off";
+    try {
+      const res = await app.inject({
+        method: "GET",
+        url: "/v1/wallet/balance?chain=ethereum&network=mainnet&address=0x2222222222222222222222222222222222222222&asset=native",
+        headers: { authorization: `Bearer ${DEMO_API_KEY}` },
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.verification).toBe("unavailable");
+      expect(body.balanceBaseUnits).toBeNull();
+    } finally {
+      if (previousEth === undefined) delete process.env.ETH_RPC_URL;
+      else process.env.ETH_RPC_URL = previousEth;
+      if (previousGeneric === undefined) delete process.env.EVM_RPC_URL;
+      else process.env.EVM_RPC_URL = previousGeneric;
+    }
+  });
+
+  it("rejects a token symbol as a balance identity", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/v1/wallet/balance?chain=ethereum&network=mainnet&address=0x2222222222222222222222222222222222222222&asset=USDT",
+      headers: { authorization: `Bearer ${DEMO_API_KEY}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe("invalid_token_contract");
+  });
+
+  it("runs the phantom demo without touching a wallet", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/demo/verification/run",
+      payload: { scenario: "phantom_event" },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.mode).toBe("simulation");
+    expect(body.evaluation.result).toBe("rejected");
+    expect(body.evaluation.eventOnlyWouldAccept).toBe(true);
+  });
+
   it("returns 501 for SSO until an issuer is configured", async () => {
     const res = await app.inject({ method: "GET", url: "/v1/auth/oidc/login" });
     expect(res.statusCode).toBe(501);
     const status = await app.inject({ method: "GET", url: "/v1/auth/oidc/status" });
     expect(status.json().enabled).toBe(false);
+  });
+
+  it("lets an owner set the public URL and keeps members out", async () => {
+    const login = await app.inject({
+      method: "POST",
+      url: "/v1/auth/login",
+      payload: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json().user.role).toBe("owner");
+    const token = login.json().sessionToken as string;
+    const saved = await app.inject({
+      method: "PUT",
+      url: "/v1/admin/settings",
+      headers: { "x-otv-session": token },
+      payload: { publicUrl: "https://otv.poptrust.me" },
+    });
+    expect(saved.statusCode).toBe(200);
+    expect(saved.json().publicUrl).toBe("https://otv.poptrust.me");
+    const rejectedKey = await app.inject({
+      method: "PUT",
+      url: "/v1/admin/settings",
+      headers: { "x-otv-session": token },
+      payload: { publicUrl: "https://otv.poptrust.me", apiKey: "otv_live_secret" },
+    });
+    expect(rejectedKey.statusCode).toBe(400);
+
+    const member = await store.createUser("member-role@poptrust.me", "member-pass-1", "Member");
+    const demoOrg = await store.defaultOrgId("user_demo");
+    store.userOrgs.set(member.id, demoOrg ?? "");
+    const demoted = await app.inject({
+      method: "PUT",
+      url: "/v1/admin/members",
+      headers: { "x-otv-session": token },
+      payload: { email: member.email, role: "member" },
+    });
+    expect(demoted.statusCode).toBe(200);
+    const memberLogin = await app.inject({
+      method: "POST",
+      url: "/v1/auth/login",
+      payload: { email: member.email, password: "member-pass-1" },
+    });
+    expect(memberLogin.json().user.role).toBe("member");
+    const blocked = await app.inject({
+      method: "GET",
+      url: "/v1/admin/settings",
+      headers: { "x-otv-session": memberLogin.json().sessionToken },
+    });
+    expect(blocked.statusCode).toBe(403);
+    const byKey = await app.inject({
+      method: "GET",
+      url: "/v1/admin/settings",
+      headers: { authorization: `Bearer ${DEMO_API_KEY}` },
+    });
+    expect(byKey.statusCode).toBe(200);
+    expect(byKey.json().role).toBe("admin");
   });
 });

@@ -5,12 +5,13 @@ import type { Verdict } from "@otv/verdict-schema";
 import type { PublicApiKey, PublicWebhook } from "@otv/api-client";
 import { useAuth } from "@/lib/auth";
 import { ClaimFields, EMPTY_CLAIM, buildIncomingClaim } from "@/components/ClaimFields";
+import { VerificationLab } from "@/components/VerificationLab";
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card className="otv-metric">
       <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-text-muted)]">{label}</div>
-      <div className="mt-3 font-[family-name:var(--otv-font-display)] text-3xl font-extrabold tracking-tight">{value}</div>
+      <div className="mt-1 font-[family-name:var(--otv-font-display)] text-xl font-extrabold tracking-tight">{value}</div>
     </Card>
   );
 }
@@ -46,6 +47,9 @@ export function DashboardOverview() {
   return (
     <>
       <h1 className="mb-4 text-2xl font-bold tracking-tight">Overview</h1>
+      <div className="mb-6">
+        <VerificationLab embedded />
+      </div>
       {error && (
         <div className="mb-4">
           <Alert tone="danger" title="Could not load">

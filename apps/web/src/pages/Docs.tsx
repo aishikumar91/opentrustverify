@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { API_BASE } from "@/lib/api";
+import { apiBase } from "@/lib/api";
 
 export function DocsPage() {
   return (
@@ -10,8 +10,8 @@ export function DocsPage() {
       </h1>
       <p className="mt-3 text-lg text-[var(--otv-text-secondary)]">
         You send a claim. You get a signed verdict. Base URL{" "}
-        <code className="otv-mono text-sm">{API_BASE}</code>. Try every field in the{" "}
-        <a className="text-[var(--otv-brand)]" href={`${API_BASE}/api/docs`}>
+        <code className="otv-mono text-sm">{apiBase()}</code>. Try every field in the{" "}
+        <a className="text-[var(--otv-brand)]" href={`${apiBase()}/api/docs`}>
           interactive API
         </a>
         .
@@ -42,7 +42,7 @@ export function DocsPage() {
             POST a claim to <code className="otv-mono">/v1/verify/incoming</code>.
           </li>
         </ol>
-        <pre className="otv-mono mt-4 overflow-x-auto rounded-[14px] border border-[var(--otv-border)] bg-[var(--otv-surface-muted)] p-4 text-xs">{`curl -s ${API_BASE}/v1/verify/incoming \\
+        <pre className="otv-mono mt-4 overflow-x-auto rounded-[14px] border border-[var(--otv-border)] bg-[var(--otv-surface-muted)] p-4 text-xs">{`curl -s ${apiBase()}/v1/verify/incoming \\
   -H "Authorization: Bearer otv_live_…" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -70,8 +70,11 @@ export function DocsPage() {
           it.
         </p>
         <p>
-          <code className="otv-mono">GET /v1/auth/me</code> returns the signed-in user and default
-          project. <code className="otv-mono">POST /v1/auth/logout</code> ends the session. Google
+          <code className="otv-mono">GET /v1/auth/me</code> returns the signed-in user, role
+          (owner, admin, or member), and default project. Owner and admin can read and set the
+          public URL at <code className="otv-mono">/v1/admin/settings</code>. A browser API key is
+          not sent to that route. <code className="otv-mono">POST /v1/auth/logout</code> ends the
+          session. Google
           sign-in is available on the hosted site via{" "}
           <code className="otv-mono">GET /v1/auth/oidc/login</code>.
         </p>

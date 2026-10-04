@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { Alert, Button, Card, EmptyState, Input, StatusBadge } from "@otv/ui";
 import { VerificationStatus, type Verdict } from "@otv/verdict-schema";
 import { useAuth } from "@/lib/auth";
-import { API_BASE } from "@/lib/api";
+import { apiBase, saveBrowserConnection, storedApiKey } from "@/lib/api";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import {
   loadNotices,
@@ -37,23 +37,34 @@ const ADMIN_NAV = [
 ] as const;
 
 function AdminChrome({ title, children }: { title: string; children: ReactNode }) {
+  const { user } = useAuth();
+  const canAdmin = user?.role === "owner" || user?.role === "admin";
+  if (!canAdmin) {
+    return (
+      <Card>
+        <h1 className="text-lg font-semibold">Admin</h1>
+        <p className="mt-2 text-sm text-[var(--otv-text-secondary)]">
+          Owner and admin roles can open this area. This session is {user?.role ?? "member"}.
+        </p>
+      </Card>
+    );
+  }
   return (
     <>
-      <h1 className="mb-2 text-2xl font-bold tracking-tight">{title}</h1>
-      <p className="mb-4 text-sm text-[var(--otv-text-secondary)]">
-        Workspace admin. Verdicts still come from the API. Tickets, seats, and inbox items stay in
-        this browser for the current project.
+      <h1 className="mb-1 text-lg font-semibold tracking-tight">{title}</h1>
+      <p className="mb-3 text-xs text-[var(--otv-text-secondary)]">
+        {user?.role} · Verdicts still come from the API. Tickets and the seat list stay in this browser.
       </p>
-      <nav className="mb-6 flex flex-wrap gap-2" aria-label="Admin">
+      <nav className="mb-4 flex flex-wrap gap-1.5" aria-label="Admin">
         {ADMIN_NAV.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={"end" in item ? item.end : false}
             className={({ isActive }) =>
-              `rounded-[10px] border px-3 py-1.5 text-xs font-semibold ${
+              `rounded-[8px] border px-2 py-1 text-[11px] font-semibold ${
                 isActive
-                  ? "border-[var(--otv-brand)] bg-[var(--otv-brand-muted)] text-[var(--otv-brand)]"
+                  ? "border-[var(--otv-border-strong)] bg-[var(--otv-brand-muted)] text-[var(--otv-brand-text)]"
                   : "border-[var(--otv-border)] text-[var(--otv-text-secondary)]"
               }`
             }
@@ -135,13 +146,13 @@ export function AdminMonitoring() {
         if (!cancelled) setError(err instanceof Error ? err.message : "Health failed");
       }
       try {
-        const res = await fetch(`${API_BASE}/v1/ready`);
+        const res = await fetch(`${apiBase()}/v1/ready`);
         if (!cancelled) setReady(res.ok ? "ready" : `HTTP ${res.status}`);
       } catch {
         if (!cancelled) setReady("unreachable");
       }
       try {
-        const res = await fetch(`${API_BASE}/v1/metrics`);
+        const res = await fetch(`${apiBase()}/v1/metrics`);
         const text = await res.text();
         if (!cancelled) setMetrics(text.split("\n").slice(0, 24).join("\n"));
       } catch {
@@ -231,9 +242,49 @@ export function AdminAnalytics() {
 }
 
 export function AdminSettings() {
-  const { user, projectId, orgId } = useAuth();
+  const { user, projectId, orgId, client } = useAuth();
   const scope = useScope();
   const [prefs, setPrefs] = useState<WorkspacePrefs>(() => loadPrefs(scope));
+  const [publicUrl, setPublicUrl] = useState(apiBase);
+  const [apiKey, setApiKey] = useState("");
+  const [connectionNote, setConnectionNote] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof client.adminSettings !== "function") return;
+    let cancelled = false;
+    client
+      .adminSettings()
+      .then((settings) => {
+        if (!cancelled) setPublicUrl(settings.publicUrl);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
+
+  async function saveConnection(e: FormEvent) {
+    e.preventDefault();
+    setConnectionError(null);
+    setConnectionNote(null);
+    try {
+      const saved = await client.saveAdminSettings(publicUrl.trim());
+      saveBrowserConnection({
+        baseUrl: saved.publicUrl,
+        ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+      });
+      setPublicUrl(saved.publicUrl);
+      setApiKey("");
+      setConnectionNote(
+        storedApiKey()
+          ? "Public URL saved on the API. The key stays in this browser only."
+          : "Public URL saved on the API. No key is stored in this browser."
+      );
+    } catch (err) {
+      setConnectionError(err instanceof Error ? err.message : "Could not save the public URL");
+    }
+  }
 
   function update<K extends keyof WorkspacePrefs>(key: K, value: WorkspacePrefs[K]) {
     const next = { ...prefs, [key]: value };
@@ -243,7 +294,44 @@ export function AdminSettings() {
 
   return (
     <AdminChrome title="Global settings">
-      <Card className="space-y-4 text-sm">
+      <Card className="mb-3 space-y-3 text-sm">
+        <form className="space-y-3" onSubmit={(e) => void saveConnection(e)}>
+          <label className="block">
+            <span className="mb-1 block text-xs text-[var(--otv-text-muted)]">Public URL</span>
+            <Input value={publicUrl} onChange={(e) => setPublicUrl(e.target.value)} required type="url" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs text-[var(--otv-text-muted)]">API key</span>
+            <Input
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder={storedApiKey() ? "A key is already stored in this browser" : "Optional. Stored in this browser only"}
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm">Save connection</Button>
+            {storedApiKey() && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  saveBrowserConnection({ apiKey: null });
+                  setApiKey("");
+                  setConnectionNote("The browser key was removed. The public URL is unchanged.");
+                }}
+              >
+                Forget browser key
+              </Button>
+            )}
+          </div>
+        </form>
+        {connectionNote && <Alert tone="info" title="Connection">{connectionNote}</Alert>}
+        {connectionError && <Alert tone="danger" title="Could not save">{connectionError}</Alert>}
+      </Card>
+      <Card className="space-y-3 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span>Theme</span>
           <ThemeSwitcher />
@@ -336,11 +424,17 @@ export function AdminManagement() {
 }
 
 export function AdminUsers() {
-  const { user } = useAuth();
+  const { user, client } = useAuth();
   const scope = useScope();
-  const [seats, setSeats] = useState(() => loadSeats(scope, user?.email ?? ""));
+  const signedInRole: SeatRole = user?.role === "admin" || user?.role === "member" ? user.role : "owner";
+  const [seats, setSeats] = useState(() =>
+    loadSeats(scope, user?.email ?? "", signedInRole).map((seat) =>
+      seat.email === user?.email ? { ...seat, role: signedInRole } : seat
+    )
+  );
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<SeatRole>("member");
+  const [roleError, setRoleError] = useState<string | null>(null);
 
   function addSeat(e: FormEvent) {
     e.preventDefault();
@@ -350,6 +444,18 @@ export function AdminUsers() {
     setSeats(next);
     saveSeats(scope, next);
     setEmail("");
+  }
+
+  async function changeRole(target: string, nextRole: SeatRole) {
+    setRoleError(null);
+    try {
+      await client.setMemberRole(target, nextRole);
+      const next = seats.map((seat) => (seat.email === target ? { ...seat, role: nextRole } : seat));
+      setSeats(next);
+      saveSeats(scope, next);
+    } catch (err) {
+      setRoleError(err instanceof Error ? err.message : "Could not change that role");
+    }
   }
 
   function removeSeat(target: string) {
@@ -380,6 +486,7 @@ export function AdminUsers() {
           <Button type="submit">Add seat</Button>
         </form>
       </Card>
+      {roleError && <Alert tone="danger" title="Role">{roleError}</Alert>}
       <Card>
         {seats.length === 0 ? (
           <EmptyState title="No seats" description="Sign in and this page seeds the owner from your session." />
@@ -390,11 +497,24 @@ export function AdminUsers() {
                 <span>
                   {s.email} · {s.role}
                 </span>
-                {s.role !== "owner" && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeSeat(s.email)}>
-                    Remove
-                  </Button>
-                )}
+                <span className="flex items-center gap-2">
+                  {user?.role === "owner" && s.email !== user.email && (
+                    <select
+                      className="otv-input"
+                      value={s.role}
+                      onChange={(e) => void changeRole(s.email, e.target.value as SeatRole)}
+                    >
+                      <option value="owner">owner</option>
+                      <option value="admin">admin</option>
+                      <option value="member">member</option>
+                    </select>
+                  )}
+                  {s.role !== "owner" && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeSeat(s.email)}>
+                      Remove
+                    </Button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

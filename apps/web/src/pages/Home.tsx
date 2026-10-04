@@ -122,6 +122,9 @@ export function HomePage() {
                   <Link to="/docs" className={buttonClassName("secondary", "otv-btn-invert")}>
                     <BtnText>Read the API</BtnText>
                   </Link>
+                  <Link to="/lab" className={buttonClassName("secondary", "otv-btn-invert")}>
+                    <BtnText>Run the demo</BtnText>
+                  </Link>
                 </div>
                 <ExplorerSearchBar compact className="otv-hero-search" />
               </div>

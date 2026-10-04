@@ -10,6 +10,7 @@ import {
   VerificationBadge,
 } from "@otv/ui";
 import { useAuth } from "@/lib/auth";
+import { WalletShell } from "@/components/WalletShell";
 
 export function WalletPage() {
   const { client } = useAuth();
@@ -47,11 +48,11 @@ export function WalletPage() {
   }
 
   return (
-    <main className="otv-container max-w-xl space-y-4 py-10">
-        <p className="otv-kicker">Wallet</p>
-        <Alert tone="info" title="Demo inbox, no custody">
-          This screen is a stand-in for a wallet. It does not hold keys or send coins. Paste a hash a
-          user might treat as paid, then see the verdict.
+    <main className="otv-container max-w-3xl space-y-4 py-10">
+        <WalletShell />
+        <Alert tone="info" title="Existing claim check">
+          This form still submits an incoming claim to the verification API. It does not send a
+          transaction, and it does not treat a pasted hash as spendable by itself.
         </Alert>
         <Card>
           <h1 className="text-xl font-bold">Inbox</h1>

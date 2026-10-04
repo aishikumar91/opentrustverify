@@ -11,6 +11,7 @@ const NAV = [
   { to: "/docs", label: "Docs" },
   { to: "/whitepaper", label: "Whitepaper" },
   { to: "/verifier", label: "Verifier" },
+  { to: "/lab", label: "Lab" },
 ];
 
 const FOOTER_LINKS = [
@@ -18,6 +19,7 @@ const FOOTER_LINKS = [
     { to: "/features", label: "Features" },
     { to: "/docs", label: "Docs" },
     { to: "/verifier", label: "Verifier" },
+    { to: "/lab", label: "Verification lab" },
     { to: "/whitepaper", label: "Whitepaper" },
   ]},
   { title: "Company", items: [
@@ -166,10 +168,9 @@ export function SiteFooter() {
   const { user } = useAuth();
   return (
     <footer className="otv-footer">
-      <div className="otv-container grid gap-12 py-20 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
+      <div className="otv-container grid gap-8 py-10 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
           <BrandLink invert />
-          <p className="otv-footer-statement">{product.tagline}</p>
           <p className="mt-5 max-w-sm text-sm">
             A signed answer to one question: can this recipient spend what just arrived?
           </p>
