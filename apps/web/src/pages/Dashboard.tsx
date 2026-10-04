@@ -8,9 +8,9 @@ import { ClaimFields, EMPTY_CLAIM, buildIncomingClaim } from "@/components/Claim
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <Card>
-      <div className="text-xs tracking-wide text-[var(--otv-text-muted)]">{label}</div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
+    <Card className="otv-metric">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-text-muted)]">{label}</div>
+      <div className="mt-3 font-[family-name:var(--otv-font-display)] text-3xl font-extrabold tracking-tight">{value}</div>
     </Card>
   );
 }

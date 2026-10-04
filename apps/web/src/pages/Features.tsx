@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { buttonClassName, BtnText } from "@otv/ui";
 import { product } from "@otv/config";
 import { ExplorerSearchBar } from "@/components/ExplorerSearchBar";
+import { FaqList, type FaqItem } from "@/components/FaqList";
 
 const FEATURES = [
   {
@@ -49,15 +50,36 @@ const STATUSES = [
   ["UNVERIFIED", "Facts missing"],
 ] as const;
 
+const FEATURE_FAQS: FaqItem[] = [
+  {
+    q: "What do I send in a claim?",
+    a: "Chain, network, transaction hash, and recipient. You can also pass an asset and an expected amount. The engine does not invent those fields from a bare hash.",
+  },
+  {
+    q: "What comes back?",
+    a: "A signed otv.verdict.v1 record: a status from the enum, the evidence that produced it, and an Ed25519 signature. Clients can POST that payload to /v1/verdicts/verify. This website never signs.",
+  },
+  {
+    q: "Can I check a token that is not on the asset list?",
+    a: "Yes, on EVM networks. GET /v1/assets is a convenience list. Any ERC-20, ERC-721, or ERC-1155 still verifies if you pass the contract, and a token id when the asset needs one.",
+  },
+  {
+    q: "Why is SPENDABLE not the same word as paid?",
+    a: "Paid collapses several facts into one label. A transfer log, a balance change, and finality can disagree. The enum keeps those steps visible so a wallet does not relabel a partial result.",
+  },
+];
+
 export function FeaturesPage() {
   return (
     <>
-      <section className="otv-hero">
-        <div className="otv-container">
+      <section className="otv-page-hero">
+        <div className="otv-container otv-split">
           <div>
-            <p className="mb-3 text-xs font-semibold tracking-[0.28em] text-[var(--otv-hero-copy)]">PRODUCT</p>
-            <h1 className="banner_big_title">What {product.shortName} actually does</h1>
-            <p className="mt-5 max-w-xl text-base text-[var(--otv-hero-copy)]">
+            <p className="otv-kicker">Product</p>
+            <h1 className="otv-display otv-display-page">What {product.shortName} actually does</h1>
+          </div>
+          <div>
+            <p className="otv-lede mt-0">
               {product.tagline} One HTTP call. A signed status your wallet or risk desk can show. No
               custody. No LLM deciding spendability.
             </p>
@@ -77,11 +99,11 @@ export function FeaturesPage() {
             </Link>
           </div>
           <h2 className="otv-heading mb-10">Capabilities</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((x) => (
-              <div key={x.t} className="otv-card">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {FEATURES.map((x, i) => (
+              <div key={x.t} className={`otv-card ${i === 0 ? "otv-card-feature xl:col-span-2" : ""}`}>
                 <span className="otv-tag">{x.tag}</span>
-                <h3 className="mt-4 text-2xl font-bold">{x.t}</h3>
+                <h3 className="mt-4 text-2xl font-bold uppercase tracking-tight">{x.t}</h3>
                 <p className="mt-3 mb-0 text-[var(--otv-text-secondary)]">{x.d}</p>
               </div>
             ))}
@@ -108,23 +130,44 @@ export function FeaturesPage() {
       </section>
 
       <section className="otv-section">
-        <div className="otv-container max-w-3xl">
-          <h2 className="otv-heading">How a desk reads a verdict</h2>
-          <p className="mt-4 text-[var(--otv-text-secondary)]">
-            The signed row is the record. Your product maps OBSERVED through SPENDABLE. Do not
-            relabel SPENDABLE as paid.
-          </p>
+        <div className="otv-container otv-split items-start">
+          <div>
+            <h2 className="otv-heading">How a desk reads a verdict</h2>
+            <p className="mt-4 text-[var(--otv-text-secondary)]">
+              The signed row is the record. Your product maps OBSERVED through SPENDABLE. Do not
+              relabel SPENDABLE as paid. Raw chain data can stay beside it. The{" "}
+              <Link className="text-[var(--otv-brand)]" to="/whitepaper">
+                model
+              </Link>{" "}
+              is the longer explanation of why the steps are not interchangeable.
+            </p>
+          </div>
+          <div className="space-y-4 text-[var(--otv-text-secondary)]">
+            <h2 className="otv-heading text-[length:clamp(1.6rem,3vw,2.4rem)]">Wallet products</h2>
+            <p>
+              MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and the rest of that market can
+              call POST /v1/verify/incoming if they can make an HTTP request from a backend. Naming
+              them here is not a partnership or an OTV certification.
+            </p>
+            <p className="mb-0">
+              The key belongs on that backend. The browser, if you show a verdict at all, verifies the
+              signature. It does not create one. Start from the{" "}
+              <Link className="text-[var(--otv-brand)]" to="/docs">
+                first request
+              </Link>
+              .
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="otv-section">
-        <div className="otv-container max-w-3xl">
-          <h2 className="otv-heading mb-4">Wallet integrations</h2>
-          <p className="mb-0 text-[var(--otv-text-secondary)]">
-            MetaMask, Coinbase Wallet, Trust Wallet, Phantom, Ledger, and the rest of that market can
-            call POST /v1/verify/incoming. Naming them here is not a partnership or an OTV
-            certification.
-          </p>
+      <section className="otv-section otv-section-tint">
+        <div className="otv-container otv-split items-start">
+          <div>
+            <p className="otv-kicker">Questions</p>
+            <h2 className="otv-heading">Using the API</h2>
+          </div>
+          <FaqList items={FEATURE_FAQS} />
         </div>
       </section>
 

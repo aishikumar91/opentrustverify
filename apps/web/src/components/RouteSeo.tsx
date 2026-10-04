@@ -35,7 +35,7 @@ export function RouteSeo() {
       : "index,follow,max-image-preview:large";
     document.title = page.title;
     setMeta("name", "description", page.description);
-    setMeta("name", "keywords", defaultKeywords);
+    setMeta("name", "keywords", page.keywords ?? defaultKeywords);
     setMeta("name", "robots", robots);
     setMeta("name", "googlebot", privatePath ? "noindex,nofollow" : "index,follow");
     setMeta("property", "og:title", page.title);

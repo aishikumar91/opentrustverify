@@ -84,10 +84,27 @@ export function VerifierPage() {
   }
 
   return (
-    <main className="otv-container grid gap-8 py-10 lg:grid-cols-2">
+    <main className="otv-container py-10">
+        <div className="mb-8 max-w-3xl">
+          <p className="otv-kicker">Verifier</p>
+          <h1 className="otv-display otv-display-page">Look up a verdict</h1>
+          <p className="otv-lede">
+            Paste a verdict ID someone shared with you, or sign in and submit a claim. Signing happens
+            on the API, not in this browser. Lookup is public. A new check needs an account. Read the{" "}
+            <Link className="text-[var(--otv-brand)]" to="/docs">
+              request shape
+            </Link>{" "}
+            and the{" "}
+            <Link className="text-[var(--otv-brand)]" to="/whitepaper">
+              status model
+            </Link>{" "}
+            if the badge wording is new.
+          </p>
+        </div>
+        <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-6">
           <Card>
-            <h1 className="text-2xl font-bold">Look up a verdict</h1>
+            <h2 className="text-xl font-bold uppercase tracking-tight">Stored verdict</h2>
             <p className="mt-2 text-sm text-[var(--otv-text-secondary)]">
               Paste a verdict ID someone shared with you. No key needed.
             </p>
@@ -178,6 +195,7 @@ export function VerifierPage() {
             </Card>
           )}
         </div>
+      </div>
       </main>
   );
 }

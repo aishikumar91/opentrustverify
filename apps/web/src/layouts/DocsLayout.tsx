@@ -12,12 +12,13 @@ const NAV = [
   ["webhooks", "Webhooks"],
   ["keys-usage", "Keys and usage"],
   ["clients", "Client libraries"],
+  ["mistakes", "Common mistakes"],
   ["errors", "Errors"],
 ] as const;
 
 export function DocsLayout() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="otv-shell flex min-h-screen flex-col">
       <SiteHeader />
       <div className="flex-1 md:grid md:grid-cols-[240px_1fr]">
         <aside className="border-b border-[var(--otv-border)] bg-[var(--otv-surface-tint)] p-6 md:border-b-0 md:border-r">
@@ -29,7 +30,7 @@ export function DocsLayout() {
               <a
                 key={id}
                 href={`#${id}`}
-                className="block rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] hover:bg-[var(--otv-brand)] hover:text-[var(--otv-ink)]"
+                className="block rounded-[10px] px-3 py-2 text-[13px] font-medium tracking-wide text-[var(--otv-text-secondary)] hover:bg-[var(--otv-surface)] hover:text-[var(--otv-text-primary)]"
               >
                 {label}
               </a>

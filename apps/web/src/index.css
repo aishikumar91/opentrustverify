@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+a.text-\[var\(--otv-brand\)\] {
+  color: var(--otv-brand-text);
+}
+a.text-\[var\(--otv-brand\)\]:hover {
+  color: var(--otv-brand);
+}

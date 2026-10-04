@@ -1,40 +1,47 @@
 :root {
-  /* Black + fluorescent green from the wordmark */
+  /* Fluorescent green stays the brand. The dark frame is a treatment, not a new identity. */
   --otv-ink: #000000;
   --otv-brand: #7cff3a;
   --otv-brand-hover: #68e028;
   --otv-brand-muted: rgba(124, 255, 58, 0.16);
+  --otv-brand-text: #146614;
   --otv-accent: #7cff3a;
   --otv-accent-warm: #7cff3a;
-  --otv-logo-accent: #000000;
+  --otv-logo-accent: #14110e;
   --otv-on-brand: #000000;
-  --otv-inverse: #ffffff;
-  --otv-on-inverse: #000000;
-  --otv-inverse-muted: rgba(255, 255, 255, 0.28);
-  --otv-inverse-wash: rgba(255, 255, 255, 0.08);
+  --otv-inverse: #f0ebc6;
+  --otv-on-inverse: #100807;
+  --otv-inverse-muted: rgba(240, 235, 198, 0.28);
+  --otv-inverse-wash: rgba(240, 235, 198, 0.08);
 
-  --otv-background: #ffffff;
-  --otv-surface: #ffffff;
-  --otv-surface-muted: #f6f6f6;
-  --otv-surface-tint: #f4f7f2;
-  --otv-border: #d2d2d2;
-  --otv-border-strong: #000000;
+  --otv-background: #f3efe6;
+  --otv-surface: #fbf8f2;
+  --otv-surface-muted: #ebe6da;
+  --otv-surface-tint: #e8e2d4;
+  --otv-border: #d8d1c3;
+  --otv-border-strong: #14110e;
 
-  --otv-text-primary: #111111;
-  --otv-text-secondary: #3d3d3d;
-  --otv-text-muted: #6b6b6b;
-  --otv-on-dark: #ffffff;
-  --otv-footer-muted: #c8c8c8;
+  --otv-text-primary: #14110e;
+  --otv-text-secondary: #3f3a34;
+  --otv-text-muted: #6f695f;
+  --otv-on-dark: #f0ebc6;
+  --otv-footer-muted: #b8b3a3;
 
-  --otv-header-bg: rgba(255, 255, 255, 0.96);
-  --otv-header-shadow: rgba(0, 0, 0, 0.08);
-  --otv-hero-bg: #ffffff;
-  --otv-hero-title: #000000;
-  --otv-hero-copy: #111111;
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.09);
-  --otv-hero-spot-b: rgba(0, 0, 0, 0.02);
-  --otv-btn-shadow: #000000;
-  --otv-btn-outline: #000000;
+  --otv-header-bg: rgba(243, 239, 230, 0.86);
+  --otv-header-shadow: rgba(20, 17, 14, 0.06);
+  --otv-hero-bg: transparent;
+  --otv-hero-title: #14110e;
+  --otv-hero-copy: #3f3a34;
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.08);
+  --otv-hero-spot-b: rgba(20, 17, 14, 0.03);
+  --otv-btn-shadow: transparent;
+  --otv-btn-outline: #14110e;
+
+  --otv-stage: #120908;
+  --otv-stage-elevated: #1c100f;
+  --otv-ivory: #f0ebc6;
+  --otv-ivory-dim: #b8b3a3;
+  --otv-frame-line: rgba(240, 235, 198, 0.14);
 
   --otv-success: #7cff3a;
   --otv-warning: #fd7e14;
@@ -74,9 +81,12 @@
   --otv-space-12: 3rem;
   --otv-space-16: 4rem;
 
-  --otv-radius-sm: 8px;
-  --otv-radius-md: 8px;
-  --otv-radius-lg: 8px;
+  --otv-radius-sm: 10px;
+  --otv-radius-md: 14px;
+  --otv-radius-lg: 28px;
+  --otv-shadow-soft: 0 16px 40px rgba(20, 12, 8, 0.06);
+  --otv-shadow-lift: 0 14px 28px rgba(20, 12, 8, 0.1);
+  --otv-container-width: 1520px;
 
   --otv-duration-fast: 120ms;
   --otv-duration-normal: 400ms;
@@ -88,40 +98,44 @@
   --otv-brand: #7cff3a;
   --otv-brand-hover: #68e028;
   --otv-brand-muted: rgba(124, 255, 58, 0.14);
+  --otv-brand-text: #7cff3a;
   --otv-on-brand: #000000;
-  --otv-logo-accent: #7cff3a;
-  --otv-inverse: #f4f4f4;
-  --otv-on-inverse: #000000;
-  --otv-inverse-muted: rgba(244, 244, 244, 0.28);
-  --otv-inverse-wash: rgba(244, 244, 244, 0.08);
+  --otv-logo-accent: #f0ebc6;
+  --otv-inverse: #f0ebc6;
+  --otv-on-inverse: #100807;
+  --otv-inverse-muted: rgba(240, 235, 198, 0.28);
+  --otv-inverse-wash: rgba(240, 235, 198, 0.08);
 
-  --otv-background: #000000;
-  --otv-surface: #0c0c0c;
-  --otv-surface-muted: #161616;
-  --otv-surface-tint: #080808;
-  --otv-border: #2a2a2a;
+  --otv-background: #070605;
+  --otv-surface: #110d0c;
+  --otv-surface-muted: #1a1412;
+  --otv-surface-tint: #0c0908;
+  --otv-border: #2a2420;
   --otv-border-strong: #7cff3a;
 
-  --otv-text-primary: #f4f4f4;
-  --otv-text-secondary: #c4c4c4;
-  --otv-text-muted: #8a8a8a;
-  --otv-on-dark: #f4f4f4;
-  --otv-footer-muted: #c4c4c4;
+  --otv-text-primary: #f0ebc6;
+  --otv-text-secondary: #b8b3a3;
+  --otv-text-muted: #8f897e;
+  --otv-on-dark: #f0ebc6;
+  --otv-footer-muted: #b8b3a3;
 
-  --otv-header-bg: rgba(0, 0, 0, 0.92);
-  --otv-header-shadow: rgba(0, 0, 0, 0.45);
-  --otv-hero-bg: #000000;
-  --otv-hero-title: #7cff3a;
-  --otv-hero-copy: #7cff3a;
-  --otv-hero-spot-a: rgba(124, 255, 58, 0.12);
-  --otv-hero-spot-b: rgba(124, 255, 58, 0.04);
-  --otv-btn-shadow: #000000;
-  --otv-btn-outline: #7cff3a;
+  --otv-header-bg: rgba(7, 6, 5, 0.78);
+  --otv-header-shadow: rgba(0, 0, 0, 0.4);
+  --otv-hero-bg: transparent;
+  --otv-hero-title: #f0ebc6;
+  --otv-hero-copy: #b8b3a3;
+  --otv-hero-spot-a: rgba(124, 255, 58, 0.08);
+  --otv-hero-spot-b: rgba(42, 8, 8, 0.35);
+  --otv-btn-shadow: transparent;
+  --otv-btn-outline: rgba(240, 235, 198, 0.28);
+
+  --otv-shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.28);
+  --otv-shadow-lift: 0 16px 32px rgba(0, 0, 0, 0.34);
 
   --otv-info: #6ea8fe;
   --otv-success: #7cff3a;
   --otv-verified: #7cff3a;
-  --otv-unverified: #8a8a8a;
+  --otv-unverified: #8f897e;
 }
 
 @media (prefers-reduced-motion: reduce) {

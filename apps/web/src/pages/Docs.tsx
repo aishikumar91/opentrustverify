@@ -4,7 +4,8 @@ import { API_BASE } from "@/lib/api";
 export function DocsPage() {
   return (
     <main className="w-full max-w-3xl px-6 py-16 md:px-10">
-      <h1 id="introduction" className="text-4xl font-bold tracking-tight md:text-5xl">
+      <p className="otv-kicker">Integration</p>
+      <h1 id="introduction" className="otv-doc-title">
         Integrate OpenTrust Verify
       </h1>
       <p className="mt-3 text-lg text-[var(--otv-text-secondary)]">
@@ -14,6 +15,17 @@ export function DocsPage() {
           interactive API
         </a>
         .
+      </p>
+      <p className="mt-4 text-[var(--otv-text-secondary)]">
+        Read the{" "}
+        <Link className="text-[var(--otv-brand)]" to="/whitepaper">
+          decision model
+        </Link>{" "}
+        before you map a status onto a badge. The{" "}
+        <Link className="text-[var(--otv-brand)]" to="/security">
+          security notes
+        </Link>{" "}
+        cover keys, sessions, and webhooks. Keep the API key on a server.
       </p>
 
       <section id="first-request" className="mt-12">
@@ -30,7 +42,7 @@ export function DocsPage() {
             POST a claim to <code className="otv-mono">/v1/verify/incoming</code>.
           </li>
         </ol>
-        <pre className="otv-mono mt-4 overflow-x-auto rounded-[8px] border-2 border-[var(--otv-border)] bg-[var(--otv-surface-muted)] p-4 text-xs">{`curl -s ${API_BASE}/v1/verify/incoming \\
+        <pre className="otv-mono mt-4 overflow-x-auto rounded-[14px] border border-[var(--otv-border)] bg-[var(--otv-surface-muted)] p-4 text-xs">{`curl -s ${API_BASE}/v1/verify/incoming \\
   -H "Authorization: Bearer otv_live_…" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -127,9 +139,30 @@ export function DocsPage() {
       <section id="clients" className="mt-12 space-y-3 text-[var(--otv-text-secondary)]">
         <h2 className="text-2xl font-semibold text-[var(--otv-text-primary)]">Client libraries</h2>
         <p>
-          TypeScript clients ship with the product. Use them from a server. Do not put a live key in
-          a public website bundle.
+          TypeScript clients ship in this repository: <code className="otv-mono">@otv/api-client</code>,{" "}
+          <code className="otv-mono">@otv/sdk-core</code>, and <code className="otv-mono">@otv/sdk-react</code>.
+          Call them from a server. Do not put a live key in a public website bundle. A Dart client
+          lives in <code className="otv-mono">packages/sdk-flutter</code>. It is not a certified
+          pub.dev package.
         </p>
+        <p>
+          Chain coverage is Bitcoin, Solana, Tron, and the EVM networks returned by{" "}
+          <code className="otv-mono">GET /v1/chains</code>. See the{" "}
+          <Link className="text-[var(--otv-brand)]" to="/features">
+            feature page
+          </Link>{" "}
+          for what each family can verify.
+        </p>
+      </section>
+
+      <section id="mistakes" className="mt-12 space-y-3 text-[var(--otv-text-secondary)]">
+        <h2 className="text-2xl font-semibold text-[var(--otv-text-primary)]">Mistakes that waste a day</h2>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>Putting a live API key in a frontend bundle.</li>
+          <li>Showing SPENDABLE as “paid”, or hiding REJECTED, SUSPICIOUS, and UNVERIFIED.</li>
+          <li>Treating a mock-adapter verdict as mainnet proof.</li>
+          <li>Calling a node directly from your app instead of sending a claim. RPC stays inside the API adapters.</li>
+        </ul>
       </section>
 
       <section id="errors" className="mt-12 space-y-3 text-[var(--otv-text-secondary)]">

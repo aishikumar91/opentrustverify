@@ -58,7 +58,7 @@ export function SiteHeader() {
     <header className="otv-header">
       <div className="otv-container grid grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
         <BrandLink />
-        <nav className="hidden items-center justify-center gap-8 lg:flex" aria-label="Primary">
+        <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Primary">
           {NAV.map((l) => (
             <NavLink key={l.to} to={l.to} className={navClass}>
               {l.label}
@@ -169,7 +169,8 @@ export function SiteFooter() {
       <div className="otv-container grid gap-12 py-20 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
           <BrandLink invert />
-          <p className="mt-6 max-w-sm text-sm">
+          <p className="otv-footer-statement">{product.tagline}</p>
+          <p className="mt-5 max-w-sm text-sm">
             A signed answer to one question: can this recipient spend what just arrived?
           </p>
           <div className="mt-6">
@@ -178,7 +179,7 @@ export function SiteFooter() {
         </div>
         {FOOTER_LINKS.map((col) => (
           <div key={col.title}>
-            <h3 className="mb-4 text-lg font-bold text-[var(--otv-on-dark)]">{col.title}</h3>
+            <h3 className="mb-4">{col.title}</h3>
             <ul className="space-y-2 text-sm text-[var(--otv-on-dark)]">
               {col.items.map((l) => (
                 <li key={l.to}>

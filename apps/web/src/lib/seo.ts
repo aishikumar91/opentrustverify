@@ -4,6 +4,7 @@ export type SeoPage = {
   title: string;
   description: string;
   path: string;
+  keywords?: string;
 };
 
 const pages: Record<string, SeoPage> = {
@@ -11,42 +12,51 @@ const pages: Record<string, SeoPage> = {
     path: "/",
     title: "OpenTrust Verify | Incoming crypto payment verification",
     description:
-      "OTV by POP Trust verifies incoming crypto transfers. Check Ethereum, Bitcoin, Solana, Tron, and EVM L2s so a wallet or exchange can tell spendable value from a chain event.",
+      "OTV by POP Trust checks whether an incoming crypto transfer increased the recipient's spendable balance. Signed verdicts for Ethereum, Bitcoin, Solana, Tron, and other EVM networks.",
+    keywords:
+      "incoming crypto payment verification, spendable balance, blockchain event vs payment, signed verdict, OpenTrust Verify",
   },
   "/features": {
     path: "/features",
     title: "OTV features | Signed incoming transfer verification",
     description:
-      "Incoming claim API, Ed25519 verdicts, chain adapters for EVM Bitcoin Solana Tron, explorer UI primitives, HMAC webhooks, and the verdict status enum.",
+      "What the OTV API checks: incoming claims, Ed25519 verdicts, EVM Bitcoin Solana and Tron adapters, explorer UI, HMAC webhooks, and the status enum.",
+    keywords: "OTV features, signed verdict API, chain adapter, HMAC webhooks, verification status enum",
   },
   "/docs": {
     path: "/docs",
     title: "OTV API docs | Verify incoming web3 transfers",
     description:
-      "Call POST /v1/verify/incoming with a chain, hash, and recipient. Get a signed verdict for crypto payment verification, webhooks, and API keys.",
+      "How to call POST /v1/verify/incoming with a chain, hash, and recipient. Authentication, statuses, public verdict lookup, webhooks, and API keys.",
+    keywords: "OTV API, verify incoming transfer, verdict lookup, webhook HMAC, API key",
   },
   "/about": {
     path: "/about",
     title: "About OpenTrust Verify | POP Trust",
     description:
-      "OpenTrust Verify is how POP Trust answers whether an incoming blockchain transfer became money the recipient can spend.",
+      "OpenTrust Verify is a POP Trust product. It tells wallets and support desks whether an incoming transfer became spendable value for the named recipient.",
+    keywords: "about OpenTrust Verify, POP Trust, POPTRUST TECH VENTURES, incoming transfer verification",
   },
   "/whitepaper": {
     path: "/whitepaper",
     title: "How OTV decides spendable funds | Crypto verification model",
     description:
-      "Inclusion, execution, asset match, balance change, and finality. Why a blockchain event is not the same as a spendable incoming payment.",
+      "How OTV separates a chain event from execution, a transfer, a balance increase, finality, and spendable funds. Mock results are marked.",
+    keywords: "spendable funds model, balance change vs transfer log, crypto verification finality",
   },
   "/security": {
     path: "/security",
     title: "OTV security | API keys, sessions, and signed verdicts",
     description:
-      "Hashed API keys, hashed sessions, HMAC webhooks, and verdict signatures that never leave the OpenTrust Verify API.",
+      "How OTV stores API keys and sessions, signs verdicts on the server, checks webhook URLs, and keeps a language model out of the spendability path.",
+    keywords: "OTV security, hashed API keys, Ed25519 verdict signature, webhook SSRF",
   },
   "/contact": {
     path: "/contact",
     title: "Contact OpenTrust Verify",
-    description: "Reach POP Trust about the OTV verification API, enterprise access, and integration help.",
+    description:
+      "Contact POP Trust about the OTV API, an enterprise workspace, or a vulnerability report. Product, security, and API documentation addresses.",
+    keywords: "contact OpenTrust Verify, enterprise@poptrust.me, security@poptrust.me",
   },
   "/privacy": {
     path: "/privacy",
@@ -64,17 +74,18 @@ const pages: Record<string, SeoPage> = {
     path: "/verifier",
     title: "Public crypto verifier | Check an incoming transfer",
     description:
-      "Paste a transaction hash and recipient. OpenTrust Verify returns a signed spendable or rejected verdict you can show in support.",
+      "Look up a stored OTV verdict by ID with no key, or sign in and submit a chain, hash, and recipient for a new check.",
+    keywords: "public crypto verifier, verdict ID lookup, incoming transfer check",
   },
   "/login": {
     path: "/login",
     title: "Log in | OpenTrust Verify",
-    description: "Sign in to the OTV dashboard with email or Google to manage API keys and verdicts.",
+    description: "Sign in to the OTV dashboard with email or Google to manage API keys, webhooks, and verdicts.",
   },
   "/register": {
     path: "/register",
     title: "Create an OTV account | Free crypto verification API",
-    description: "Register for OpenTrust Verify. You get a workspace, a default project, and the free plan to mint a key.",
+    description: "Register for OpenTrust Verify. You get a workspace, a default project, and the free plan so you can mint a key.",
   },
 };
 

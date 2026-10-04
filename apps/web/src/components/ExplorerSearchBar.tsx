@@ -29,7 +29,7 @@ export function ExplorerSearchBar({
   return (
     <form
       onSubmit={onSubmit}
-      className={`${compact ? "max-w-xl p-1.5" : "p-2"} rounded-[8px] border-2 border-[var(--otv-border-strong)] bg-[var(--otv-surface)] ${className}`}
+      className={`otv-search ${compact ? "max-w-xl p-1.5" : "p-2"} ${className}`}
       role="search"
       aria-label="Look up a verdict or transaction"
     >

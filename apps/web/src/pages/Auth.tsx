@@ -53,7 +53,12 @@ export function LoginPage() {
             <p className="text-xs font-semibold tracking-[0.28em] text-[var(--otv-brand)]">ACCOUNT</p>
             <h1 className="mt-2 text-2xl font-bold">Log in</h1>
             <p className="mt-1 text-sm text-[var(--otv-text-secondary)]">
-              Use the email you registered with. API keys stay in your backend, not in this form.
+              Use the email you registered with. API keys stay in your backend, not in this form. A
+              stored verdict can still be opened on the{" "}
+              <Link className="text-[var(--otv-brand)]" to="/verifier">
+                public verifier
+              </Link>{" "}
+              without an account.
             </p>
           </div>
           {error && (
@@ -128,7 +133,9 @@ export function RegisterPage() {
             <p className="text-xs font-semibold tracking-[0.28em] text-[var(--otv-brand)]">NEW TEAM</p>
             <h1 className="mt-2 text-2xl font-bold">Create an account</h1>
             <p className="mt-1 text-sm text-[var(--otv-text-secondary)]">
-              You get a workspace, a default project, and the free plan so you can mint a key.
+              You get a workspace, a default project, and the free plan so you can mint a key. Put
+              that key in your backend. Card billing is not live. Plan names beyond free exist in the
+              product, without published prices.
             </p>
           </div>
           {error && (
