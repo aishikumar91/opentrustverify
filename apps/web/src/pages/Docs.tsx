@@ -1,13 +1,19 @@
 import { Link } from "react-router-dom";
 import { apiBase } from "@/lib/api";
+import { VerdictOrbit } from "@/components/editorial";
 
 export function DocsPage() {
   return (
     <main className="w-full max-w-3xl px-6 py-16 md:px-10">
+      <div className="flex items-start justify-between gap-6">
+        <div>
       <p className="otv-kicker">Integration</p>
       <h1 id="introduction" className="otv-doc-title">
         Integrate OpenTrust Verify
       </h1>
+        </div>
+        <VerdictOrbit />
+      </div>
       <p className="mt-3 text-lg text-[var(--otv-text-secondary)]">
         You send a claim. You get a signed verdict. Base URL{" "}
         <code className="otv-mono text-sm">{apiBase()}</code>. Try every field in the{" "}

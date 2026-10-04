@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { buttonClassName, BtnText } from "@otv/ui";
 import { product } from "@otv/config";
 import { ExplorerSearchBar } from "@/components/ExplorerSearchBar";
+import { VerdictOrbit } from "@/components/editorial";
 import { FaqList, type FaqItem } from "@/components/FaqList";
 
 const FEATURES = [
@@ -73,12 +74,15 @@ export function FeaturesPage() {
   return (
     <>
       <section className="otv-page-hero">
-        <div className="otv-container otv-split">
+        <div className="otv-container otv-split items-center">
           <div>
             <p className="otv-kicker">Product</p>
             <h1 className="otv-display otv-display-page">What {product.shortName} actually does</h1>
           </div>
-          <div>
+          <VerdictOrbit />
+        </div>
+        <div className="otv-container">
+          <div className="max-w-xl">
             <p className="otv-lede mt-0">
               {product.tagline} One HTTP call. A signed status your wallet or risk desk can show. No
               custody. No LLM deciding spendability.

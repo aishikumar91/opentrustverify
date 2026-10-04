@@ -426,12 +426,38 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(240px, 0.88fr);
-  grid-template-rows: 1fr auto;
-  column-gap: 12px;
-  row-gap: 28px;
-  min-height: 580px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(200px, 0.7fr);
+  align-items: center;
+  column-gap: 28px;
+  min-height: 0;
 }
+.otv-frame-hero {
+  min-height: 0;
+  padding: 28px 28px 24px;
+  --otv-brand: #f6e7b4;
+  --otv-brand-text: #f6e7b4;
+}
+.otv-frame-hero .otv-display {
+  font-size: clamp(2rem, 4.2vw, 3.4rem);
+  max-width: 12ch;
+}
+.otv-hero-note {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--otv-ivory-dim);
+}
+.otv-hero-note a { color: #f6e7b4; text-decoration: none; }
+.otv-hero-note a:hover { text-decoration: underline; }
+.otv-orbit {
+  width: 148px;
+  flex: none;
+  color: var(--otv-brand-text);
+}
+[data-theme="dark"] .otv-orbit { color: var(--otv-brand); }
+.otv-frame .otv-orbit,
+.otv-orbit-hero { color: #f6e7b4; }
+.otv-orbit svg { display: block; width: 100%; height: auto; }
+.otv-orbit-hero { width: min(100%, 300px); margin-left: auto; }
 .otv-hero-copy { grid-column: 1; grid-row: 1; position: relative; z-index: 2; padding-top: 12px; }
 .otv-frame .otv-display { color: var(--otv-ivory); }
 .otv-frame .otv-lede { color: var(--otv-ivory-dim); max-width: 34rem; }
@@ -459,7 +485,7 @@ a { color: inherit; text-decoration: none; }
   z-index: 3;
   max-width: 380px;
 }
-.otv-hero-search { margin-top: 22px; max-width: 36rem; }
+.otv-hero-search { margin-top: 16px; max-width: 36rem; }
 
 .otv-float {
   position: absolute;
@@ -727,7 +753,8 @@ a { color: inherit; text-decoration: none; }
     min-height: 0;
     gap: 18px;
   }
-  .otv-frame .otv-display { max-width: none; font-size: clamp(2.15rem, 12vw, 3.4rem); }
+  .otv-frame .otv-display { max-width: none; font-size: clamp(2rem, 11vw, 3rem); }
+  .otv-orbit-hero { width: min(100%, 220px); margin: 4px auto 0; }
   .otv-hero-visual {
     min-height: 0;
     margin: 0;

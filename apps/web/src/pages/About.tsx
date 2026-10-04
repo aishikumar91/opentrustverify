@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { product } from "@otv/config";
 import { DocArticle } from "@/components/DocArticle";
+import { VerdictOrbit } from "@/components/editorial";
 import { FaqList, type FaqItem } from "@/components/FaqList";
 
 const ABOUT_FAQS: FaqItem[] = [
@@ -35,7 +36,7 @@ const MODEL_FAQS: FaqItem[] = [
 
 export function AboutPage() {
   return (
-    <DocArticle title="About OpenTrust Verify" kicker="POP TRUST">
+    <DocArticle title="About OpenTrust Verify" kicker="POP TRUST" mark={<VerdictOrbit />}>
       <p>
         {product.name} is how {product.parentBrand} answers a question explorers leave open: did this
         incoming transfer become money the recipient can actually spend?
@@ -123,7 +124,7 @@ export function AboutPage() {
 
 export function WhitepaperPage() {
   return (
-    <DocArticle title="How OpenTrust Verify decides" kicker="MODEL">
+    <DocArticle title="How OpenTrust Verify decides" kicker="MODEL" mark={<VerdictOrbit />}>
       <p>
         Wallets already simulate what you are about to sign. OpenTrust Verify works on the inbound
         side. You tell us what arrived. We say whether that arrival is spendable value for the named

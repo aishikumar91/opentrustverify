@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { product } from "@otv/config";
 import { DocArticle } from "@/components/DocArticle";
+import { VerdictOrbit } from "@/components/editorial";
 import { FaqList, type FaqItem } from "@/components/FaqList";
 
 const API_ORIGIN = import.meta.env.VITE_OTV_API_URL ?? "https://otv.poptrust.me";
@@ -26,7 +27,7 @@ const SECURITY_FAQS: FaqItem[] = [
 
 export function SecurityPage() {
   return (
-    <DocArticle title="Security" kicker="TRUST">
+    <DocArticle title="Security" kicker="TRUST" mark={<VerdictOrbit />}>
       <p>
         The main risk we exist to catch is a true-looking chain event that is not spendable money.
         Around that sit forged claims, a bad RPC, lookalike tokens, replayed verdicts, and webhook

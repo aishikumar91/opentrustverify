@@ -15,6 +15,7 @@ import {
 import { publicClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ClaimFields, EMPTY_CLAIM, buildIncomingClaim } from "@/components/ClaimFields";
+import { VerdictOrbit } from "@/components/editorial";
 
 export function VerifierPage() {
   const { user, client } = useAuth();
@@ -85,7 +86,8 @@ export function VerifierPage() {
 
   return (
     <main className="otv-container py-10">
-        <div className="mb-8 max-w-3xl">
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-6">
+          <div className="max-w-3xl">
           <p className="otv-kicker">Verifier</p>
           <h1 className="otv-display otv-display-page">Look up a verdict</h1>
           <p className="otv-lede">
@@ -100,6 +102,8 @@ export function VerifierPage() {
             </Link>{" "}
             if the badge wording is new.
           </p>
+          </div>
+          <VerdictOrbit />
         </div>
         <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-6">

@@ -15,6 +15,8 @@ export function otvWebVite(opts: { port: number; open?: string; outDir?: string 
       alias: {
         "@": path.join(webRoot, "src"),
         "@otv/wallet-core": path.join(webRoot, "../../packages/wallet-core/src/index.ts"),
+        "@otv/ui/styles.css": path.join(webRoot, "../../packages/ui/src/styles.css"),
+        "@otv/design-tokens/css": path.join(webRoot, "../../packages/design-tokens/src/tokens.css"),
       },
     },
     server: { port: opts.port, host: true, open: opts.open },

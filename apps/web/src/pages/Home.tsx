@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { buttonClassName, BtnText } from "@otv/ui";
-import { product } from "@otv/config";
 import { useAuth } from "@/lib/auth";
 import { ExplorerSearchBar } from "@/components/ExplorerSearchBar";
-import { CinematicInstrument, FloatingInfoCard, ProductPreviewCard } from "@/components/editorial";
+import { VerdictOrbit } from "@/components/editorial";
 import { FaqList, type FaqItem } from "@/components/FaqList";
 
 const FEATURES = [
@@ -96,24 +95,18 @@ export function HomePage() {
     <>
       <section className="otv-stage">
         <div className="otv-container">
-          <div className="otv-frame">
+          <div className="otv-frame otv-frame-hero">
             <div className="otv-hero-layout">
-              <div className="otv-hero-copy otv-rise">
+              <div className="otv-hero-copy">
                 <p className="otv-kicker">Incoming verification</p>
                 <h1 className="otv-display">
-                  Trust
+                  Trust the balance,
                   <br />
-                  the balance,
-                  <br />
-                  not just the
-                  <br />
-                  blockchain
-                  <br />
-                  event.
+                  not the event.
                 </h1>
                 <p className="otv-lede">
-                  A transaction hash can look paid while the recipient still cannot spend the asset. Send
-                  us the claim. We return a signed verdict your wallet or risk desk can show.
+                  A hash can look paid while the recipient still cannot spend the asset. Send the claim.
+                  The API returns a signed verdict.
                 </p>
                 <div className="otv-hero-actions">
                   <Link to="/register" className={buttonClassName("primary")}>
@@ -122,38 +115,17 @@ export function HomePage() {
                   <Link to="/docs" className={buttonClassName("secondary", "otv-btn-invert")}>
                     <BtnText>Read the API</BtnText>
                   </Link>
-                  <Link to="/lab" className={buttonClassName("secondary", "otv-btn-invert")}>
-                    <BtnText>Run the demo</BtnText>
-                  </Link>
                 </div>
-                <ExplorerSearchBar compact className="otv-hero-search" />
+                <p className="otv-hero-note">
+                  <Link to="/lab">Run the demo</Link>
+                  <span aria-hidden> · </span>
+                  <Link to="/verifier">Look up a verdict</Link>
+                </p>
               </div>
-
-              <div className="otv-hero-visual" aria-hidden={false}>
-                <CinematicInstrument />
-                <div className="otv-float otv-float-a otv-rise otv-rise-2">
-                  <FloatingInfoCard label="Server signed" value="Ed25519 on the API" />
-                </div>
-                <div className="otv-float otv-float-b otv-rise otv-rise-3">
-                  <FloatingInfoCard label="Balance check" value="Not the chain event" />
-                </div>
-                <div className="otv-float otv-float-c otv-rise">
-                  <FloatingInfoCard label="Evidence" value="Required before a verdict" />
-                </div>
-              </div>
-
-              <div className="otv-hero-product otv-rise otv-rise-3">
-                <ProductPreviewCard
-                  title={product.name}
-                  meta="Incoming claim"
-                  status="SPENDABLE"
-                  statusNote="· a status in the enum"
-                  actionLabel="Open the public verifier"
-                  to="/verifier"
-                />
-              </div>
+              <VerdictOrbit size="hero" />
             </div>
           </div>
+          <ExplorerSearchBar compact className="otv-hero-search" />
         </div>
       </section>
 
@@ -227,7 +199,10 @@ export function HomePage() {
 
       <section className="otv-section otv-section-tint">
         <div className="otv-container">
-          <h2 className="otv-heading mb-12 max-w-3xl">How a claim becomes a signed verdict</h2>
+          <div className="mb-10 flex flex-wrap items-center justify-between gap-6">
+            <h2 className="otv-heading mb-0 max-w-3xl">How a claim becomes a signed verdict</h2>
+            <VerdictOrbit />
+          </div>
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s) => (
               <div key={s.n} className="otv-step">
