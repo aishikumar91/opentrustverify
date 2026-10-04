@@ -82,7 +82,18 @@ export function DocsPage() {
           not sent to that route. <code className="otv-mono">POST /v1/auth/logout</code> ends the
           session. Google
           sign-in is available on the hosted site via{" "}
-          <code className="otv-mono">GET /v1/auth/oidc/login</code>.
+          <code className="otv-mono">GET /v1/auth/oidc/login</code>. While{" "}
+          <code className="otv-mono">GET /v1/auth/me</code> is in flight, the page shows a skeleton
+          instead of the signed-in controls.
+        </p>
+      </section>
+
+      <section id="lab" className="mt-12 space-y-3 text-[var(--otv-text-secondary)]">
+        <h2 className="text-2xl font-semibold text-[var(--otv-text-primary)]">Verification lab</h2>
+        <p>
+          <code className="otv-mono">POST /v1/demo/verification/run</code> runs a labeled simulation.
+          The four scenarios are a phantom event, a balance mismatch, a valid payment, and a pending
+          payment. The lab does not broadcast a transaction and it does not mint a verdict.
         </p>
       </section>
 

@@ -182,8 +182,10 @@ export function WhitepaperPage() {
         <code className="otv-mono">eth_getBalance</code> read. Token balances are{" "}
         <code className="otv-mono">balanceOf</code>. If those reads disagree, the result needs
         reconciliation. If every read fails, the balance is unavailable. It is not reported as zero.
-        The verification lab is a labeled simulation. It does not broadcast a transaction and it does
-        not mint a verdict.
+        The verification lab is a labeled simulation: a phantom event, a balance mismatch, a valid
+        payment, or a pending payment. It does not broadcast a transaction and it does not mint a
+        verdict. While the session check is in flight, the site shows a skeleton instead of
+        signed-in controls.
       </p>
       <h2 className="pt-4 text-xl font-semibold text-[var(--otv-text-primary)]">Honesty about live vs mock</h2>
       <p>

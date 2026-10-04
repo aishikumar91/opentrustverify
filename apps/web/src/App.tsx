@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./lib/auth";
 import { ThemeProvider } from "./lib/theme";
@@ -36,6 +37,14 @@ import { LabPage } from "./pages/Lab";
 import { DocsPage } from "./pages/Docs";
 import { LoginPage, RegisterPage } from "./pages/Auth";
 import { RouteSeo } from "./components/RouteSeo";
+import { SkeletonPreloader } from "./components/SkeletonPreloader";
+import { useAuth } from "./lib/auth";
+
+function ReadyGate({ children }: { children: ReactNode }) {
+  const { ready } = useAuth();
+  if (!ready) return <SkeletonPreloader />;
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
@@ -43,6 +52,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <RouteSeo />
+        <ReadyGate>
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
@@ -112,6 +122,7 @@ export default function App() {
           <Route path="/demo-wallet" element={<Navigate to="/wallet" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ReadyGate>
       </BrowserRouter>
     </AuthProvider>
     </ThemeProvider>

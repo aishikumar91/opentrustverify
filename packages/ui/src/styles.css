@@ -85,7 +85,7 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 32px;
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 0 16px;
@@ -104,7 +104,7 @@ a { color: inherit; text-decoration: none; }
     filter var(--otv-duration-fast) var(--otv-ease);
 }
 .otv-btn:disabled { opacity: 0.4; pointer-events: none; }
-.otv-btn-sm { padding: 0 12px; min-height: 34px; }
+.otv-btn-sm { padding: 0 12px; min-height: 28px; }
 .otv-btn-sm .otv-btn-face small {
   padding: 6px 0;
   font-size: 12px;
@@ -114,7 +114,7 @@ a { color: inherit; text-decoration: none; }
 .otv-btn-face { position: relative; display: inline-block; }
 .otv-btn-face small {
   display: block;
-  padding: 10px 0;
+  padding: 6px 0;
   font-size: 13px;
   font-weight: 700;
   line-height: 16px;
@@ -174,7 +174,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 36px;
+  min-height: 32px;
   border: 0;
   background: transparent;
   color: var(--otv-text-secondary);
@@ -818,7 +818,7 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 767px) {
   .otv-btn,
-  .otv-btn-ghost { min-height: 44px; }
+  .otv-btn-ghost { min-height: 36px; }
   .otv-btn { padding: 0 16px; }
   .otv-section { padding: 56px 0; }
   .otv-card { padding: 18px; }
@@ -871,6 +871,38 @@ a { color: inherit; text-decoration: none; }
   color: var(--otv-text-secondary);
 }
 
+.otv-skel-bar {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(111, 106, 98, 0.18), rgba(111, 106, 98, 0.42), rgba(111, 106, 98, 0.18));
+  background-size: 200% 100%;
+  animation: otv-skel 1.15s ease-in-out infinite;
+}
+.otv-frame .otv-skel-bar {
+  background: linear-gradient(90deg, rgba(181, 176, 166, 0.16), rgba(181, 176, 166, 0.4), rgba(181, 176, 166, 0.16));
+  background-size: 200% 100%;
+}
+.otv-skel-logo { width: 148px; height: 18px; }
+.otv-skel-nav { display: none; width: min(360px, 40vw); height: 14px; justify-self: center; }
+@media (min-width: 960px) {
+  .otv-skel-nav { display: block; }
+}
+.otv-skel-action { width: 88px; height: 28px; justify-self: end; }
+.otv-skel-kicker { width: 120px; height: 10px; }
+.otv-skel-title { width: min(100%, 280px); height: 28px; margin-top: 12px; }
+.otv-skel-short { width: min(72%, 200px); }
+.otv-skel-line { width: min(100%, 340px); height: 12px; margin-top: 14px; }
+.otv-skel-shorter { width: min(64%, 220px); }
+.otv-skel-orbit {
+  width: min(100%, 220px);
+  height: 220px;
+  margin-left: auto;
+  border-radius: 999px;
+}
+@keyframes otv-skel {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
 @keyframes otv-orbit-spin {
   to { transform: rotate(360deg); }
 }
@@ -882,7 +914,8 @@ a { color: inherit; text-decoration: none; }
   .otv-float-card,
   .otv-instrument,
   .otv-rise,
-  .otv-spin { transition: none; animation: none; }
+  .otv-spin,
+  .otv-skel-bar { transition: none; animation: none; }
   .otv-btn:hover,
   .otv-btn:active,
   .otv-btn-ghost:hover,

@@ -1,6 +1,6 @@
 # OpenTrust Verify
 
-Version 0.3.2. POP Trust. Product host: otv.poptrust.me.
+Version 0.3.3. POP Trust. Product host: otv.poptrust.me.
 
 Trust the balance, not just the blockchain event.
 
@@ -44,7 +44,7 @@ The hosted site signs people in with email and password, or with Google. Google 
 
 A deployment without `OIDC_ISSUER` and `OIDC_CLIENT_ID` keeps email and password. `GET /v1/auth/oidc/login` returns 501, and the Google control stays off. Workspace roles are owner, admin, and member. Owner and admin can set the public site URL. An API key stays with the caller. The settings request does not accept the key.
 
-A browser wallet on this site is not an account and not a verdict. Native balances are an `eth_getBalance` read. Token balances are `balanceOf`. If those reads disagree, the result needs reconciliation. If every read fails, the balance is unavailable. It is not reported as zero. The in-product verification lab is a labeled simulation. It does not broadcast a transaction and it does not mint a verdict.
+A browser wallet on this site is not an account and not a verdict. Native balances are an `eth_getBalance` read. Token balances are `balanceOf`. If those reads disagree, the result needs reconciliation. If every read fails, the balance is unavailable. It is not reported as zero. The verification lab is a labeled simulation with four scenarios: a phantom event, a balance mismatch, a valid payment, and a pending payment. It does not broadcast a transaction and it does not mint a verdict. While `GET /v1/auth/me` is in flight, the site shows a skeleton instead of signed-in controls.
 
 ## What we do not claim
 
