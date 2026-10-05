@@ -1,4 +1,3 @@
-import Link from "next/link";
 import BrandMark from "../components/BrandMark";
 import VerificationExplorer from "../components/VerificationExplorer";
 
@@ -25,14 +24,8 @@ export default function Home() {
     <div className="font-ui min-h-screen overflow-x-hidden bg-[#0A0E14] text-[#ECEFF3]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(ellipse_at_20%_0%,_rgba(225,29,72,0.22),_transparent_55%),radial-gradient(ellipse_at_80%_10%,_rgba(80,10,30,0.35),_transparent_50%)]" />
 
-      <nav className="relative mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-5 sm:px-6 md:px-8">
+      <nav className="relative mx-auto flex max-w-5xl items-center px-4 py-5 sm:px-6 md:px-8">
         <BrandMark size="sm" />
-        <Link
-          href="/admin/login"
-          className="shrink-0 rounded-full bg-[#E11D48] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
-        >
-          Admin console
-        </Link>
       </nav>
 
       <header className="relative mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center px-4 pb-16 pt-10 text-center sm:px-6 md:px-8 md:pb-24">
