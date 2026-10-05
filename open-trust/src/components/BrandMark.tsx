@@ -12,7 +12,7 @@ const sizeClass: Record<NonNullable<BrandMarkProps["size"]>, string> = {
 };
 
 /**
- * 3GGE wordmark — dimensional red lettering for dark admin surfaces.
+ * 3GGER wordmark — dimensional red lettering for dark admin surfaces.
  */
 export default function BrandMark({
   size = "md",
@@ -21,10 +21,10 @@ export default function BrandMark({
 }: BrandMarkProps) {
   return (
     <Tag
-      className={`brand-3gge inline-block font-brand uppercase leading-none ${sizeClass[size]} ${className}`}
-      aria-label="3GGE"
+      className={`brand-3gger inline-block font-brand uppercase leading-none ${sizeClass[size]} ${className}`}
+      aria-label="3GGER"
     >
-      3GGE
+      3GGER
     </Tag>
   );
 }

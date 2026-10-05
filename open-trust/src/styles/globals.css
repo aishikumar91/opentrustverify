@@ -26,8 +26,8 @@ body {
   font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Dimensional red 3GGE wordmark — readable on dark admin surfaces */
-.brand-3gge {
+/* Dimensional red 3GGER wordmark — readable on dark admin surfaces */
+.brand-3gger {
   color: #ff2d4a;
   text-shadow:
     0 1px 0 #b01028,
@@ -43,7 +43,7 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .brand-3gge {
+  .brand-3gger {
     animation: brand-rise 0.9s ease-out both;
   }
 

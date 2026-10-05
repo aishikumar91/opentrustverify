@@ -34,7 +34,7 @@ export default function Home() {
           Know if a transaction is real before it costs you.
         </p>
         <p className="brand-fade-up-delay mx-auto mt-4 max-w-lg text-sm text-[#6B7686]">
-          3GGE reads live on-chain data to catch mempool lures, address poisoning, and
+          3GGER reads live on-chain data to catch mempool lures, address poisoning, and
           unverified tokens — in the seconds before you&apos;d act on fake funds.
         </p>
         <div className="brand-fade-up-delay mt-10">
@@ -69,7 +69,7 @@ export default function Home() {
       </section>
 
       <footer className="relative mx-auto max-w-5xl px-4 py-10 text-center text-xs text-[#3A4150] sm:px-6 md:px-8">
-        3GGE · verdicts are produced from live chain data, not stored assumptions.
+        3GGER · verdicts are produced from live chain data, not stored assumptions.
       </footer>
     </div>
   );
