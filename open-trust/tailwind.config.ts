@@ -5,8 +5,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Roboto", "ui-sans-serif", "system-ui"],
-        display: ["Urbanist", "ui-sans-serif", "system-ui"],
+        sans: ["Outfit", "ui-sans-serif", "system-ui"],
+        display: ["Outfit", "ui-sans-serif", "system-ui"],
+        brand: ["Bebas Neue", "Impact", "sans-serif"],
         mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
       },
       colors: {

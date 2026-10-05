@@ -8,12 +8,16 @@
  * or short-circuited in test/demo flags.
  */
 
-function loadAllowlist(): Set<string> {
+function parseAllowlistEntries(): string[] {
   const raw = process.env.ADMIN_ALLOWLIST ?? "";
-  const entries = raw
+  return raw
     .split(",")
     .map((a) => a.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function loadAllowlist(): Set<string> {
+  const entries = parseAllowlistEntries();
 
   if (entries.length === 0) {
     throw new Error(
@@ -22,6 +26,11 @@ function loadAllowlist(): Set<string> {
     );
   }
   return new Set(entries);
+}
+
+/** Soft check for settings UI — does not throw when empty. */
+export function hasAllowlistEntries(): boolean {
+  return parseAllowlistEntries().length > 0;
 }
 
 let cached: Set<string> | null = null;

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&family=Roboto:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,6 +7,7 @@
 html,
 body {
   background-color: #0a121b;
+  overflow-x: hidden;
 }
 
 * {
@@ -17,8 +18,68 @@ body {
   background-color: #e11d4855;
 }
 
+.font-brand {
+  font-family: "Bebas Neue", "Impact", sans-serif;
+}
+
+.font-ui {
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Dimensional red 3GGE wordmark — readable on dark admin surfaces */
+.brand-3gge {
+  color: #ff2d4a;
+  text-shadow:
+    0 1px 0 #b01028,
+    0 2px 0 #9a0e22,
+    0 3px 0 #840c1d,
+    0 4px 0 #6e0a18,
+    0 5px 0 #580814,
+    0 6px 10px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(225, 29, 72, 0.35);
+  letter-spacing: 0.18em;
+  transform: perspective(600px) rotateX(8deg);
+  transform-origin: center bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brand-3gge {
+    animation: brand-rise 0.9s ease-out both;
+  }
+
+  .brand-fade-up {
+    animation: fade-up 0.7s ease-out both;
+  }
+
+  .brand-fade-up-delay {
+    animation: fade-up 0.7s ease-out 0.15s both;
+  }
+}
+
+@keyframes brand-rise {
+  from {
+    opacity: 0;
+    transform: perspective(600px) rotateX(18deg) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(600px) rotateX(8deg) translateY(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer components {
   .btn-primary {
-    @apply rounded-full bg-brand px-6 py-3 text-sm font-medium text-[#0A0E14] transition hover:bg-brand-hover disabled:opacity-50;
+    @apply rounded-full bg-brand px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-50;
   }
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandMark from "../components/BrandMark";
 import VerificationExplorer from "../components/VerificationExplorer";
 
 const STEPS = [
@@ -21,65 +22,52 @@ const STEPS = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0A0E14] text-[#ECEFF3]" style={{ fontFamily: "'Roboto', sans-serif" }}>
-      <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6 md:px-8">
-        <span className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Urbanist', sans-serif" }}>
-          Open Trust
-        </span>
+    <div className="font-ui min-h-screen overflow-x-hidden bg-[#0A0E14] text-[#ECEFF3]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(ellipse_at_20%_0%,_rgba(225,29,72,0.22),_transparent_55%),radial-gradient(ellipse_at_80%_10%,_rgba(80,10,30,0.35),_transparent_50%)]" />
+
+      <nav className="relative mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-5 sm:px-6 md:px-8">
+        <BrandMark size="sm" />
         <Link
           href="/admin/login"
-          className="rounded-full border border-[#20242C] px-4 py-1.5 text-sm text-[#B9C4CE] transition hover:border-[#E11D48] hover:text-[#E11D48]"
+          className="shrink-0 rounded-full bg-[#E11D48] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
         >
           Admin console
         </Link>
       </nav>
 
-      {/* Hero */}
-      <header className="mx-auto max-w-3xl px-6 pb-20 pt-12 text-center md:px-8 md:pb-28 md:pt-20">
-        <h1
-          className="text-4xl font-semibold leading-[1.1] tracking-tight md:text-6xl"
-          style={{ fontFamily: "'Urbanist', sans-serif" }}
-        >
+      <header className="relative mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center px-4 pb-16 pt-10 text-center sm:px-6 md:px-8 md:pb-24">
+        <BrandMark size="hero" as="h1" className="mb-6" />
+        <p className="brand-fade-up max-w-xl text-base text-[#B9C4CE] sm:text-lg">
           Know if a transaction is real before it costs you.
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-base text-[#8A95A5] md:text-lg">
-          Open Trust reads live on-chain data to catch mempool lures, address poisoning, and
-          unverified tokens — in the seconds before you'd act on fake funds.
         </p>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <p className="brand-fade-up-delay mx-auto mt-4 max-w-lg text-sm text-[#6B7686]">
+          3GGE reads live on-chain data to catch mempool lures, address poisoning, and
+          unverified tokens — in the seconds before you&apos;d act on fake funds.
+        </p>
+        <div className="brand-fade-up-delay mt-10">
           <a
             href="#explorer"
-            className="rounded-full bg-[#E11D48] px-7 py-3 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
-            style={{ fontFamily: "'Urbanist', sans-serif" }}
+            className="inline-flex rounded-full bg-[#E11D48] px-7 py-3 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
           >
             Verify a transaction
           </a>
         </div>
       </header>
 
-      {/* Explorer */}
-      <section className="mx-auto max-w-3xl px-6 pb-24 md:px-8">
+      <section className="relative mx-auto max-w-3xl px-4 pb-20 sm:px-6 md:px-8 md:pb-24">
         <VerificationExplorer />
       </section>
 
-      {/* How it works */}
-      <section className="border-t border-[#171B22] bg-[#080B10]">
-        <div className="mx-auto max-w-5xl px-6 py-20 md:px-8">
-          <h2
-            className="mb-12 text-center text-2xl font-semibold tracking-tight md:text-3xl"
-            style={{ fontFamily: "'Urbanist', sans-serif" }}
-          >
+      <section className="relative border-t border-[#171B22] bg-[#080B10]">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 md:px-8 md:py-20">
+          <h2 className="mb-10 text-center text-2xl font-semibold tracking-tight sm:mb-12 md:text-3xl">
             How a verdict gets made
           </h2>
           <div className="grid gap-10 md:grid-cols-3">
             {STEPS.map((s) => (
               <div key={s.n}>
-                <span className="text-sm text-[#3A4150]" style={{ fontFamily: "'Urbanist', sans-serif" }}>
-                  {s.n}
-                </span>
-                <h3 className="mt-2 text-base font-medium" style={{ fontFamily: "'Urbanist', sans-serif" }}>
-                  {s.title}
-                </h3>
+                <span className="text-sm text-[#3A4150]">{s.n}</span>
+                <h3 className="mt-2 text-base font-medium">{s.title}</h3>
                 <p className="mt-2 text-sm text-[#8A95A5]">{s.body}</p>
               </div>
             ))}
@@ -87,8 +75,8 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-5xl px-6 py-10 text-center text-xs text-[#3A4150] md:px-8">
-        Open Trust · verdicts are produced from live chain data, not stored assumptions.
+      <footer className="relative mx-auto max-w-5xl px-4 py-10 text-center text-xs text-[#3A4150] sm:px-6 md:px-8">
+        3GGE · verdicts are produced from live chain data, not stored assumptions.
       </footer>
     </div>
   );

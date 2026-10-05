@@ -1,9 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getAdminSettingsFlags } from "../../../lib/settings";
 
 /**
  * Public runtime config for the admin UI.
  * WalletConnect project id is read at request time so VPS .env changes
  * apply without rebuilding the Next image (NEXT_PUBLIC_* alone is build-time).
+ * Status YES/NO flags are also exposed so landing can show readiness without
+ * inventing client-side values.
  */
 export default function handler(_req: NextApiRequest, res: NextApiResponse) {
   const walletConnectProjectId = (
@@ -13,11 +16,18 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse) {
     ""
   ).trim();
 
+  const settings = getAdminSettingsFlags();
+
   res.setHeader("Cache-Control", "no-store");
   res.status(200).json({
     walletConnectProjectId,
     walletConnectConfigured: Boolean(walletConnectProjectId),
-    chainId: Number(process.env.CHAIN_ID ?? 8453),
-    chainName: process.env.CHAIN_NAME ?? "Base",
+    chainId: settings.chainId,
+    chainName: settings.chainName,
+    productName: "3GGE",
+    rpc: settings.rpc,
+    mainnet: settings.mainnet,
+    allowlist: settings.allowlist,
+    rpcSource: settings.rpcSource,
   });
 }

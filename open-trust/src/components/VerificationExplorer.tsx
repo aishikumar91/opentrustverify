@@ -45,7 +45,7 @@ export default function VerificationExplorer() {
   return (
     <div id="explorer" className="mx-auto max-w-2xl">
       <form onSubmit={runVerification} className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7686]" />
           <input
             value={input}
@@ -57,32 +57,41 @@ export default function VerificationExplorer() {
         <button
           type="submit"
           disabled={loading}
-          className="shrink-0 rounded-full bg-[#E11D48] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-50"
-          style={{ fontFamily: "'Urbanist', sans-serif" }}
+          className="flex min-h-[48px] shrink-0 items-center justify-center rounded-full bg-[#E11D48] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
         </button>
       </form>
 
-      {error && <p className="mt-3 text-sm text-[#FF5C6C]">{error}</p>}
+      {error && <p className="mt-3 break-words text-sm text-[#FF5C6C]">{error}</p>}
 
       {result && (
-        <div className="mt-6 rounded-2xl border border-[#20242C] bg-[#10141C] p-6">
-          <div className="flex items-center gap-2">
+        <div
+          className={`mt-6 overflow-hidden rounded-2xl border p-4 sm:p-6 ${
+            result.status === "FRAUD_INTERCEPTED"
+              ? "border-[#E11D48]/40 bg-[linear-gradient(135deg,rgba(225,29,72,0.16),rgba(16,20,28,0.9))]"
+              : "border-[#20242C] bg-[#10141C]"
+          }`}
+        >
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`h-2 w-2 rounded-full ${
+              className={`h-2 w-2 shrink-0 rounded-full ${
                 result.status === "FRAUD_INTERCEPTED" ? "bg-[#FF5C6C]" : "bg-[#35D398]"
               }`}
             />
-            <p className="text-base font-medium" style={{ fontFamily: "'Urbanist', sans-serif" }}>
+            <p className="text-base font-medium">
               {result.status === "FRAUD_INTERCEPTED" ? "Fraud intercepted" : "Verified legitimate"}
             </p>
-            <span className="ml-auto text-sm text-[#6B7686]">{result.threatScore}/100</span>
+            <span className="ml-auto font-mono text-sm text-[#6B7686]">
+              {result.threatScore}/100
+            </span>
           </div>
-          <p className="mt-1 font-mono text-xs text-[#6B7686]">{result.txHash}</p>
-          <ul className="mt-4 space-y-1.5 text-sm text-[#B9C4CE]" style={{ fontFamily: "'Roboto', sans-serif" }}>
+          <p className="mt-1 break-all font-mono text-xs text-[#6B7686]">{result.txHash}</p>
+          <ul className="mt-4 space-y-1.5 text-sm text-[#B9C4CE]">
             {result.reasons.map((r, i) => (
-              <li key={i}>· {r}</li>
+              <li key={i} className="break-words">
+                · {r}
+              </li>
             ))}
           </ul>
         </div>

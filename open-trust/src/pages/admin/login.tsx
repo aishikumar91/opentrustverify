@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { withBasePath } from "../../lib/basePath";
+import BrandMark from "../../components/BrandMark";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,23 +31,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0A0E14] text-[#ECEFF3]">
-      <form onSubmit={onSubmit} className="w-full max-w-sm px-6">
-        <h1
-          className="mb-1 text-xl font-medium tracking-tight"
-          style={{ fontFamily: "'Urbanist', sans-serif" }}
-        >
-          Admin console
-        </h1>
-        <p className="mb-8 text-sm text-[#6B7686]" style={{ fontFamily: "'Roboto', sans-serif" }}>
-          Open Trust trigger access
+    <div className="font-ui relative flex min-h-screen items-center justify-center overflow-x-hidden bg-[#0A0E14] px-4 text-[#ECEFF3]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(225,29,72,0.16),_transparent_55%)]" />
+      <form onSubmit={onSubmit} className="relative w-full max-w-sm">
+        <BrandMark size="lg" as="h1" className="mb-3" />
+        <p className="brand-fade-up mb-8 text-sm text-[#8A95A5]">
+          Admin console — sign in to trigger and verify.
         </p>
 
         <label className="text-xs text-[#6B7686]">Username</label>
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="mt-1 mb-5 w-full border-0 border-b border-[#20242C] bg-transparent py-2 text-sm outline-none focus:border-[#E11D48]"
+          className="mb-5 mt-1 w-full border-0 border-b border-[#20242C] bg-transparent py-2 text-sm outline-none focus:border-[#E11D48]"
           autoComplete="username"
         />
 
@@ -55,11 +52,11 @@ export default function LoginPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 mb-6 w-full border-0 border-b border-[#20242C] bg-transparent py-2 text-sm outline-none focus:border-[#E11D48]"
+          className="mb-6 mt-1 w-full border-0 border-b border-[#20242C] bg-transparent py-2 text-sm outline-none focus:border-[#E11D48]"
           autoComplete="current-password"
         />
 
-        {error && <p className="mb-4 text-xs text-[#FF5C6C]">{error}</p>}
+        {error && <p className="mb-4 break-words text-xs text-[#FF5C6C]">{error}</p>}
 
         <button
           type="submit"

@@ -27,6 +27,29 @@ async function main() {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS executed_runs (
+      id SERIAL PRIMARY KEY,
+      tx_hash TEXT NOT NULL UNIQUE,
+      vector TEXT NOT NULL,
+      target_address TEXT NOT NULL,
+      explorer_url TEXT,
+      status TEXT,
+      threat_score INTEGER,
+      real_balance_impact TEXT,
+      reasons JSONB,
+      action_recommended TEXT,
+      broadcast_at TIMESTAMPTZ,
+      verified_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS executed_runs_broadcast_at_idx
+      ON executed_runs (broadcast_at DESC NULLS LAST, created_at DESC);
+  `);
+
   const passwordHash = bcrypt.hashSync(password, 10);
   await pool.query(
     `INSERT INTO admin_users (username, password_hash, role)

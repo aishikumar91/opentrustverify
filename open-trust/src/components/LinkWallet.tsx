@@ -114,8 +114,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         optionalChains: [chainId, 8453, 1, 137],
         showQrModal: true,
         metadata: {
-          name: "Open Trust Admin",
-          description: "Link an allowlisted wallet for Open Trust trigger vectors",
+          name: "3GGE Admin",
+          description: "Link an allowlisted wallet for 3GGE trigger vectors",
           url: process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
           icons: ["https://otv.poptrust.me/favicon.svg"],
         },
@@ -138,11 +138,11 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs text-[#6B7686]">Linked wallet</p>
           {wallet ? (
-            <p className="mt-1 font-mono text-sm text-[#ECEFF3]">
+            <p className="mt-1 break-all font-mono text-sm text-[#ECEFF3] sm:break-normal">
               {shortAddress(wallet.address)}
               <span className="ml-2 text-xs text-[#6B7686]">
                 {wallet.source === "walletconnect" ? "WalletConnect" : "Injected"}
@@ -152,14 +152,14 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             <p className="mt-1 text-sm text-[#6B7686]">No wallet linked</p>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 min-[420px]:w-auto min-[420px]:flex-row min-[420px]:flex-wrap">
           {!wallet ? (
             <>
               <button
                 type="button"
                 onClick={() => void connectInjected()}
                 disabled={busy !== null}
-                className="rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
+                className="min-h-[44px] rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 {busy === "injected" ? "Connecting…" : "Connect MetaMask"}
               </button>
@@ -172,7 +172,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                     ? "Connect with WalletConnect"
                     : "Set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID (or VITE_WALLETCONNECT_PROJECT_ID) to enable"
                 }
-                className="rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30"
+                className="min-h-[44px] rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 {busy === "walletconnect" ? "Connecting…" : "WalletConnect"}
               </button>
@@ -182,14 +182,14 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               <button
                 type="button"
                 onClick={() => onUseAsTarget(wallet.address)}
-                className="rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
+                className="min-h-[44px] rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
               >
                 Use as target
               </button>
               <button
                 type="button"
                 onClick={disconnect}
-                className="rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48]"
+                className="min-h-[44px] rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48]"
               >
                 Disconnect
               </button>

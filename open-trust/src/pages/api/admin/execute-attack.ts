@@ -3,9 +3,11 @@ import {
   triggerLowGasPendingLure,
   triggerZeroValuePoisoning,
   triggerFakeTokenTransfer,
+  type TriggerResult,
 } from "../../../services/liveEngine";
 import { NotAllowlistedError } from "../../../lib/allowlist";
 import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../lib/auth";
+import { insertExecutedRun } from "../../../lib/runs";
 
 type Vector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer";
 
@@ -14,6 +16,21 @@ interface Body {
   targetAddress: string;
   amount?: string;
   fakeTokenContract?: string;
+}
+
+async function persistRun(result: TriggerResult) {
+  try {
+    return await insertExecutedRun({
+      txHash: result.txHash,
+      vector: result.vector,
+      targetAddress: result.targetAddress,
+      explorerUrl: result.explorerUrl,
+      broadcastAt: result.broadcastAt,
+    });
+  } catch (err) {
+    console.error("Failed to persist executed run:", err);
+    return null;
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -36,32 +53,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    let result: TriggerResult;
     switch (vector) {
       case "mempoolLure": {
-        const result = await triggerLowGasPendingLure(targetAddress, amount ?? "0.001");
-        return res.status(200).json(result);
+        result = await triggerLowGasPendingLure(targetAddress, amount ?? "0.001");
+        break;
       }
       case "addressPoisoning": {
         if (!fakeTokenContract) {
           return res.status(400).json({ error: "fakeTokenContract is required for this vector" });
         }
-        const result = await triggerZeroValuePoisoning(targetAddress, fakeTokenContract);
-        return res.status(200).json(result);
+        result = await triggerZeroValuePoisoning(targetAddress, fakeTokenContract);
+        break;
       }
       case "fakeTokenTransfer": {
         if (!fakeTokenContract) {
           return res.status(400).json({ error: "fakeTokenContract is required for this vector" });
         }
-        const result = await triggerFakeTokenTransfer(
+        result = await triggerFakeTokenTransfer(
           targetAddress,
           fakeTokenContract,
           amount ?? "1000000000000000000"
         );
-        return res.status(200).json(result);
+        break;
       }
       default:
         return res.status(400).json({ error: `Unknown vector: ${vector}` });
     }
+
+    const run = await persistRun(result);
+    return res.status(200).json({ ...result, run });
   } catch (err) {
     if (err instanceof NotAllowlistedError) {
       return res.status(403).json({ error: err.message });
