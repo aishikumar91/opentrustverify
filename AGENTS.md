@@ -141,3 +141,15 @@ Full filtered dump is about 129k tokens. Signatures mode is about 20k. After cod
 Do not point context-builder at home directories, `keys/`, or `.env` files. Review dumps before sharing. They can still contain demo secrets from `.env.example` and SQL seeds.
 
 Details: `docs/handoffs/project-context/README.md`.
+
+---
+
+## Cursor Cloud specific instructions
+
+Postgres 16 and Redis 7 are installed in the VM. The environment start script binds the ports from `.env.example`: Postgres `5433` (role and database `otv`, password `otv`), Redis `6380`, API `4080`, web `4090`. Docker is not installed here, so `pnpm docker:up` does not start these services.
+
+That start script exports `DATABASE_URL`, `REDIS_URL`, and `VITE_OTV_API_URL=http://localhost:4080`, then runs `pnpm --filter @otv/api run dev` and `pnpm --filter @otv/web run dev`. Install already ran `pnpm install --frozen-lockfile` and `pnpm --filter './packages/*' run build`. Repeat the package build after editing a package that publishes `dist`.
+
+Demo login is `demo@poptrust.me` / `otv-demo-change-me`. Demo API key is `otv_test_demo_key_change_me`. With `DATABASE_URL` set, the API applies migrations and `database/seeds/001_demo.sql` on startup.
+
+`services/api` resolves `@otv/wallet-core` through a `tsconfig` path, and that package is not a workspace dependency. `tsx` (dev and `pnpm demo`) follows the path. Vitest does not, so `src/app.test.ts` fails to load until the import is a real dependency. Package tests, conformance, and the running API are unaffected.
