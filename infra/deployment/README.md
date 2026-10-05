@@ -62,10 +62,10 @@ Compose service `trigger` in `infra/docker/docker-compose.vps.yml` builds `infra
 | `OTV_PG_PASSWORD` | Shared Postgres (`admin_users` table in `otv` DB) |
 | `SESSION_SECRET` | Admin session cookie HMAC |
 | `DEMO_PASSWORD` | Seeded `admin` password (`DEFAULT_ADMIN_PASSWORD`) |
-| `BASE_RPC_URL` / `ETH_RPC_URL` / `EVM_RPC_URL` | Mapped to `RPC_URL` in the container entrypoint (use VPS mainnet RPC; do not invent Sepolia) |
+| `BASE_RPC_URL` / `ETH_RPC_URL` / `EVM_RPC_URL` | Mapped to `RPC_URL` in the container entrypoint. Prefer a dedicated VPS RPC; if unset (and otv-api has none), deploy falls back to catalog public Base (`https://base.publicnode.com`) for `TRIGGER_CHAIN_ID=8453` — same path as OTV `EVM_PUBLIC_RPC`, not Sepolia |
 | `TRIGGER_ALLOW_MAINNET` | Keep `true` when RPC/chain is Base mainnet (`TRIGGER_CHAIN_ID=8453`) |
 | `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY` | Optional broadcast key — leave empty unless intentionally set on the VPS |
-| `TRIGGER_ADMIN_ALLOWLIST` | Optional comma-separated allowlisted wallets |
+| `TRIGGER_ADMIN_ALLOWLIST` | Comma-separated allowlisted wallets; required for ALLOWLIST=YES — do not invent addresses |
 | `VITE_WALLETCONNECT_PROJECT_ID` / `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect for admin link-wallet; reuse OTV web id, never invent |
 
 Do not invent MetaMask / broadcast private keys. Without `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY`, login and the console still work; live execute routes refuse until a key is configured. Without a WalletConnect project id, MetaMask / injected connect still works; the WalletConnect button stays disabled with a config message.

@@ -117,7 +117,7 @@ ensure_env_keys() {
     fi
   done
 
-  # Reuse RPC from a running otv-api container when .env lacks it (do not invent).
+  # Reuse RPC from a running otv-api container when .env lacks it (do not invent keys).
   if ! grep -qE '^(BASE_RPC_URL|ETH_RPC_URL|EVM_RPC_URL|RPC_URL)=.+' "$env_file"; then
     if command -v docker >/dev/null 2>&1 && docker inspect otv-api >/dev/null 2>&1; then
       local imported=""
@@ -134,6 +134,22 @@ ensure_env_keys() {
         printf '%s\n' "$imported" >>"$env_file"
         chmod 600 "$env_file"
       fi
+    fi
+  fi
+
+  # When API also has no dedicated RPC (EVM_PUBLIC_RPC path), use the same
+  # catalog public Base mainnet endpoint as @otv/chain-adapters — not a secret,
+  # not Sepolia. Only for default TRIGGER_CHAIN_ID=8453 / Base.
+  if ! grep -qE '^(BASE_RPC_URL|ETH_RPC_URL|EVM_RPC_URL|RPC_URL)=.+' "$env_file"; then
+    local chain_id="8453"
+    chain_id="$(grep -E '^TRIGGER_CHAIN_ID=' "$env_file" | head -n1 | cut -d= -f2- || true)"
+    chain_id="${chain_id:-8453}"
+    if [[ "$chain_id" == "8453" ]]; then
+      echo "No dedicated RPC in .env or otv-api — setting BASE_RPC_URL to catalog public Base mainnet RPC."
+      grep -vE '^BASE_RPC_URL=' "$env_file" >"${env_file}.tmp" || true
+      mv "${env_file}.tmp" "$env_file"
+      printf '%s\n' 'BASE_RPC_URL=https://base.publicnode.com' >>"$env_file"
+      chmod 600 "$env_file"
     fi
   fi
 
