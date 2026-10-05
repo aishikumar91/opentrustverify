@@ -341,7 +341,7 @@ export default function OpenTrustDashboard() {
         </section>
 
         <footer className="mt-16 text-xs text-[#3A4150]">
-          Targets restricted to ADMIN_ALLOWLIST · 3GGER
+          Targets restricted to ADMIN_ALLOWLIST · 3GGA
         </footer>
       </div>
     </div>

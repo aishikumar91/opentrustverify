@@ -6,9 +6,9 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>3GGER</title>
+        <title>3GGA</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="3GGER — live on-chain fraud interception and verification." />
+        <meta name="description" content="3GGA — live on-chain fraud interception and verification." />
       </Head>
       <Component {...pageProps} />
     </>

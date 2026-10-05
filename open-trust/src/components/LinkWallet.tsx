@@ -114,8 +114,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         optionalChains: [chainId, 8453, 1, 137],
         showQrModal: true,
         metadata: {
-          name: "3GGER Admin",
-          description: "Link an allowlisted wallet for 3GGER trigger vectors",
+          name: "3GGA Admin",
+          description: "Link an allowlisted wallet for 3GGA trigger vectors",
           url: process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
           icons: ["https://otv.poptrust.me/favicon.svg"],
         },

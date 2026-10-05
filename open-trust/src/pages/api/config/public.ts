@@ -24,7 +24,7 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse) {
     walletConnectConfigured: Boolean(walletConnectProjectId),
     chainId: settings.chainId,
     chainName: settings.chainName,
-    productName: "3GGER",
+    productName: "3GGA",
     rpc: settings.rpc,
     mainnet: settings.mainnet,
     allowlist: settings.allowlist,
