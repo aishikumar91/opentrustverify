@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUpRight } from "lucide-react";
 import { withBasePath } from "../lib/basePath";
+import LinkWallet from "./LinkWallet";
 
 type Vector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer";
 
@@ -37,12 +38,22 @@ function shortHash(h: string) {
 
 export default function OpenTrustDashboard() {
   const [targetAddress, setTargetAddress] = useState("");
+  const [linkedAddress, setLinkedAddress] = useState<string | null>(null);
   const [fakeTokenContract, setFakeTokenContract] = useState("");
   const [firing, setFiring] = useState<Vector | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [records, setRecords] = useState<TriggerRecord[]>([]);
   const [assessments, setAssessments] = useState<Record<string, Assessment>>({});
   const [error, setError] = useState<string | null>(null);
+
+  function handleLinked(address: string | null) {
+    setLinkedAddress(address);
+    if (address) setTargetAddress(address);
+  }
+
+  function useLinkedAsTarget(address: string) {
+    setTargetAddress(address);
+  }
 
   async function fire(vector: Vector) {
     setError(null);
@@ -94,6 +105,15 @@ export default function OpenTrustDashboard() {
         </header>
 
         <section className="mb-20">
+          <div className="mb-8 border-b border-[#171B22] pb-8">
+            <LinkWallet onLinked={handleLinked} onUseAsTarget={useLinkedAsTarget} />
+            {linkedAddress && targetAddress.toLowerCase() === linkedAddress.toLowerCase() && (
+              <p className="mt-3 text-xs text-[#6B7686]">
+                Target uses the linked wallet. It must also be present in ADMIN_ALLOWLIST.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-5">
             <div>
               <label className="text-xs text-[#6B7686]">Target wallet</label>

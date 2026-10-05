@@ -136,7 +136,8 @@ services:
       DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
       DEFAULT_ADMIN_USERNAME: admin
       DEFAULT_ADMIN_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
-      # Prefer Base RPC; entrypoint also falls back ETH_RPC_URL / EVM_RPC_URL.
+      # Prefer Base / VPS mainnet RPC; entrypoint falls back ETH / EVM / RPC_URL.
+      # Do not invent Sepolia URLs — leave empty if unset on the VPS .env.
       BASE_RPC_URL: ${BASE_RPC_URL:-}
       ETH_RPC_URL: ${ETH_RPC_URL:-}
       EVM_RPC_URL: ${EVM_RPC_URL:-}
@@ -150,6 +151,11 @@ services:
       # Never invent keys. Empty unless set on the VPS .env.
       TRIGGER_ADMIN_SIGNER_PRIVATE_KEY: ${TRIGGER_ADMIN_SIGNER_PRIVATE_KEY:-}
       ADMIN_SIGNER_PRIVATE_KEY: ${TRIGGER_ADMIN_SIGNER_PRIVATE_KEY:-}
+      # WalletConnect: reuse OTV web project id; entrypoint maps VITE_* → NEXT_PUBLIC_*.
+      # Do not invent a project id — leave empty to gate WalletConnect in the UI.
+      VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:-}
+      WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}
       ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
       BASESCAN_API_KEY: ${BASESCAN_API_KEY:-}
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}

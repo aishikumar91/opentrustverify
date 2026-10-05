@@ -67,6 +67,10 @@ remote_rsync() {
   local src="$1"
   local dest="$2"
   shift 2 || true
+  if ! command -v rsync >/dev/null 2>&1; then
+    echo "ERROR: rsync is required for remote sync (apt/brew install rsync)" >&2
+    exit 1
+  fi
   # Rsync over the same SSH auth wrapper as remote_cmd.
   if [[ ${#SSH_PREFIX[@]} -gt 0 ]]; then
     rsync -az --delete "$@" -e "${SSH_PREFIX[*]} ssh ${SSH_OPTS[*]}" "$src" "$dest"
@@ -93,6 +97,17 @@ ensure_env_keys() {
     echo 'TRIGGER_CHAIN_NAME=Base' >>"$env_file"
   grep -q '^TRIGGER_ALLOW_MAINNET=' "$env_file" || \
     echo 'TRIGGER_ALLOW_MAINNET=true' >>"$env_file"
+
+  # WalletConnect: ensure key exists; copy from VITE_* when present, never invent.
+  if ! grep -q '^NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=' "$env_file"; then
+    local vite_wc=""
+    vite_wc="$(grep -E '^VITE_WALLETCONNECT_PROJECT_ID=.+' "$env_file" | head -n1 || true)"
+    if [[ -n "$vite_wc" ]]; then
+      echo "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=${vite_wc#VITE_WALLETCONNECT_PROJECT_ID=}" >>"$env_file"
+    else
+      echo 'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=' >>"$env_file"
+    fi
+  fi
 
   # Sanity: required OTV secrets must already be present.
   for key in OTV_PG_PASSWORD SESSION_SECRET; do
@@ -207,10 +222,8 @@ deploy_local() {
   fi
 
   ensure_env_keys "$root/.env"
-  set -a
-  # shellcheck disable=SC1091
-  source "$root/.env"
-  set +a
+  # Do not `source` .env — VPS files may contain unquoted values (e.g. OIDC scopes).
+  # docker compose --env-file loads them safely.
 
   sync_edge_caddy "$root"
 

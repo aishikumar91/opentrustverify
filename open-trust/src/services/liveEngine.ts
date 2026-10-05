@@ -2,7 +2,7 @@
  * liveEngine.ts
  *
  * Admin-only trigger service. Broadcasts real transactions on the
- * configured network (Base Sepolia by default — see .env.example) against
+ * configured network (Base mainnet by default — see .env.example) against
  * addresses the admin controls, so the verification engine has live,
  * non-simulated data to analyze instead of mocked fixtures.
  *
