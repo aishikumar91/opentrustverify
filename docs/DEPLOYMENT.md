@@ -17,7 +17,7 @@ pnpm --filter @otv/api run start:worker
 
 Docker: `pnpm docker:up`. Confirm `GET /v1/ready` → `store: postgres`.
 
-Map `otv.poptrust.me` (UI + `/v1` behind Caddy). Worker image: `infra/docker/Dockerfile.worker`. Set `OTV_EMBED_WORKER=0` on the API when the worker is a separate process.
+Map `otv.poptrust.me` (UI + `/v1` + `/trigger` behind Caddy). Worker image: `infra/docker/Dockerfile.worker`. Set `OTV_EMBED_WORKER=0` on the API when the worker is a separate process. Open Trust Admin: `infra/deployment/deploy-vps-trigger.sh` → `https://otv.poptrust.me/trigger`.
 
 Or: `pnpm --filter @otv/worker run start` (alias for the API worker).
 

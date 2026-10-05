@@ -8,6 +8,7 @@ OTV is a TypeScript Fastify API plus static Vite frontends. Postgres is the sour
 - `https://otv.poptrust.me/v1` → `@otv/api`
 - `https://otv.poptrust.me/docs` → product docs in the web app
 - `https://otv.poptrust.me/api/docs` → OpenAPI UI
+- `https://otv.poptrust.me/trigger` → Open Trust Admin (`open-trust`, Next.js on `:4091`)
 - Worker replica(s) run `node dist/worker.js` against the same Postgres + Redis
 
 ## Required environment
@@ -46,7 +47,35 @@ See `docs/OPERATIONS.md` for SLOs and incident steps.
 ## HTTPS on `otv.poptrust.me`
 
 Append `infra/caddy/otv.poptrust.me.caddy` to the edge Caddyfile and reload `edge-caddy`.
+The snippet proxies `/trigger*` to `host.docker.internal:4091`.
 
 If the hostname is orange-clouded on Cloudflare, visitors hit **525** until origin TLS exists for that name. Grey-cloud the A record until Caddy has a certificate, then proxy again with SSL mode **Full**. Do not point Cloudflare at origin HTTP-only with Full/Full (strict).
 
 Swagger UI is served by the API at `/api/docs`. Caddy must proxy `/api/docs*` without stripping `/api`, and should also rewrite legacy `/docs/static*` and `/docs/json` to `/api/...` so the SPA at `/docs` does not swallow those assets.
+
+## Open Trust Admin (`/trigger`)
+
+Compose service `trigger` in `infra/docker/docker-compose.vps.yml` builds `infra/docker/Dockerfile.trigger` from `open-trust/`. Edge Caddy proxies `/trigger*` to `host.docker.internal:4091` (see `infra/caddy/otv.poptrust.me.caddy`).
+
+| Env (VPS `.env`) | Used as |
+|------------------|---------|
+| `OTV_PG_PASSWORD` | Shared Postgres (`admin_users` table in `otv` DB) |
+| `SESSION_SECRET` | Admin session cookie HMAC |
+| `DEMO_PASSWORD` | Seeded `admin` password (`DEFAULT_ADMIN_PASSWORD`) |
+| `BASE_RPC_URL` / `ETH_RPC_URL` / `EVM_RPC_URL` | Mapped to `RPC_URL` in the container entrypoint |
+| `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY` | Optional broadcast key — leave empty unless intentionally set |
+| `TRIGGER_ADMIN_ALLOWLIST` | Optional comma-separated allowlisted wallets |
+
+Do not invent MetaMask / broadcast private keys. Without `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY`, login and the console still work; live execute routes refuse until a key is configured.
+
+```bash
+# On the VPS (deploy root = /home/administrator/deployments/opentrust-verify)
+bash infra/deployment/deploy-vps-trigger.sh
+
+# From a workstation with SSH key access
+export VPS_SSH_PRIVATE_KEY="$(cat ~/.ssh/opentrustverify_vps)"   # or VPS_SSH_KEY=/path/to/key
+DEPLOY_HOST=administrator@93.127.142.159 \
+  bash infra/deployment/deploy-vps-trigger.sh --remote
+```
+
+Default login after seed: `admin` / value of `DEMO_PASSWORD` (fallback `otv-demo-change-me`).

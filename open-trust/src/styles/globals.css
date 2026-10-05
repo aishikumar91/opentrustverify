@@ -1,0 +1,24 @@
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&family=Roboto:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: #0a121b;
+}
+
+* {
+  font-feature-settings: "tnum";
+}
+
+::selection {
+  background-color: #e11d4855;
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-full bg-brand px-6 py-3 text-sm font-medium text-[#0A0E14] transition hover:bg-brand-hover disabled:opacity-50;
+  }
+}

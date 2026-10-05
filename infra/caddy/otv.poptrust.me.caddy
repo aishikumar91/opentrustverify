@@ -46,6 +46,16 @@ otv.poptrust.me {
 		}
 	}
 
+	# Open Trust Admin trigger console (Next.js, basePath=/trigger)
+	handle /trigger* {
+		reverse_proxy host.docker.internal:4091 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
 	handle {
 		reverse_proxy host.docker.internal:4090 {
 			header_up Host {host}
