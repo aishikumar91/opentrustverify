@@ -76,6 +76,11 @@ bash infra/deployment/deploy-vps-trigger.sh
 export VPS_SSH_PRIVATE_KEY="$(cat ~/.ssh/opentrustverify_vps)"   # or VPS_SSH_KEY=/path/to/key
 DEPLOY_HOST=administrator@93.127.142.159 \
   bash infra/deployment/deploy-vps-trigger.sh --remote
+
+# Password auth (export SSHPASS in your shell; never commit it)
+# export SSHPASS='…'
+# DEPLOY_HOST=administrator@93.127.142.159 \
+#   bash infra/deployment/deploy-vps-trigger.sh --remote
 ```
 
 Default login after seed: `admin` / value of `DEMO_PASSWORD` (fallback `otv-demo-change-me`).

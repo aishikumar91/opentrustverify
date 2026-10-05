@@ -10,9 +10,13 @@
 # Usage (on the VPS, from the deploy root):
 #   bash infra/deployment/deploy-vps-trigger.sh
 #
-# Or from a workstation with SSH:
+# Or from a workstation with SSH (key or SSHPASS):
 #   DEPLOY_HOST=administrator@93.127.142.159 \
-#   DEPLOY_PATH=/home/administrator/deployments/opentrust-verify \
+#   bash infra/deployment/deploy-vps-trigger.sh --remote
+#
+# Password auth (do not put the password on argv or in git):
+#   export SSHPASS='…'
+#   DEPLOY_HOST=administrator@93.127.142.159 \
 #   bash infra/deployment/deploy-vps-trigger.sh --remote
 set -euo pipefail
 
@@ -30,21 +34,45 @@ for arg in "$@"; do
   esac
 done
 
-SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=accept-new)
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new)
+SSH_PREFIX=()
 if [[ -n "${VPS_SSH_PRIVATE_KEY:-}" ]]; then
   KEY_FILE="$(mktemp)"
   printf '%s\n' "$VPS_SSH_PRIVATE_KEY" >"$KEY_FILE"
   chmod 600 "$KEY_FILE"
   trap 'rm -f "$KEY_FILE"' EXIT
-  SSH_OPTS+=(-i "$KEY_FILE" -o IdentitiesOnly=yes)
+  SSH_OPTS+=(-o BatchMode=yes -i "$KEY_FILE" -o IdentitiesOnly=yes)
 elif [[ -n "${VPS_SSH_KEY:-}" ]]; then
-  SSH_OPTS+=(-i "$VPS_SSH_KEY" -o IdentitiesOnly=yes)
+  SSH_OPTS+=(-o BatchMode=yes -i "$VPS_SSH_KEY" -o IdentitiesOnly=yes)
+elif [[ -n "${SSHPASS:-}" ]]; then
+  if ! command -v sshpass >/dev/null 2>&1; then
+    echo "ERROR: SSHPASS is set but sshpass is not installed" >&2
+    exit 1
+  fi
+  # Prefer env var (-e) so the password is never placed on argv.
+  SSH_PREFIX=(sshpass -e)
+  SSH_OPTS+=(-o PreferredAuthentications=password -o PubkeyAuthentication=no)
 elif [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
+  SSH_OPTS+=(-o BatchMode=yes)
   export SSH_AUTH_SOCK
+else
+  SSH_OPTS+=(-o BatchMode=yes)
 fi
 
 remote_cmd() {
-  ssh "${SSH_OPTS[@]}" "$DEPLOY_HOST" "$@"
+  "${SSH_PREFIX[@]}" ssh "${SSH_OPTS[@]}" "$DEPLOY_HOST" "$@"
+}
+
+remote_rsync() {
+  local src="$1"
+  local dest="$2"
+  shift 2 || true
+  # Rsync over the same SSH auth wrapper as remote_cmd.
+  if [[ ${#SSH_PREFIX[@]} -gt 0 ]]; then
+    rsync -az --delete "$@" -e "${SSH_PREFIX[*]} ssh ${SSH_OPTS[*]}" "$src" "$dest"
+  else
+    rsync -az --delete "$@" -e "ssh ${SSH_OPTS[*]}" "$src" "$dest"
+  fi
 }
 
 ensure_env_keys() {
@@ -74,7 +102,27 @@ ensure_env_keys() {
     fi
   done
 
-  if ! grep -qE '^(BASE_RPC_URL|ETH_RPC_URL|EVM_RPC_URL|RPC_URL)=' "$env_file"; then
+  # Reuse RPC from a running otv-api container when .env lacks it (do not invent).
+  if ! grep -qE '^(BASE_RPC_URL|ETH_RPC_URL|EVM_RPC_URL|RPC_URL)=.+' "$env_file"; then
+    if command -v docker >/dev/null 2>&1 && docker inspect otv-api >/dev/null 2>&1; then
+      local imported=""
+      imported="$(docker inspect otv-api --format '{{range .Config.Env}}{{println .}}{{end}}' \
+        | grep -E '^(BASE_RPC_URL|ETH_RPC_URL|EVM_RPC_URL|RPC_URL)=' \
+        | grep -v '=$' \
+        | head -n1 || true)"
+      if [[ -n "$imported" ]]; then
+        echo "Importing RPC URL key from running otv-api into .env (value not printed)."
+        # Strip any existing empty key line for the same name, then append.
+        local ikey="${imported%%=*}"
+        grep -v "^${ikey}=" "$env_file" >"${env_file}.tmp" || true
+        mv "${env_file}.tmp" "$env_file"
+        printf '%s\n' "$imported" >>"$env_file"
+        chmod 600 "$env_file"
+      fi
+    fi
+  fi
+
+  if ! grep -qE '^(BASE_RPC_URL|ETH_RPC_URL|EVM_RPC_URL|RPC_URL)=.+' "$env_file"; then
     echo "WARN: no BASE_RPC_URL / ETH_RPC_URL / EVM_RPC_URL / RPC_URL in $env_file — trigger will start without a live RPC." >&2
   fi
 }
@@ -149,6 +197,15 @@ deploy_local() {
     git pull --ff-only origin "$BRANCH" || true
   fi
 
+  if [[ ! -d "$root/open-trust" ]]; then
+    echo "ERROR: missing $root/open-trust — sync open-trust before deploy" >&2
+    exit 1
+  fi
+  if [[ ! -f "$root/infra/docker/Dockerfile.trigger" ]]; then
+    echo "ERROR: missing $root/infra/docker/Dockerfile.trigger" >&2
+    exit 1
+  fi
+
   ensure_env_keys "$root/.env"
   set -a
   # shellcheck disable=SC1091
@@ -180,17 +237,55 @@ deploy_local() {
   echo "Default admin user: admin (password from DEMO_PASSWORD in .env)"
 }
 
+sync_remote_tree() {
+  local root
+  root="$(cd "$(dirname "$0")/../.." && pwd)"
+  echo "==> Syncing trigger deploy artifacts to $DEPLOY_HOST:$DEPLOY_PATH"
+  echo "    (source: $root, branch hint: $BRANCH)"
+
+  if [[ ! -d "$root/open-trust" ]]; then
+    echo "ERROR: local open-trust/ missing at $root/open-trust" >&2
+    exit 1
+  fi
+
+  # open-trust app (exclude heavy/local-only paths)
+  remote_rsync "$root/open-trust/" "$DEPLOY_HOST:$DEPLOY_PATH/open-trust/" \
+    --exclude node_modules \
+    --exclude .next \
+    --exclude .env \
+    --exclude .env.local \
+    --exclude .git
+
+  # Docker / Caddy / deploy script pieces required for trigger
+  remote_cmd "mkdir -p '$DEPLOY_PATH/infra/docker' '$DEPLOY_PATH/infra/caddy' '$DEPLOY_PATH/infra/deployment'"
+  remote_rsync "$root/infra/docker/Dockerfile.trigger" "$DEPLOY_HOST:$DEPLOY_PATH/infra/docker/Dockerfile.trigger"
+  remote_rsync "$root/infra/docker/docker-compose.vps.yml" "$DEPLOY_HOST:$DEPLOY_PATH/infra/docker/docker-compose.vps.yml"
+  remote_rsync "$root/infra/caddy/otv.poptrust.me.caddy" "$DEPLOY_HOST:$DEPLOY_PATH/infra/caddy/otv.poptrust.me.caddy"
+  remote_rsync "$root/infra/deployment/deploy-vps-trigger.sh" "$DEPLOY_HOST:$DEPLOY_PATH/infra/deployment/deploy-vps-trigger.sh"
+  remote_cmd "chmod +x '$DEPLOY_PATH/infra/deployment/deploy-vps-trigger.sh'"
+}
+
 if [[ "$REMOTE" -eq 1 ]]; then
   echo "==> Remote deploy via $DEPLOY_HOST:$DEPLOY_PATH"
   remote_cmd "test -d '$DEPLOY_PATH'"
-  # Copy latest script + ensure repo has branch, then run on host.
-  remote_cmd "bash -lc 'set -euo pipefail
-    cd \"$DEPLOY_PATH\"
-    if [[ -d .git ]]; then
+  remote_cmd "test -f '$DEPLOY_PATH/.env'"
+
+  # Prefer git pull when the VPS tree is a clone; otherwise rsync artifacts.
+  if remote_cmd "test -d '$DEPLOY_PATH/.git'"; then
+    echo "==> VPS tree is a git repo — fetching $BRANCH"
+    remote_cmd "bash -lc 'set -euo pipefail
+      cd \"$DEPLOY_PATH\"
       git fetch origin \"$BRANCH\" || true
       git checkout \"$BRANCH\" 2>/dev/null || git checkout -B \"$BRANCH\" \"origin/$BRANCH\"
       git pull --ff-only origin \"$BRANCH\" || true
-    fi
+    '"
+  else
+    echo "==> VPS tree has no .git — syncing open-trust + compose/caddy via rsync"
+    sync_remote_tree
+  fi
+
+  remote_cmd "bash -lc 'set -euo pipefail
+    cd \"$DEPLOY_PATH\"
     bash infra/deployment/deploy-vps-trigger.sh
   '"
 else
