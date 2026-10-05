@@ -160,8 +160,10 @@ services:
       BASESCAN_API_KEY: ${BASESCAN_API_KEY:-}
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
       VERTEX_AGENT_ENDPOINT: ${VERTEX_AGENT_ENDPOINT:-}
+    # Bind on all interfaces so edge Caddy (host.docker.internal → docker0)
+    # can reach the console. Matches otv-web :4090 / otv-api :4080.
     ports:
-      - "127.0.0.1:4091:3000"
+      - "4091:3000"
     depends_on:
       postgres:
         condition: service_healthy

@@ -194,9 +194,12 @@ PY
   fi
 
   if command -v docker >/dev/null 2>&1; then
-    (cd "$EDGE_CADDY_DIR" && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null) \
-      || (cd "$EDGE_CADDY_DIR" && docker compose restart caddy 2>/dev/null) \
-      || echo "WARN: could not reload edge Caddy automatically — reload manually." >&2
+    echo "==> Reloading edge Caddy"
+    if ! (cd "$EDGE_CADDY_DIR" && docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile); then
+      echo "WARN: caddy reload failed — restarting edge-caddy" >&2
+      (cd "$EDGE_CADDY_DIR" && docker compose restart caddy) \
+        || echo "WARN: could not reload edge Caddy automatically — reload manually." >&2
+    fi
   fi
 }
 
@@ -297,10 +300,7 @@ if [[ "$REMOTE" -eq 1 ]]; then
     sync_remote_tree
   fi
 
-  remote_cmd "bash -lc 'set -euo pipefail
-    cd \"$DEPLOY_PATH\"
-    bash infra/deployment/deploy-vps-trigger.sh
-  '"
+  remote_cmd "bash -lc \"set -euo pipefail; cd '$DEPLOY_PATH'; bash infra/deployment/deploy-vps-trigger.sh\""
 else
   ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
   # Prefer explicit DEPLOY_PATH when already on the VPS layout.
