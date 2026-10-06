@@ -63,6 +63,7 @@ Compose service `trigger` in `infra/docker/docker-compose.vps.yml` builds `infra
 | `SESSION_SECRET` | Admin session cookie HMAC |
 | `DEMO_PASSWORD` | Seeded `admin` password (`DEFAULT_ADMIN_PASSWORD`) |
 | `BASE_RPC_URL` / `ETH_RPC_URL` / `EVM_RPC_URL` | Mapped to `RPC_URL` in the container entrypoint. Prefer a dedicated VPS RPC; if unset (and otv-api has none), deploy falls back to catalog public Base (`https://base.publicnode.com`) for `TRIGGER_CHAIN_ID=8453` — same path as OTV `EVM_PUBLIC_RPC`, not Sepolia |
+| `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN` | Passkey (WebAuthn) RP for admin wallet linking. Defaults `otv.poptrust.me` / `https://otv.poptrust.me`. Challenges live in Postgres (`admin_webauthn_challenges`); credentials in `admin_passkeys` (no private keys). |
 | `TRIGGER_ALLOW_MAINNET` | Keep `true` when RPC/chain is Base mainnet (`TRIGGER_CHAIN_ID=8453`) |
 | `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY` | Optional broadcast key — leave empty unless intentionally set on the VPS |
 | `TRIGGER_ADMIN_ALLOWLIST` | Comma-separated allowlisted wallets; required for ALLOWLIST=YES — do not invent addresses |

@@ -109,6 +109,12 @@ ensure_env_keys() {
     fi
   fi
 
+  # WebAuthn / Passkeys for admin wallet linking (origin-bound; never invent off-host RP).
+  grep -q '^WEBAUTHN_RP_ID=' "$env_file" || \
+    echo 'WEBAUTHN_RP_ID=otv.poptrust.me' >>"$env_file"
+  grep -q '^WEBAUTHN_ORIGIN=' "$env_file" || \
+    echo 'WEBAUTHN_ORIGIN=https://otv.poptrust.me' >>"$env_file"
+
   # Sanity: required OTV secrets must already be present.
   for key in OTV_PG_PASSWORD SESSION_SECRET; do
     if ! grep -q "^${key}=" "$env_file"; then

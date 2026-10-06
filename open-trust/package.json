@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.3",
     "@walletconnect/ethereum-provider": "^2.25.0",
     "bcryptjs": "^2.4.3",
     "ethers": "^6.13.4",

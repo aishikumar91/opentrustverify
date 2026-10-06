@@ -97,7 +97,7 @@ export default function AdminSettingsPanel() {
           </h2>
           <p className="mt-1 break-words text-xs leading-relaxed text-[#5A6575]">
             Live status from server — WalletConnect project id persists in Postgres (DB over
-            env).
+            env). Passkeys link under Linked wallet (credential id + public key only).
           </p>
         </div>
         {settings && (

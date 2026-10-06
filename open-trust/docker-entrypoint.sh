@@ -32,6 +32,14 @@ if [ -z "${DEFAULT_ADMIN_USERNAME:-}" ]; then
   export DEFAULT_ADMIN_USERNAME=admin
 fi
 
+# WebAuthn defaults for production host (override via compose / .env).
+if [ -z "${WEBAUTHN_RP_ID:-}" ]; then
+  export WEBAUTHN_RP_ID=otv.poptrust.me
+fi
+if [ -z "${WEBAUTHN_ORIGIN:-}" ]; then
+  export WEBAUTHN_ORIGIN="${NEXT_PUBLIC_SITE_URL:-https://otv.poptrust.me}"
+fi
+
 if [ -n "${DATABASE_URL:-}" ]; then
   echo "Seeding Open Trust admin user…"
   node scripts/seed-admin.mjs || echo "WARN: admin seed failed (will retry on next start)"

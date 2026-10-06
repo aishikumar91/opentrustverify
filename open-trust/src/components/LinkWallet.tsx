@@ -6,7 +6,7 @@ import { withBasePath } from "../lib/basePath";
 
 type LinkedWallet = {
   address: string;
-  source: "injected" | "walletconnect";
+  source: "injected" | "walletconnect" | "passkey";
 };
 
 type PublicConfig = {
@@ -15,6 +15,17 @@ type PublicConfig = {
   walletConnectSource?: "database" | "env" | "none";
   chainId: number;
   chainName: string;
+};
+
+type PasskeyPublic = {
+  id: number;
+  credentialId: string;
+  deviceName: string | null;
+  linkedAddress: string | null;
+  transports: string[];
+  createdAt: string;
+  lastUsedAt: string | null;
+  backedUp: boolean;
 };
 
 type EthereumProviderLike = {
@@ -33,6 +44,11 @@ function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+function shortCredentialId(id: string) {
+  if (id.length < 14) return id;
+  return `${id.slice(0, 8)}…${id.slice(-6)}`;
+}
+
 /** Prefer MetaMask / Rabby when multiple injected providers are present. */
 function getInjectedProvider(): EthereumProviderLike | null {
   if (typeof window === "undefined") return null;
@@ -48,6 +64,11 @@ function getInjectedProvider(): EthereumProviderLike | null {
   return eth;
 }
 
+function webAuthnAvailable(): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean(window.PublicKeyCredential);
+}
+
 type Props = {
   onLinked: (address: string | null) => void;
   onUseAsTarget: (address: string) => void;
@@ -56,9 +77,15 @@ type Props = {
 export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [wallet, setWallet] = useState<LinkedWallet | null>(null);
-  const [busy, setBusy] = useState<"injected" | "walletconnect" | null>(null);
+  const [busy, setBusy] = useState<
+    "injected" | "walletconnect" | "passkey-register" | "passkey-assert" | "passkey-save" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [hasInjected, setHasInjected] = useState(false);
+  const [passkeyOk, setPasskeyOk] = useState(false);
+  const [passkeys, setPasskeys] = useState<PasskeyPublic[]>([]);
+  const [associateDraft, setAssociateDraft] = useState("");
+  const [pendingPasskeyId, setPendingPasskeyId] = useState<number | null>(null);
   const onLinkedRef = useRef(onLinked);
   onLinkedRef.current = onLinked;
 
@@ -93,6 +120,24 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
 
   useEffect(() => {
     setHasInjected(Boolean(getInjectedProvider()));
+    setPasskeyOk(webAuthnAvailable());
+  }, []);
+
+  async function refreshPasskeys() {
+    try {
+      const res = await fetch(withBasePath("/api/admin/passkeys"), {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to load passkeys");
+      setPasskeys(Array.isArray(data.passkeys) ? data.passkeys : []);
+    } catch {
+      // Non-fatal on first paint (session or table may still be warming).
+    }
+  }
+
+  useEffect(() => {
+    void refreshPasskeys();
   }, []);
 
   useEffect(() => {
@@ -117,8 +162,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         const wcReady = Boolean(config?.walletConnectConfigured);
         setError(
           wcReady
-            ? "No browser wallet detected. Install MetaMask/Rabby, or use WalletConnect."
-            : "No browser wallet detected, and WalletConnect is not configured. Install MetaMask/Rabby, or paste a WalletConnect project ID in Admin settings."
+            ? "No browser wallet detected. Install MetaMask/Rabby, use WalletConnect, or Link with Passkey."
+            : "No browser wallet detected, and WalletConnect is not configured. Install MetaMask/Rabby, or use Link with Passkey."
         );
         return;
       }
@@ -195,12 +240,203 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
   }
 
+  async function linkWithPasskey() {
+    setError(null);
+    if (!webAuthnAvailable()) {
+      setError(
+        "Passkeys are not available in this browser. Use a platform authenticator (iOS/Android/desktop), or connect MetaMask / WalletConnect."
+      );
+      return;
+    }
+    setBusy("passkey-register");
+    try {
+      const { startRegistration, browserSupportsWebAuthn } = await import(
+        "@simplewebauthn/browser"
+      );
+      if (!browserSupportsWebAuthn()) {
+        setError("WebAuthn is not supported in this browser.");
+        return;
+      }
+
+      const optRes = await fetch(withBasePath("/api/admin/passkeys/register/options"), {
+        method: "POST",
+        credentials: "include",
+      });
+      const optData = await optRes.json();
+      if (!optRes.ok) throw new Error(optData.error ?? "Failed to start passkey registration");
+
+      const attestation = await startRegistration({ optionsJSON: optData.options });
+
+      const verifyRes = await fetch(withBasePath("/api/admin/passkeys/register/verify"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          response: attestation,
+          deviceName:
+            typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : null,
+        }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey registration failed");
+
+      const passkey = verifyData.passkey as PasskeyPublic;
+      await refreshPasskeys();
+
+      if (passkey.linkedAddress) {
+        applyAddress(passkey.linkedAddress, "passkey");
+        setPendingPasskeyId(null);
+        setAssociateDraft("");
+      } else {
+        setPendingPasskeyId(passkey.id);
+        setAssociateDraft("");
+        setError(null);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Passkey registration failed.";
+      if (/not allowed|abort|cancel/i.test(msg)) {
+        setError("Passkey registration cancelled.");
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function assertPasskey() {
+    setError(null);
+    if (!webAuthnAvailable()) {
+      setError("Passkeys are not available in this browser.");
+      return;
+    }
+    if (passkeys.length === 0) {
+      setError("No passkeys linked yet. Use “Link with Passkey” first.");
+      return;
+    }
+    setBusy("passkey-assert");
+    try {
+      const { startAuthentication, browserSupportsWebAuthn } = await import(
+        "@simplewebauthn/browser"
+      );
+      if (!browserSupportsWebAuthn()) {
+        setError("WebAuthn is not supported in this browser.");
+        return;
+      }
+
+      const optRes = await fetch(withBasePath("/api/admin/passkeys/assert/options"), {
+        method: "POST",
+        credentials: "include",
+      });
+      const optData = await optRes.json();
+      if (!optRes.ok) throw new Error(optData.error ?? "Failed to start passkey assertion");
+
+      const assertion = await startAuthentication({ optionsJSON: optData.options });
+
+      const verifyRes = await fetch(withBasePath("/api/admin/passkeys/assert/verify"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: assertion }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey assertion failed");
+
+      await refreshPasskeys();
+      const linked = verifyData.linkedAddress as string | null;
+      if (linked && isAddress(linked)) {
+        applyAddress(linked, "passkey");
+        setPendingPasskeyId(null);
+      } else {
+        const pk = verifyData.passkey as PasskeyPublic;
+        setPendingPasskeyId(pk.id);
+        setError(
+          "Passkey verified, but no EVM address is associated yet. Paste an allowlisted address below."
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Passkey assertion failed.";
+      if (/not allowed|abort|cancel/i.test(msg)) {
+        setError("Passkey cancelled.");
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveAssociatedAddress(passkeyId: number) {
+    setError(null);
+    setBusy("passkey-save");
+    try {
+      const res = await fetch(withBasePath("/api/admin/passkeys"), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: passkeyId,
+          linkedAddress: associateDraft.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to associate address");
+      const passkey = data.passkey as PasskeyPublic;
+      await refreshPasskeys();
+      if (passkey.linkedAddress) {
+        applyAddress(passkey.linkedAddress, "passkey");
+        setPendingPasskeyId(null);
+        setAssociateDraft("");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to associate address");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function unlinkPasskey(id: number) {
+    setError(null);
+    try {
+      const res = await fetch(withBasePath("/api/admin/passkeys"), {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to unlink passkey");
+      if (pendingPasskeyId === id) {
+        setPendingPasskeyId(null);
+        setAssociateDraft("");
+      }
+      if (wallet?.source === "passkey") {
+        const remaining = passkeys.filter((p) => p.id !== id);
+        const still = remaining.find((p) => p.linkedAddress);
+        if (still?.linkedAddress) {
+          applyAddress(still.linkedAddress, "passkey");
+        } else {
+          setWallet(null);
+        }
+      }
+      await refreshPasskeys();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to unlink passkey");
+    }
+  }
+
   function disconnect() {
     setWallet(null);
     setError(null);
   }
 
   const wcReady = Boolean(config?.walletConnectConfigured);
+  const sourceLabel =
+    wallet?.source === "walletconnect"
+      ? "WalletConnect"
+      : wallet?.source === "passkey"
+        ? "Passkey"
+        : "Injected";
 
   return (
     <div className="space-y-3">
@@ -210,9 +446,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           {wallet ? (
             <p className="mt-1 break-all font-mono text-sm text-[#ECEFF3] sm:break-normal">
               {shortAddress(wallet.address)}
-              <span className="ml-2 text-xs text-[#6B7686]">
-                {wallet.source === "walletconnect" ? "WalletConnect" : "Injected"}
-              </span>
+              <span className="ml-2 text-xs text-[#6B7686]">{sourceLabel}</span>
             </p>
           ) : (
             <p className="mt-1 text-sm text-[#6B7686]">No wallet linked</p>
@@ -247,6 +481,30 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               >
                 {busy === "walletconnect" ? "Connecting…" : "WalletConnect"}
               </button>
+              <button
+                type="button"
+                onClick={() => void linkWithPasskey()}
+                disabled={busy !== null || !passkeyOk}
+                title={
+                  passkeyOk
+                    ? "Create a platform passkey and optionally associate an allowlisted address"
+                    : "WebAuthn / passkeys are not available in this browser"
+                }
+                className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+              >
+                {busy === "passkey-register" ? "Linking…" : "Link with Passkey"}
+              </button>
+              {passkeys.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => void assertPasskey()}
+                  disabled={busy !== null || !passkeyOk}
+                  title="Unlock a previously linked passkey and use its associated address"
+                  className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                >
+                  {busy === "passkey-assert" ? "Verifying…" : "Use Passkey"}
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -269,6 +527,97 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         </div>
       </div>
 
+      {pendingPasskeyId !== null && (
+        <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#B9C4CE]">
+            Associate EVM address
+          </p>
+          <p className="break-words text-xs leading-relaxed text-[#5A6575]">
+            Passkeys store a credential id and public key only — not a private key. Paste an
+            allowlisted address to use as the trigger target after passkey unlock.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <input
+              type="text"
+              value={associateDraft}
+              onChange={(e) => setAssociateDraft(e.target.value)}
+              placeholder="0x…"
+              autoComplete="off"
+              spellCheck={false}
+              className="min-h-[44px] w-full min-w-0 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"
+            />
+            <button
+              type="button"
+              onClick={() => void saveAssociatedAddress(pendingPasskeyId)}
+              disabled={busy !== null || !associateDraft.trim()}
+              className="min-h-[44px] w-full shrink-0 rounded-full bg-[#E11D48] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+            >
+              {busy === "passkey-save" ? "Saving…" : "Save address"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {passkeys.length > 0 && (
+        <div className="space-y-2 border-t border-[#171B22] pt-3">
+          <p className="text-xs text-[#6B7686]">Linked passkeys</p>
+          <ul className="space-y-2">
+            {passkeys.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="break-all font-mono text-xs text-[#ECEFF3]">
+                    {shortCredentialId(p.credentialId)}
+                    {p.linkedAddress ? (
+                      <span className="ml-2 text-[#8A95A5]">
+                        → {shortAddress(p.linkedAddress)}
+                      </span>
+                    ) : (
+                      <span className="ml-2 text-[#5A6575]">no address</span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {!p.linkedAddress && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPendingPasskeyId(p.id);
+                        setAssociateDraft("");
+                      }}
+                      className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                    >
+                      Associate address
+                    </button>
+                  )}
+                  {p.linkedAddress && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        applyAddress(p.linkedAddress!, "passkey");
+                        onUseAsTarget(getAddress(p.linkedAddress!));
+                      }}
+                      className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                    >
+                      Use as target
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void unlinkPasskey(p.id)}
+                    className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                  >
+                    Unlink
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {config && !wcReady && (
         <p className="break-words text-xs leading-relaxed text-[#6B7686]">
           WalletConnect disabled — paste a project ID from{" "}
@@ -281,7 +630,13 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             cloud.walletconnect.com
           </a>{" "}
           in Admin settings above (saved to Postgres; no image rebuild). MetaMask / injected
-          wallets still work when available in this browser.
+          wallets and Passkeys still work when available in this browser.
+        </p>
+      )}
+      {!passkeyOk && (
+        <p className="break-words text-xs leading-relaxed text-[#6B7686]">
+          Passkeys unavailable in this browser — use MetaMask, WalletConnect, or a device with
+          a platform authenticator.
         </p>
       )}
       {error && <p className="break-words text-xs text-[#FF5C6C]">{error}</p>}

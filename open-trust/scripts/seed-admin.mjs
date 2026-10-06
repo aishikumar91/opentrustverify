@@ -59,6 +59,43 @@ async function main() {
     );
   `);
 
+  // WebAuthn passkeys for admin wallet linking (credential id + public key only).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_passkeys (
+      id SERIAL PRIMARY KEY,
+      admin_username TEXT NOT NULL,
+      credential_id TEXT NOT NULL UNIQUE,
+      public_key TEXT NOT NULL,
+      counter BIGINT NOT NULL DEFAULT 0,
+      transports TEXT[] NOT NULL DEFAULT '{}',
+      device_name TEXT,
+      linked_address TEXT,
+      credential_device_type TEXT,
+      backed_up BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_used_at TIMESTAMPTZ
+    );
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS admin_passkeys_username_idx
+      ON admin_passkeys (admin_username);
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_webauthn_challenges (
+      id SERIAL PRIMARY KEY,
+      admin_username TEXT NOT NULL,
+      challenge TEXT NOT NULL,
+      purpose TEXT NOT NULL CHECK (purpose IN ('registration', 'authentication')),
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS admin_webauthn_challenges_lookup_idx
+      ON admin_webauthn_challenges (admin_username, purpose, expires_at DESC);
+  `);
+
   const passwordHash = bcrypt.hashSync(password, 10);
   await pool.query(
     `INSERT INTO admin_users (username, password_hash, role)
