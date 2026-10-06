@@ -50,6 +50,15 @@ async function main() {
       ON executed_runs (broadcast_at DESC NULLS LAST, created_at DESC);
   `);
 
+  // Key/value admin settings (e.g. WalletConnect project id). DB wins over env.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
   const passwordHash = bcrypt.hashSync(password, 10);
   await pool.query(
     `INSERT INTO admin_users (username, password_hash, role)

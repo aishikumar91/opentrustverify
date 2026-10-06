@@ -66,9 +66,9 @@ Compose service `trigger` in `infra/docker/docker-compose.vps.yml` builds `infra
 | `TRIGGER_ALLOW_MAINNET` | Keep `true` when RPC/chain is Base mainnet (`TRIGGER_CHAIN_ID=8453`) |
 | `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY` | Optional broadcast key — leave empty unless intentionally set on the VPS |
 | `TRIGGER_ADMIN_ALLOWLIST` | Comma-separated allowlisted wallets; required for ALLOWLIST=YES — do not invent addresses |
-| `VITE_WALLETCONNECT_PROJECT_ID` / `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect for admin link-wallet; reuse OTV web id, never invent |
+| `VITE_WALLETCONNECT_PROJECT_ID` / `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Optional WalletConnect fallback; Admin UI can save a project id to Postgres (`admin_settings`) without rebuild — never invent |
 
-Do not invent MetaMask / broadcast private keys. Without `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY`, login and the console still work; live execute routes refuse until a key is configured. Without a WalletConnect project id, MetaMask / injected connect still works; the WalletConnect button stays disabled with a config message.
+Do not invent MetaMask / broadcast private keys. Without `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY`, login and the console still work; live execute routes refuse until a key is configured. Without a WalletConnect project id (Admin settings or env), MetaMask / injected connect still works when available; the WalletConnect button stays disabled until an admin pastes a real id from cloud.walletconnect.com.
 
 ```bash
 # On the VPS (deploy root = /home/administrator/deployments/opentrust-verify)
