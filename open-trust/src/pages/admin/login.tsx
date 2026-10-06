@@ -31,11 +31,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="font-ui relative flex min-h-screen items-center justify-center overflow-x-hidden bg-[#0A0E14] px-4 text-[#ECEFF3]">
+    <div className="font-ui relative flex min-h-screen items-center justify-center overflow-x-hidden bg-[#0A0E14] px-3.5 text-[#ECEFF3] sm:px-4">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(225,29,72,0.16),_transparent_55%)]" />
-      <form onSubmit={onSubmit} className="relative w-full max-w-sm">
+      <form onSubmit={onSubmit} className="relative w-full max-w-sm min-w-0">
         <BrandMark size="lg" as="h1" className="mb-3" />
-        <p className="brand-fade-up mb-8 text-sm text-[#8A95A5]">
+        <p className="brand-fade-up mb-8 text-sm leading-relaxed text-[#8A95A5]">
           Admin console — sign in to trigger and verify.
         </p>
 
@@ -43,7 +43,7 @@ export default function LoginPage() {
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="mb-5 mt-1 w-full border-0 border-b border-[#20242C] bg-transparent py-2 text-sm outline-none focus:border-[#E11D48]"
+          className="mb-5 mt-1 min-h-[44px] w-full min-w-0 border-0 border-b border-[#20242C] bg-transparent py-2.5 text-sm outline-none focus:border-[#E11D48]"
           autoComplete="username"
         />
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-6 mt-1 w-full border-0 border-b border-[#20242C] bg-transparent py-2 text-sm outline-none focus:border-[#E11D48]"
+          className="mb-6 mt-1 min-h-[44px] w-full min-w-0 border-0 border-b border-[#20242C] bg-transparent py-2.5 text-sm outline-none focus:border-[#E11D48]"
           autoComplete="current-password"
         />
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-[#E11D48] py-2.5 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-50"
+          className="min-h-[44px] w-full rounded-full bg-[#E11D48] py-2.5 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-50"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>

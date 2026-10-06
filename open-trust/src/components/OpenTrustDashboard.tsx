@@ -161,15 +161,15 @@ export default function OpenTrustDashboard() {
   return (
     <div className="font-ui min-h-screen overflow-x-hidden bg-[#0A0E14] text-[#ECEFF3] antialiased">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_at_top,_rgba(225,29,72,0.18),_transparent_60%)]" />
-      <div className="relative mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14 md:px-8 md:py-20">
-        <header className="mb-10 sm:mb-14">
+      <div className="relative mx-auto w-full max-w-3xl px-3.5 py-8 sm:px-6 sm:py-14 md:px-8 md:py-20">
+        <header className="mb-8 min-w-0 sm:mb-14">
           <BrandMark size="lg" as="h1" />
-          <p className="brand-fade-up mt-4 max-w-md text-sm text-[#8A95A5]">
+          <p className="brand-fade-up mt-3 max-w-md text-sm leading-relaxed text-[#8A95A5] sm:mt-4">
             Live interception console — verified on-chain, allowlist-scoped.
           </p>
           <a
             href={withBasePath("/api/auth/logout")}
-            className="mt-4 inline-block text-xs text-[#6B7686] transition hover:text-[#E11D48]"
+            className="mt-3 inline-flex min-h-[44px] items-center text-xs text-[#6B7686] transition hover:text-[#E11D48] sm:mt-4"
           >
             Sign out
           </a>
@@ -188,16 +188,16 @@ export default function OpenTrustDashboard() {
           </div>
 
           <div className="space-y-5">
-            <div>
+            <div className="min-w-0">
               <label className="text-xs text-[#6B7686]">Target wallet</label>
               <input
                 value={targetAddress}
                 onChange={(e) => setTargetAddress(e.target.value)}
                 placeholder="0x…"
-                className="mt-1 w-full min-w-0 border-0 border-b border-[#20242C] bg-transparent py-2 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
+                className="mt-1 min-h-[44px] w-full min-w-0 border-0 border-b border-[#20242C] bg-transparent py-2.5 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-xs text-[#6B7686]">
                 Token contract (poisoning / transfer vectors)
               </label>
@@ -205,18 +205,18 @@ export default function OpenTrustDashboard() {
                 value={fakeTokenContract}
                 onChange={(e) => setFakeTokenContract(e.target.value)}
                 placeholder="0x…"
-                className="mt-1 w-full min-w-0 border-0 border-b border-[#20242C] bg-transparent py-2 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
+                className="mt-1 min-h-[44px] w-full min-w-0 border-0 border-b border-[#20242C] bg-transparent py-2.5 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
               />
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-2 min-[480px]:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {VECTORS.map((v) => (
               <button
                 key={v.id}
                 onClick={() => fire(v.id)}
                 disabled={!targetAddress || firing !== null}
-                className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#E11D48] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-[#E11D48] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 {firing === v.id && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />}
                 <span className="text-center leading-snug">{v.label}</span>
@@ -228,7 +228,7 @@ export default function OpenTrustDashboard() {
         </section>
 
         <section>
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
+          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-2">
             <h2 className="text-xs uppercase tracking-[0.16em] text-[#6B7686]">
               Executed runs
             </h2>
@@ -278,11 +278,11 @@ export default function OpenTrustDashboard() {
                             {shortAddr(r.targetAddress)}
                           </p>
                         </div>
-                        <div className="flex shrink-0 flex-wrap items-center gap-2 text-[11px] text-[#6B7686]">
-                          <span className="rounded bg-[#171B22] px-2 py-0.5 font-mono uppercase tracking-wide text-[#B9C4CE]">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] text-[#6B7686]">
+                          <span className="max-w-full break-all rounded bg-[#171B22] px-2 py-1 font-mono uppercase tracking-wide text-[#B9C4CE]">
                             {r.vector}
                           </span>
-                          <span>{formatWhen(r.broadcastAt)}</span>
+                          <span className="break-words">{formatWhen(r.broadcastAt)}</span>
                         </div>
                       </div>
 
@@ -327,7 +327,7 @@ export default function OpenTrustDashboard() {
                         <button
                           onClick={() => verify(r.txHash)}
                           disabled={verifying === r.txHash}
-                          className="mt-4 min-h-[40px] rounded-full bg-[#E11D48] px-4 py-2 text-xs font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-40"
+                          className="mt-4 min-h-[44px] w-full rounded-full bg-[#E11D48] px-4 py-2 text-xs font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-40 sm:w-auto"
                         >
                           {verifying === r.txHash ? "Scanning…" : "Verify"}
                         </button>
@@ -340,7 +340,7 @@ export default function OpenTrustDashboard() {
           </ul>
         </section>
 
-        <footer className="mt-16 text-xs text-[#3A4150]">
+        <footer className="mt-12 break-words text-xs text-[#3A4150] sm:mt-16">
           Targets restricted to ADMIN_ALLOWLIST · 3GGA
         </footer>
       </div>

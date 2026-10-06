@@ -21,11 +21,12 @@ type SettingsPayload = {
 const FLAGS: {
   key: keyof Pick<SettingsPayload, "rpc" | "mainnet" | "allowlist" | "walletConnect">;
   label: string;
+  shortLabel: string;
 }[] = [
-  { key: "rpc", label: "RPC" },
-  { key: "mainnet", label: "MAINNET" },
-  { key: "allowlist", label: "ALLOWLIST" },
-  { key: "walletConnect", label: "WALLETCONNECT" },
+  { key: "rpc", label: "RPC", shortLabel: "RPC" },
+  { key: "mainnet", label: "MAINNET", shortLabel: "MAINNET" },
+  { key: "allowlist", label: "ALLOWLIST", shortLabel: "ALLOWLIST" },
+  { key: "walletConnect", label: "WALLETCONNECT", shortLabel: "WC" },
 ];
 
 export default function AdminSettingsPanel() {
@@ -88,26 +89,27 @@ export default function AdminSettingsPanel() {
   }
 
   return (
-    <section className="mb-10 overflow-hidden rounded-xl border border-[#1C2430] bg-[#0D121A] p-4 sm:p-5">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-        <div>
+    <section className="mb-8 overflow-x-hidden rounded-xl border border-[#1C2430] bg-[#0D121A] p-3.5 sm:mb-10 sm:p-5">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#8A95A5]">
             Admin settings
           </h2>
-          <p className="mt-1 text-xs text-[#5A6575]">
-            Live status from server — WalletConnect project id persists in Postgres (DB over env).
+          <p className="mt-1 break-words text-xs leading-relaxed text-[#5A6575]">
+            Live status from server — WalletConnect project id persists in Postgres (DB over
+            env).
           </p>
         </div>
         {settings && (
-          <p className="font-mono text-[11px] text-[#5A6575]">
+          <p className="max-w-full break-all font-mono text-[11px] leading-relaxed text-[#5A6575] sm:break-normal sm:text-right">
             {settings.chainName} · {settings.chainId}
             {settings.rpcSource ? ` · ${settings.rpcSource}` : ""}
           </p>
         )}
       </div>
 
-      {error && <p className="mb-3 text-xs text-[#FF5C6C]">{error}</p>}
-      {saveMsg && <p className="mb-3 text-xs text-[#8A95A5]">{saveMsg}</p>}
+      {error && <p className="mb-3 break-words text-xs text-[#FF5C6C]">{error}</p>}
+      {saveMsg && <p className="mb-3 break-words text-xs text-[#8A95A5]">{saveMsg}</p>}
 
       {!settings && !error && (
         <p className="text-xs text-[#5A6575]">Loading settings…</p>
@@ -115,20 +117,23 @@ export default function AdminSettingsPanel() {
 
       {settings && (
         <>
-          <div className="mb-5 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
-            {FLAGS.map(({ key, label }) => {
+          {/* Wrap status chips — never force 3/4 cramped columns on phone widths */}
+          <div className="mb-5 flex flex-wrap gap-2">
+            {FLAGS.map(({ key, label, shortLabel }) => {
               const value = settings[key];
               const on = value === "YES";
               return (
                 <div
                   key={key}
-                  className="flex items-center justify-between gap-3 border-b border-[#171B22] pb-3 min-[420px]:border-b-0 min-[420px]:pb-0"
+                  className="inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] px-3 py-2"
+                  title={label}
                 >
-                  <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#B9C4CE]">
-                    {label}
+                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#B9C4CE] sm:text-xs sm:tracking-[0.14em]">
+                    <span className="sm:hidden">{shortLabel}</span>
+                    <span className="hidden sm:inline">{label}</span>
                   </span>
                   <span
-                    className={`rounded px-2 py-0.5 font-mono text-xs font-semibold tracking-wide ${
+                    className={`shrink-0 rounded px-2 py-1 font-mono text-xs font-semibold tracking-wide ${
                       on
                         ? "bg-[#E11D48]/20 text-[#FF6B81]"
                         : "bg-[#171B22] text-[#6B7686]"
@@ -148,7 +153,7 @@ export default function AdminSettingsPanel() {
             >
               WalletConnect project ID
             </label>
-            <p className="text-xs text-[#5A6575]">
+            <p className="break-words text-xs leading-relaxed text-[#5A6575]">
               Paste from{" "}
               <a
                 href="https://cloud.walletconnect.com"
@@ -162,7 +167,7 @@ export default function AdminSettingsPanel() {
               <span className="font-mono text-[#8A95A5]">{settings.walletConnectSource}</span>
               . Empty clears the DB override (env still used if set).
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 id="wc-project-id"
                 type="text"
@@ -171,13 +176,13 @@ export default function AdminSettingsPanel() {
                 placeholder="WalletConnect Cloud project id"
                 autoComplete="off"
                 spellCheck={false}
-                className="min-h-[44px] w-full flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"
+                className="min-h-[44px] w-full min-w-0 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"
               />
               <button
                 type="button"
                 onClick={() => void saveWalletConnect()}
                 disabled={saving}
-                className="min-h-[44px] shrink-0 rounded-full bg-[#E11D48] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
+                className="min-h-[44px] w-full shrink-0 rounded-full bg-[#E11D48] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {saving ? "Saving…" : "Save"}
               </button>

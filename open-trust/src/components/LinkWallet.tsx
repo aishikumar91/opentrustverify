@@ -218,7 +218,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             <p className="mt-1 text-sm text-[#6B7686]">No wallet linked</p>
           )}
         </div>
-        <div className="flex w-full flex-col gap-2 min-[420px]:w-auto min-[420px]:flex-row min-[420px]:flex-wrap">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
           {!wallet ? (
             <>
               <button
@@ -230,7 +230,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                     ? "Connect MetaMask / injected wallet"
                     : "Requires MetaMask or another injected wallet in this browser"
                 }
-                className="min-h-[44px] rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
+                className="min-h-[44px] w-full rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {busy === "injected" ? "Connecting…" : "Connect MetaMask"}
               </button>
@@ -243,7 +243,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                     ? "Connect with WalletConnect"
                     : "Set a WalletConnect project ID in Admin settings to enable"
                 }
-                className="min-h-[44px] rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30"
+                className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {busy === "walletconnect" ? "Connecting…" : "WalletConnect"}
               </button>
@@ -253,14 +253,14 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               <button
                 type="button"
                 onClick={() => onUseAsTarget(wallet.address)}
-                className="min-h-[44px] rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E]"
+                className="min-h-[44px] w-full rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] sm:w-auto"
               >
                 Use as target
               </button>
               <button
                 type="button"
                 onClick={disconnect}
-                className="min-h-[44px] rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48]"
+                className="min-h-[44px] w-full rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
               >
                 Disconnect
               </button>
@@ -270,7 +270,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       </div>
 
       {config && !wcReady && (
-        <p className="text-xs text-[#6B7686]">
+        <p className="break-words text-xs leading-relaxed text-[#6B7686]">
           WalletConnect disabled — paste a project ID from{" "}
           <a
             href="https://cloud.walletconnect.com"
@@ -284,7 +284,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           wallets still work when available in this browser.
         </p>
       )}
-      {error && <p className="text-xs text-[#FF5C6C]">{error}</p>}
+      {error && <p className="break-words text-xs text-[#FF5C6C]">{error}</p>}
     </div>
   );
 }
