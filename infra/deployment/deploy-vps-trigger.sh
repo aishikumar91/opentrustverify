@@ -302,19 +302,20 @@ if [[ "$REMOTE" -eq 1 ]]; then
   remote_cmd "test -d '$DEPLOY_PATH'"
   remote_cmd "test -f '$DEPLOY_PATH/.env'"
 
-  # Prefer git pull when the VPS tree is a clone; otherwise rsync artifacts.
+  # Prefer git pull when the VPS tree is a clone; always rsync open-trust
+  # artifacts afterward so a failed/partial pull cannot leave stale trigger code.
   if remote_cmd "test -d '$DEPLOY_PATH/.git'"; then
     echo "==> VPS tree is a git repo — fetching $BRANCH"
     remote_cmd "bash -lc 'set -euo pipefail
       cd \"$DEPLOY_PATH\"
       git fetch origin \"$BRANCH\" || true
-      git checkout \"$BRANCH\" 2>/dev/null || git checkout -B \"$BRANCH\" \"origin/$BRANCH\"
+      git checkout \"$BRANCH\" 2>/dev/null || git checkout -B \"$BRANCH\" \"origin/$BRANCH\" || true
       git pull --ff-only origin \"$BRANCH\" || true
     '"
   else
-    echo "==> VPS tree has no .git — syncing open-trust + compose/caddy via rsync"
-    sync_remote_tree
+    echo "==> VPS tree has no .git"
   fi
+  sync_remote_tree
 
   remote_cmd "bash -lc \"set -euo pipefail; cd '$DEPLOY_PATH'; bash infra/deployment/deploy-vps-trigger.sh\""
 else
