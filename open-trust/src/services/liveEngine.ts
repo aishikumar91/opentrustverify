@@ -61,7 +61,7 @@ export async function triggerLowGasPendingLure(
   targetAddress: string,
   amountEth: string
 ): Promise<TriggerResult> {
-  assertAllowlisted(targetAddress);
+  await assertAllowlisted(targetAddress);
   const { wallet, publicClient, account } = getSigner();
 
   const baseFee = (await publicClient.getBlock()).baseFeePerGas ?? 1_000_000n;
@@ -96,7 +96,7 @@ export async function triggerZeroValuePoisoning(
   targetAddress: string,
   fakeTokenContract: string
 ): Promise<TriggerResult> {
-  assertAllowlisted(targetAddress);
+  await assertAllowlisted(targetAddress);
   const { wallet, account } = getSigner();
 
   // Minimal ABI: a test contract exposing emitPoisonedTransfer(address)
@@ -137,7 +137,7 @@ export async function triggerFakeTokenTransfer(
   fakeTokenContract: string,
   amount: string
 ): Promise<TriggerResult> {
-  assertAllowlisted(targetAddress);
+  await assertAllowlisted(targetAddress);
   const { wallet, account } = getSigner();
 
   const abi = [

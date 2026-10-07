@@ -1,14 +1,16 @@
 /**
  * Admin allowlist enforcement.
  *
- * Every function in liveEngine.ts that broadcasts a transaction MUST call
- * assertAllowlisted() on its target address before signing anything.
- * This is the single chokepoint that keeps the trigger console scoped to
- * wallets the admin controls — it must never be bypassed, soft-disabled,
- * or short-circuited in test/demo flags.
+ * Sources (merged):
+ * 1. ADMIN_ALLOWLIST env (comma-separated)
+ * 2. admin_linked_wallets rows (real MetaMask / WalletConnect / Passkey-linked)
+ *
+ * Every broadcast path must call assertAllowlisted() before signing or recording.
  */
 
-function parseAllowlistEntries(): string[] {
+import { listAllLinkedAddresses } from "./linkedWalletsStore";
+
+function parseEnvAllowlistEntries(): string[] {
   const raw = process.env.ADMIN_ALLOWLIST ?? "";
   return raw
     .split(",")
@@ -16,47 +18,51 @@ function parseAllowlistEntries(): string[] {
     .filter(Boolean);
 }
 
-function loadAllowlist(): Set<string> {
-  const entries = parseAllowlistEntries();
+/** Soft check for settings UI — env or DB-linked wallets. */
+export function hasAllowlistEntriesSync(): boolean {
+  return parseEnvAllowlistEntries().length > 0;
+}
 
-  if (entries.length === 0) {
-    throw new Error(
-      "ADMIN_ALLOWLIST is empty. Refusing to start the trigger engine " +
-        "without at least one admin-controlled target address."
-    );
+export async function hasAllowlistEntries(): Promise<boolean> {
+  if (parseEnvAllowlistEntries().length > 0) return true;
+  const linked = await listAllLinkedAddresses();
+  return linked.length > 0;
+}
+
+export async function getAllowlist(): Promise<Set<string>> {
+  const entries = new Set(parseEnvAllowlistEntries());
+  const linked = await listAllLinkedAddresses();
+  for (const addr of linked) {
+    entries.add(addr.toLowerCase());
   }
-  return new Set(entries);
-}
-
-/** Soft check for settings UI — does not throw when empty. */
-export function hasAllowlistEntries(): boolean {
-  return parseAllowlistEntries().length > 0;
-}
-
-let cached: Set<string> | null = null;
-
-export function getAllowlist(): Set<string> {
-  if (!cached) cached = loadAllowlist();
-  return cached;
+  return entries;
 }
 
 export class NotAllowlistedError extends Error {
   constructor(address: string) {
     super(
-      `Refusing to target ${address}: not present in ADMIN_ALLOWLIST. ` +
-        `Trigger targets must be wallets the admin controls.`
+      `Refusing to target ${address}: not allowlisted. ` +
+        `Link the wallet on the admin dashboard (MetaMask / WalletConnect) or add it to ADMIN_ALLOWLIST.`
     );
     this.name = "NotAllowlistedError";
   }
 }
 
-export function assertAllowlisted(address: string): void {
+export async function assertAllowlisted(address: string): Promise<void> {
   const normalized = address.trim().toLowerCase();
-  if (!getAllowlist().has(normalized)) {
+  const allowlist = await getAllowlist();
+  if (allowlist.size === 0) {
+    throw new Error(
+      "Allowlist is empty. Connect MetaMask or WalletConnect on the admin dashboard " +
+        "to link a real wallet, or set ADMIN_ALLOWLIST."
+    );
+  }
+  if (!allowlist.has(normalized)) {
     throw new NotAllowlistedError(address);
   }
 }
 
-export function isAllowlisted(address: string): boolean {
-  return getAllowlist().has(address.trim().toLowerCase());
+export async function isAllowlisted(address: string): Promise<boolean> {
+  const allowlist = await getAllowlist();
+  return allowlist.has(address.trim().toLowerCase());
 }

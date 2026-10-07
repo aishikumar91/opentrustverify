@@ -5,6 +5,7 @@
  */
 
 import { resolveWalletConnectProjectId, type SettingSource } from "./adminSettingsStore";
+import { hasAllowlistEntries } from "./allowlist";
 
 export type YesNo = "YES" | "NO";
 
@@ -51,12 +52,17 @@ export function isMainnetEnabled(): boolean {
   return false;
 }
 
-export function isAllowlistConfigured(): boolean {
+export function isAllowlistConfiguredSync(): boolean {
   const raw = process.env.ADMIN_ALLOWLIST ?? "";
   return raw
     .split(",")
     .map((a) => a.trim())
     .some(Boolean);
+}
+
+/** Env ADMIN_ALLOWLIST or DB-linked real wallets. */
+export async function isAllowlistConfigured(): Promise<boolean> {
+  return hasAllowlistEntries();
 }
 
 export function getAdminSettingsFlagsSync(): Omit<
@@ -67,19 +73,23 @@ export function getAdminSettingsFlagsSync(): Omit<
   return {
     rpc: rpcSource ? "YES" : "NO",
     mainnet: isMainnetEnabled() ? "YES" : "NO",
-    allowlist: isAllowlistConfigured() ? "YES" : "NO",
+    allowlist: isAllowlistConfiguredSync() ? "YES" : "NO",
     chainId: Number(process.env.CHAIN_ID ?? 8453),
     chainName: process.env.CHAIN_NAME ?? "Base",
     rpcSource,
   };
 }
 
-/** Async: includes DB-backed WalletConnect project id (DB first, then env). */
+/** Async: DB WalletConnect project id + allowlist from env or linked wallets. */
 export async function getAdminSettingsFlags(): Promise<AdminSettingsFlags> {
   const base = getAdminSettingsFlagsSync();
-  const wc = await resolveWalletConnectProjectId();
+  const [wc, allowlistOk] = await Promise.all([
+    resolveWalletConnectProjectId(),
+    isAllowlistConfigured(),
+  ]);
   return {
     ...base,
+    allowlist: allowlistOk ? "YES" : "NO",
     walletConnectProjectId: wc.projectId,
     walletConnectConfigured: wc.configured,
     walletConnectSource: wc.source,

@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { getAddress, isAddress } from "viem";
 import { withBasePath } from "../lib/basePath";
+import {
+  getInjectedProvider,
+  setActiveWalletProvider,
+  type Eip1193Provider,
+} from "../lib/walletProvider";
 
 type LinkedWallet = {
   address: string;
@@ -28,18 +33,6 @@ type PasskeyPublic = {
   backedUp: boolean;
 };
 
-type EthereumProviderLike = {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  providers?: EthereumProviderLike[];
-  isMetaMask?: boolean;
-};
-
-declare global {
-  interface Window {
-    ethereum?: EthereumProviderLike;
-  }
-}
-
 function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
@@ -47,21 +40,6 @@ function shortAddress(address: string) {
 function shortCredentialId(id: string) {
   if (id.length < 14) return id;
   return `${id.slice(0, 8)}…${id.slice(-6)}`;
-}
-
-/** Prefer MetaMask / Rabby when multiple injected providers are present. */
-function getInjectedProvider(): EthereumProviderLike | null {
-  if (typeof window === "undefined") return null;
-  const eth = window.ethereum;
-  if (!eth) return null;
-  if (Array.isArray(eth.providers) && eth.providers.length > 0) {
-    return (
-      eth.providers.find((p) => p?.isMetaMask) ||
-      eth.providers[0] ||
-      eth
-    );
-  }
-  return eth;
 }
 
 function webAuthnAvailable(): boolean {
@@ -140,15 +118,66 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     void refreshPasskeys();
   }, []);
 
+  // Restore last linked dashboard wallet (address only — must reconnect to sign).
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(withBasePath("/api/admin/wallets"), { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json();
+        const first = Array.isArray(data.wallets) ? data.wallets[0] : null;
+        if (!cancelled && first?.address && isAddress(first.address) && !wallet) {
+          setWallet({
+            address: getAddress(first.address),
+            source: (first.source as LinkedWallet["source"]) || "injected",
+          });
+        }
+      })
+      .catch(() => {
+        /* non-fatal */
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally once on mount — do not re-run when wallet changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     onLinkedRef.current(wallet?.address ?? null);
   }, [wallet]);
 
-  function applyAddress(raw: string, source: LinkedWallet["source"]) {
+  async function persistLinkedWallet(
+    address: string,
+    source: LinkedWallet["source"]
+  ): Promise<void> {
+    const res = await fetch(withBasePath("/api/admin/wallets"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address, source }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(
+        (data as { error?: string }).error ?? "Failed to save linked wallet to dashboard"
+      );
+    }
+    window.dispatchEvent(new Event("otv-admin-settings-updated"));
+  }
+
+  async function applyAddress(
+    raw: string,
+    source: LinkedWallet["source"],
+    provider: Eip1193Provider | null = null
+  ) {
     if (!raw || !isAddress(raw)) {
       throw new Error("Wallet did not return a valid EVM address.");
     }
     const address = getAddress(raw);
+    await persistLinkedWallet(address, source);
+    // Passkey-only links have no signing provider; MetaMask/WC do.
+    setActiveWalletProvider(provider, provider ? address : null);
     setWallet({ address, source });
     setError(null);
   }
@@ -162,16 +191,16 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         const wcReady = Boolean(config?.walletConnectConfigured);
         setError(
           wcReady
-            ? "No browser wallet detected. Install MetaMask/Rabby, use WalletConnect, or Link with Passkey."
-            : "No browser wallet detected, and WalletConnect is not configured. Install MetaMask/Rabby, or use Link with Passkey."
+            ? "No browser wallet detected. Install MetaMask or Trust Wallet (extension), use WalletConnect for mobile Trust Wallet, or Link with Passkey."
+            : "No browser wallet detected, and WalletConnect is not configured. Install MetaMask, or set a WalletConnect project ID for Trust Wallet."
         );
         return;
       }
       const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
       if (!accounts?.length) {
-        throw new Error("No accounts returned. Unlock MetaMask and try again.");
+        throw new Error("No accounts returned. Unlock MetaMask / Trust Wallet and try again.");
       }
-      applyAddress(accounts[0], "injected");
+      await applyAddress(accounts[0], "injected", provider);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Injected wallet connection failed.");
     } finally {
@@ -226,7 +255,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       if (!account) {
         throw new Error("WalletConnect session opened but no account was returned.");
       }
-      applyAddress(account, "walletconnect");
+      // WalletConnect provider is EIP-1193 — keep it for real signing (Trust Wallet).
+      await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "WalletConnect did not connect.";
       // User closed modal — soft message
@@ -284,7 +314,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       await refreshPasskeys();
 
       if (passkey.linkedAddress) {
-        applyAddress(passkey.linkedAddress, "passkey");
+        await applyAddress(passkey.linkedAddress, "passkey", null);
         setPendingPasskeyId(null);
         setAssociateDraft("");
       } else {
@@ -345,13 +375,13 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       await refreshPasskeys();
       const linked = verifyData.linkedAddress as string | null;
       if (linked && isAddress(linked)) {
-        applyAddress(linked, "passkey");
+        await applyAddress(linked, "passkey", null);
         setPendingPasskeyId(null);
       } else {
         const pk = verifyData.passkey as PasskeyPublic;
         setPendingPasskeyId(pk.id);
         setError(
-          "Passkey verified, but no EVM address is associated yet. Paste an allowlisted address below."
+          "Passkey verified, but no EVM address is associated yet. Paste a wallet address below (or connect MetaMask / WalletConnect to sign)."
         );
       }
     } catch (err) {
@@ -384,7 +414,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       const passkey = data.passkey as PasskeyPublic;
       await refreshPasskeys();
       if (passkey.linkedAddress) {
-        applyAddress(passkey.linkedAddress, "passkey");
+        await applyAddress(passkey.linkedAddress, "passkey", null);
         setPendingPasskeyId(null);
         setAssociateDraft("");
       }
@@ -414,8 +444,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         const remaining = passkeys.filter((p) => p.id !== id);
         const still = remaining.find((p) => p.linkedAddress);
         if (still?.linkedAddress) {
-          applyAddress(still.linkedAddress, "passkey");
+          void applyAddress(still.linkedAddress, "passkey", null);
         } else {
+          setActiveWalletProvider(null, null);
           setWallet(null);
         }
       }
@@ -426,8 +457,33 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   }
 
   function disconnect() {
+    // Clears the active signing session only. Linked address stays on the
+    // allowlist in Postgres until explicitly removed.
+    setActiveWalletProvider(null, null);
     setWallet(null);
     setError(null);
+  }
+
+  async function unlinkFromDashboard() {
+    if (!wallet?.address) return;
+    setError(null);
+    try {
+      const res = await fetch(withBasePath("/api/admin/wallets"), {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: wallet.address }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error ?? "Failed to unlink wallet");
+      }
+      window.dispatchEvent(new Event("otv-admin-settings-updated"));
+      setActiveWalletProvider(null, null);
+      setWallet(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to unlink wallet");
+    }
   }
 
   const wcReady = Boolean(config?.walletConnectConfigured);
@@ -479,7 +535,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                 }
                 className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
-                {busy === "walletconnect" ? "Connecting…" : "WalletConnect"}
+                {busy === "walletconnect" ? "Connecting…" : "Trust Wallet / WC"}
               </button>
               <button
                 type="button"
@@ -522,10 +578,25 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               >
                 Disconnect
               </button>
+              <button
+                type="button"
+                onClick={() => void unlinkFromDashboard()}
+                className="min-h-[44px] w-full rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+              >
+                Unlink from dashboard
+              </button>
             </>
           )}
         </div>
       </div>
+
+      {wallet && (
+        <p className="break-words text-xs leading-relaxed text-[#5A6575]">
+          {wallet.source === "passkey"
+            ? "Address is on the dashboard allowlist. Connect MetaMask or Trust Wallet / WC to sign triggers with that wallet."
+            : "Real wallet linked. Reconnect MetaMask or Trust Wallet / WC in this browser if signing is unavailable, then fire a vector."}
+        </p>
+      )}
 
       {pendingPasskeyId !== null && (
         <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
@@ -533,8 +604,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             Associate EVM address
           </p>
           <p className="break-words text-xs leading-relaxed text-[#5A6575]">
-            Passkeys store a credential id and public key only — not a private key. Paste an
-            allowlisted address to use as the trigger target after passkey unlock.
+            Passkeys identify you — they do not sign EVM txs. Paste an address to allowlist it,
+            or connect MetaMask / WalletConnect (Trust Wallet) to sign triggers with your real
+            wallet. Seed phrases are never collected.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
             <input
@@ -596,8 +668,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                     <button
                       type="button"
                       onClick={() => {
-                        applyAddress(p.linkedAddress!, "passkey");
-                        onUseAsTarget(getAddress(p.linkedAddress!));
+                        void applyAddress(p.linkedAddress!, "passkey", null).then(() => {
+                          onUseAsTarget(getAddress(p.linkedAddress!));
+                        });
                       }}
                       className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
                     >

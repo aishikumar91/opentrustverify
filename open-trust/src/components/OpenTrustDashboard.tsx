@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUpRight } from "lucide-react";
 import { withBasePath } from "../lib/basePath";
+import { fireVectorFromLinkedWallet } from "../lib/clientTriggers";
+import { getActiveWalletProvider } from "../lib/walletProvider";
 import LinkWallet from "./LinkWallet";
 import BrandMark from "./BrandMark";
 import AdminSettingsPanel from "./AdminSettingsPanel";
@@ -100,14 +102,46 @@ export default function OpenTrustDashboard() {
     setError(null);
     setFiring(vector);
     try {
-      const res = await fetch(withBasePath("/api/admin/execute-attack"), {
+      if (!targetAddress.trim()) {
+        throw new Error("Set a target wallet (or connect and Use as target).");
+      }
+
+      // Prefer the admin's real linked wallet (MetaMask / WalletConnect).
+      // No demo signer and no seed-phrase path.
+      const provider = getActiveWalletProvider();
+      if (!provider) {
+        throw new Error(
+          "Connect MetaMask or Trust Wallet (WalletConnect) to sign with your real admin wallet. Seed phrases are never accepted."
+        );
+      }
+
+      const chainRes = await fetch(withBasePath("/api/config/public"));
+      const chainCfg = chainRes.ok
+        ? ((await chainRes.json()) as { chainId?: number })
+        : { chainId: 8453 };
+
+      const clientResult = await fireVectorFromLinkedWallet({
+        vector,
+        targetAddress: targetAddress.trim(),
+        fakeTokenContract: fakeTokenContract.trim() || undefined,
+        chainId: chainCfg.chainId || 8453,
+      });
+
+      const res = await fetch(withBasePath("/api/admin/record-run"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ vector, targetAddress, fakeTokenContract }),
+        body: JSON.stringify({
+          txHash: clientResult.txHash,
+          vector: clientResult.vector,
+          targetAddress: clientResult.targetAddress,
+          fromAddress: clientResult.fromAddress,
+          broadcastAt: clientResult.broadcastAt,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Trigger failed");
+      if (!res.ok) throw new Error(data.error ?? "Failed to record broadcast");
+
       upsertRun({
         txHash: data.txHash,
         explorerUrl: data.explorerUrl,
@@ -182,7 +216,8 @@ export default function OpenTrustDashboard() {
             <LinkWallet onLinked={handleLinked} onUseAsTarget={useLinkedAsTarget} />
             {linkedAddress && targetAddress.toLowerCase() === linkedAddress.toLowerCase() && (
               <p className="mt-3 text-xs text-[#6B7686]">
-                Target uses the linked wallet. It must also be present in ADMIN_ALLOWLIST.
+                Target is your linked wallet (saved to the dashboard allowlist). Triggers are
+                signed by the connected MetaMask / Trust Wallet session.
               </p>
             )}
           </div>
