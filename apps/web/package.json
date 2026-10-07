@@ -18,6 +18,7 @@
     "@otv/verdict-schema": "workspace:*",
     "@tanstack/react-query": "^5.83.0",
     "@walletconnect/ethereum-provider": "^2.21.1",
+    "@web3auth/modal": "^11.4.2",
     "aos": "^2.3.4",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",

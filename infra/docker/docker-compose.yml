@@ -39,6 +39,10 @@ services:
       OTV_KEYS_DIR: /app/keys
       OTV_EMBED_WORKER: "0"
       OTV_PUBLIC_URL: http://localhost:4080
+      WEB3AUTH_CLIENT_ID: ${WEB3AUTH_CLIENT_ID:-BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M}
+      WEB3AUTH_CLIENT_SECRET: ${WEB3AUTH_CLIENT_SECRET:-}
+      WEB3AUTH_JWKS_URL: ${WEB3AUTH_JWKS_URL:-https://api-auth.web3auth.io/.well-known/jwks.json}
+      WEB3AUTH_NETWORK: ${WEB3AUTH_NETWORK:-sapphire_mainnet}
     ports:
       - "4080:4080"
     depends_on:
