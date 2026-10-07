@@ -36,6 +36,7 @@ import { WalletPage } from "./pages/Wallet";
 import { LabPage } from "./pages/Lab";
 import { DocsPage } from "./pages/Docs";
 import { LoginPage, RegisterPage } from "./pages/Auth";
+import { TriggerAdminPage } from "./pages/TriggerAdmin";
 import { RouteSeo } from "./components/RouteSeo";
 import { SkeletonPreloader } from "./components/SkeletonPreloader";
 import { useAuth } from "./lib/auth";
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="/faq" element={<Navigate to="/whitepaper" replace />} />
           <Route path="/web3" element={<Navigate to="/" replace />} />
           <Route path="/crypto" element={<Navigate to="/" replace />} />
+          <Route path="/trigger/admin" element={<TriggerAdminPage />} />
           <Route path="/demo" element={<Navigate to="/lab" replace />} />
           <Route path="/demo-wallet" element={<Navigate to="/wallet" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

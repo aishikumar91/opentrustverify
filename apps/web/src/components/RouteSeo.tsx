@@ -29,7 +29,7 @@ export function RouteSeo() {
   useEffect(() => {
     const page = seoForPath(pathname);
     const url = `${SITE_ORIGIN}${page.path}`;
-    const privatePath = pathname.startsWith("/dashboard") || pathname === "/wallet";
+    const privatePath = pathname.startsWith("/dashboard") || pathname === "/wallet" || pathname.startsWith("/trigger");
     const robots = privatePath
       ? "noindex,nofollow"
       : "index,follow,max-image-preview:large";
