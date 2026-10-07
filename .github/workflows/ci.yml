@@ -21,8 +21,9 @@ jobs:
       - run: pnpm demo
       - name: Fail if ethereum adapter still always-mocks
         run: |
-          if grep -E "return this\.mock;" packages/chain-adapters/src/ethereum.ts; then
+          # Live EVM RPC lives in evm.ts; ethereum.ts is the createAdapter entry.
+          if grep -E "return this\.mock;" packages/chain-adapters/src/evm.ts; then
             echo "ethereum adapter still short-circuits to mock"
             exit 1
           fi
-          grep -n "eth_getTransactionByHash" packages/chain-adapters/src/ethereum.ts
+          grep -n "eth_getTransactionByHash" packages/chain-adapters/src/evm.ts
