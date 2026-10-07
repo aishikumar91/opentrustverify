@@ -70,6 +70,11 @@ const pages: Record<string, SeoPage> = {
     description:
       "Hosted OTV API terms. Verdicts are signed evidence, not custody, legal advice, or a payment instruction. Mock adapters are not chain proof.",
   },
+  "/trigger/admin": {
+    path: "/trigger/admin",
+    title: "sectool admin | OpenTrust Verify",
+    description: "MetaMask Embedded Wallets sign-in for the sectool project on sapphire_mainnet.",
+  },
   "/wallet": {
     path: "/wallet",
     title: "Open Trust Wallet | OpenTrust Verify",

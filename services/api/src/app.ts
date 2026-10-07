@@ -623,7 +623,6 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   app.post("/v1/wallet/metamask/verify", { schema: openapi.metamaskVerify }, async (req, reply) => {
-    await resolveProject(req);
     const status = web3authStatus();
     if (!status.clientIdConfigured) {
       return reply.code(503).send({

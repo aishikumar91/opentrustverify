@@ -566,9 +566,7 @@ export const routes: Record<string, FastifySchema> = {
   },
   metamaskVerify: {
     tags: ["admin"],
-    summary: "Verify a MetaMask Embedded Wallets identity token with the project JWKS",
-    security: secured,
-    headers: authHeaders,
+    summary: "Verify a MetaMask Embedded Wallets identity token for /trigger/admin with the project JWKS",
     body: {
       type: "object",
       additionalProperties: false,

@@ -16,13 +16,6 @@ import { Alert, Button, Card, Input } from "@otv/ui";
 import { apiBase } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
-  connectMetaMaskEmbedded,
-  disconnectMetaMaskEmbedded,
-  metamaskClientId,
-  metamaskProjectName,
-  metamaskRequest,
-} from "@/lib/metamask-embedded";
-import {
   cancelWalletConnectPairing,
   disconnectWalletConnect,
   restoreWalletConnect,
@@ -78,7 +71,6 @@ type Session =
   | { kind: "local"; address: string; accountIndex: number }
   | { kind: "injected"; address: string }
   | { kind: "walletconnect"; address: string; origin: string }
-  | { kind: "metamask"; address: string }
   | { kind: "watch"; address: string };
 
 interface EthereumRequest {
@@ -102,7 +94,7 @@ function short(address: string): string {
 }
 
 export function WalletShell() {
-  const { client, sessionToken } = useAuth();
+  const { client } = useAuth();
   const [session, setSession] = useState<Session | null>(null);
   const [panel, setPanel] = useState<"home" | "receive" | "send" | "merchant" | "settings">("home");
   const [networkIndex, setNetworkIndex] = useState(0);
@@ -358,39 +350,6 @@ export function WalletShell() {
     saveConnectedApps([entry, ...connectedApps().filter((item) => item.origin !== origin)]);
   }
 
-  async function connectMetaMask() {
-    setError(null);
-    setNotice(null);
-    if (!metamaskClientId()) {
-      setError("MetaMask Embedded Wallets is not configured on this deployment.");
-      return;
-    }
-    try {
-      const linked = await connectMetaMaskEmbedded();
-      if (linked.idToken) {
-        const response = await fetch(`${apiBase()}/v1/wallet/metamask/verify`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            ...(sessionToken ? { "x-otv-session": sessionToken } : {}),
-          },
-          body: JSON.stringify({ idToken: linked.idToken }),
-        });
-        if (!response.ok) {
-          await disconnectMetaMaskEmbedded();
-          const body = (await response.json().catch(() => null)) as { message?: string } | null;
-          throw new Error(body?.message ?? "The MetaMask identity token was not verified.");
-        }
-      }
-      const address = getAddress(linked.address);
-      rememberLinkedWallet(metamaskProjectName(), "https://metamask.io", address, network.network);
-      setSession({ kind: "metamask", address });
-      setSetup("idle");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "MetaMask did not connect.");
-    }
-  }
-
   async function connectWalletConnect() {
     setError(null);
     setNotice(null);
@@ -463,7 +422,6 @@ export function WalletShell() {
     if (session.kind === "watch") return "WATCH ONLY";
     if (session.kind === "local") return `Account ${String(session.accountIndex + 1).padStart(2, "0")}`;
     if (session.kind === "walletconnect") return "WalletConnect";
-    if (session.kind === "metamask") return "MetaMask";
     return "Injected wallet";
   }, [session]);
 
@@ -497,9 +455,6 @@ export function WalletShell() {
             <Button type="button" size="sm" variant="secondary" onClick={connectInjected}>Connect wallet</Button>
             <Button type="button" size="sm" variant="secondary" disabled={pairing} onClick={() => void connectWalletConnect()}>
               Link with QR
-            </Button>
-            <Button type="button" size="sm" variant="secondary" disabled={!metamaskClientId()} onClick={() => void connectMetaMask()}>
-              MetaMask
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setSetup("watch")}>Watch address</Button>
             {hasVault() && (
@@ -595,7 +550,6 @@ export function WalletShell() {
                   variant="ghost"
                   onClick={() => {
                     if (session.kind === "walletconnect") void disconnectWalletConnect();
-                    if (session.kind === "metamask") void disconnectMetaMaskEmbedded();
                     lockVault();
                     setSession(null);
                     setPanel("home");
@@ -680,11 +634,6 @@ export function WalletShell() {
               onUnlink={(origin) => {
                 if (session.kind === "walletconnect" && session.origin === origin) {
                   void disconnectWalletConnect();
-                  setSession(null);
-                  setPanel("home");
-                }
-                if (session.kind === "metamask" && origin === "https://metamask.io") {
-                  void disconnectMetaMaskEmbedded();
                   setSession(null);
                   setPanel("home");
                 }
@@ -898,22 +847,6 @@ function SendPanel({
           method: "eth_sendTransaction",
           params: [tx],
         });
-      } else if (session.kind === "metamask") {
-        const tx: { from: string; to: string; value: string; data?: string } = {
-          from: session.address,
-          to: asset.assetId === "native" ? recipient : getAddress(asset.contract ?? recipient),
-          value: asset.assetId === "native" ? `0x${BigInt(baseUnits).toString(16)}` : "0x0",
-        };
-        if (data) tx.data = data;
-        await metamaskRequest({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: `0x${network.chainId.toString(16)}` }],
-        });
-        setPhase("signed");
-        txHash = (await metamaskRequest({
-          method: "eth_sendTransaction",
-          params: [tx],
-        })) as string;
       } else {
         const provider = injectedProvider();
         if (!provider) {

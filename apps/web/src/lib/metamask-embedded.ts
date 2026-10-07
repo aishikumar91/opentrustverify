@@ -10,6 +10,7 @@ type EthereumProvider = {
 };
 
 let sdk: Web3Auth | null = null;
+let connectInflight: Promise<{ address: string; idToken?: string }> | null = null;
 
 export function metamaskClientId(): string | null {
   const raw = import.meta.env.VITE_WEB3AUTH_CLIENT_ID;
@@ -51,7 +52,16 @@ function providerOf(current: Web3Auth): EthereumProvider | null {
   return provider as EthereumProvider;
 }
 
-export async function connectMetaMaskEmbedded(): Promise<{ address: string; idToken?: string }> {
+export function connectMetaMaskEmbedded(): Promise<{ address: string; idToken?: string }> {
+  if (!connectInflight) {
+    connectInflight = openMetaMask().finally(() => {
+      connectInflight = null;
+    });
+  }
+  return connectInflight;
+}
+
+async function openMetaMask(): Promise<{ address: string; idToken?: string }> {
   const current = await instance();
   if (!current.connected) {
     await current.connect();
