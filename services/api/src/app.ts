@@ -622,12 +622,46 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     };
   });
 
+  /** Public, non-secret wallet config for the SPA (WalletConnect project id + sectool status). */
+  app.get("/v1/wallet/public-config", { schema: openapi.walletPublicConfig }, async () => {
+    const walletConnectProjectId = (
+      process.env.WALLETCONNECT_PROJECT_ID ||
+      process.env.VITE_WALLETCONNECT_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ||
+      ""
+    ).trim();
+    const status = web3authStatus();
+    return {
+      walletConnectProjectId,
+      walletConnectConfigured: Boolean(walletConnectProjectId),
+      metamask: {
+        projectName: status.projectName,
+        network: status.network,
+        clientIdConfigured: status.clientIdConfigured,
+        /** Public client id only — never the client secret. */
+        clientId: status.clientIdConfigured
+          ? process.env.WEB3AUTH_CLIENT_ID?.trim() ||
+            process.env.VITE_WEB3AUTH_CLIENT_ID?.trim() ||
+            "BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M"
+          : null,
+      },
+      rpc: {
+        ethereum: Boolean((process.env.ETH_RPC_URL || "").trim()) || process.env.EVM_PUBLIC_RPC === "1",
+        source: (process.env.ETH_RPC_URL || "").trim()
+          ? "ETH_RPC_URL"
+          : process.env.EVM_PUBLIC_RPC === "1"
+            ? "EVM_PUBLIC_RPC"
+            : null,
+      },
+    };
+  });
+
   app.post("/v1/wallet/metamask/verify", { schema: openapi.metamaskVerify }, async (req, reply) => {
     const status = web3authStatus();
     if (!status.clientIdConfigured) {
       return reply.code(503).send({
         error: "metamask_unconfigured",
-        message: "MetaMask Embedded Wallets is not configured on this server.",
+        message: "MetaMask Embedded Wallets (sectool) is not configured on this server.",
       });
     }
     const idToken = (req.body as { idToken?: string }).idToken ?? "";

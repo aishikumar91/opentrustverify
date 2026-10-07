@@ -1,4 +1,5 @@
 import type EthereumProvider from "@walletconnect/ethereum-provider";
+import { apiBase } from "./api";
 import { isWalletConnectUri, pairingQrDataUrl } from "./wallet-connect-uri";
 
 const CHAINS = [1, 8453, 137] as const;
@@ -21,11 +22,34 @@ export class WalletConnectPairingError extends Error {
 
 let provider: EthereumProvider | null = null;
 let generation = 0;
+/** Runtime override from GET /v1/wallet/public-config (build-time env still wins when set). */
+let runtimeProjectId: string | null = null;
+let configLoaded = false;
 
 export function walletConnectProjectId(): string | null {
   const raw = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
-  const id = typeof raw === "string" ? raw.trim() : "";
-  return id.length > 0 ? id : null;
+  const fromEnv = typeof raw === "string" ? raw.trim() : "";
+  if (fromEnv) return fromEnv;
+  const fromRuntime = runtimeProjectId?.trim() ?? "";
+  return fromRuntime.length > 0 ? fromRuntime : null;
+}
+
+/** Load WalletConnect project id from the API when the Vite build was shipped without it. */
+export async function ensureWalletConnectProjectId(): Promise<string | null> {
+  const existing = walletConnectProjectId();
+  if (existing) return existing;
+  if (configLoaded) return walletConnectProjectId();
+  configLoaded = true;
+  try {
+    const res = await fetch(`${apiBase()}/v1/wallet/public-config`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { walletConnectProjectId?: string };
+    const id = typeof data.walletConnectProjectId === "string" ? data.walletConnectProjectId.trim() : "";
+    runtimeProjectId = id || null;
+  } catch {
+    runtimeProjectId = null;
+  }
+  return walletConnectProjectId();
 }
 
 function readAccount(current: EthereumProvider): WalletConnectAccount | null {
@@ -39,11 +63,11 @@ function readAccount(current: EthereumProvider): WalletConnectAccount | null {
 }
 
 async function createProvider(): Promise<EthereumProvider> {
-  const projectId = walletConnectProjectId();
+  const projectId = await ensureWalletConnectProjectId();
   if (!projectId) {
     throw new WalletConnectPairingError(
       "missing_project",
-      "WalletConnect is not configured on this deployment. Use an injected wallet or create a local wallet.",
+      "WalletConnect is not configured. Set VITE_WALLETCONNECT_PROJECT_ID (or WALLETCONNECT_PROJECT_ID on the API) from cloud.walletconnect.com.",
     );
   }
   const { default: EthereumProviderCtor } = await import("@walletconnect/ethereum-provider");
@@ -66,7 +90,7 @@ async function createProvider(): Promise<EthereumProvider> {
 }
 
 export async function restoreWalletConnect(): Promise<WalletConnectAccount | null> {
-  if (!walletConnectProjectId()) return null;
+  if (!(await ensureWalletConnectProjectId())) return null;
   if (provider?.accounts[0]) return readAccount(provider);
   const ticket = generation;
   const current = await createProvider();

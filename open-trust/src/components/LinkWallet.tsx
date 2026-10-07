@@ -58,6 +58,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const [busy, setBusy] = useState<
     "injected" | "walletconnect" | "passkey-register" | "passkey-assert" | "passkey-save" | null
   >(null);
+  const [pairingQr, setPairingQr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasInjected, setHasInjected] = useState(false);
   const [passkeyOk, setPasskeyOk] = useState(false);
@@ -233,13 +234,15 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       return;
     }
     setBusy("walletconnect");
+    setPairingQr(null);
     try {
       const imported = await import("@walletconnect/ethereum-provider");
       const EthereumProvider = imported.default;
+      const QRCode = (await import("qrcode")).default;
       const provider = await EthereumProvider.init({
         projectId,
         optionalChains: [chainId, 8453, 1, 137],
-        showQrModal: true,
+        showQrModal: false,
         metadata: {
           name: "3GGA Admin",
           description: "Link an allowlisted wallet for 3GGA trigger vectors",
@@ -250,13 +253,29 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           icons: ["https://otv.poptrust.me/favicon.svg"],
         },
       });
-      await provider.connect();
+      const onDisplay = (uri: string) => {
+        if (!uri?.startsWith("wc:")) return;
+        void QRCode.toDataURL(uri, {
+          margin: 1,
+          width: 280,
+          color: { dark: "#0A0E14", light: "#FFFFFF" },
+        })
+          .then((img) => setPairingQr(img))
+          .catch(() => undefined);
+      };
+      provider.on("display_uri", onDisplay);
+      try {
+        await provider.connect();
+      } finally {
+        provider.off("display_uri", onDisplay);
+      }
       const account = provider.accounts?.[0];
       if (!account) {
         throw new Error("WalletConnect session opened but no account was returned.");
       }
       // WalletConnect provider is EIP-1193 — keep it for real signing (Trust Wallet).
       await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
+      setPairingQr(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "WalletConnect did not connect.";
       // User closed modal — soft message
@@ -589,6 +608,23 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           )}
         </div>
       </div>
+
+      {busy === "walletconnect" && (
+        <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#B9C4CE]">
+            WalletConnect QR
+          </p>
+          <p className="text-xs leading-relaxed text-[#5A6575]">
+            Scan with Trust Wallet / MetaMask mobile. This is a pairing link — not a receive address.
+          </p>
+          {pairingQr ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pairingQr} alt="WalletConnect pairing QR" width={280} height={280} />
+          ) : (
+            <p className="text-xs text-[#6B7686]">Preparing pairing code…</p>
+          )}
+        </div>
+      )}
 
       {wallet && (
         <p className="break-words text-xs leading-relaxed text-[#5A6575]">

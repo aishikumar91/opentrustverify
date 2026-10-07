@@ -104,6 +104,43 @@ ensure_env_keys() {
     echo 'OTV_PUBLIC_URL=https://otv.poptrust.me' >>"$env_file"
   grep -q '^VITE_OTV_API_URL=' "$env_file" || \
     echo 'VITE_OTV_API_URL=https://otv.poptrust.me' >>"$env_file"
+
+  # WalletConnect: keep VITE_ / NEXT_PUBLIC_ / WALLETCONNECT_PROJECT_ID in sync (never invent).
+  local wc=""
+  wc="$(grep -E '^VITE_WALLETCONNECT_PROJECT_ID=.+' "$env_file" | head -n1 | cut -d= -f2- || true)"
+  if [[ -z "$wc" ]]; then
+    wc="$(grep -E '^NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=.+' "$env_file" | head -n1 | cut -d= -f2- || true)"
+  fi
+  if [[ -z "$wc" ]]; then
+    wc="$(grep -E '^WALLETCONNECT_PROJECT_ID=.+' "$env_file" | head -n1 | cut -d= -f2- || true)"
+  fi
+  if [[ -n "$wc" ]]; then
+    for key in VITE_WALLETCONNECT_PROJECT_ID NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID WALLETCONNECT_PROJECT_ID; do
+      if grep -q "^${key}=" "$env_file"; then
+        grep -v "^${key}=" "$env_file" >"${env_file}.tmp" || true
+        mv "${env_file}.tmp" "$env_file"
+      fi
+      printf '%s=%s\n' "$key" "$wc" >>"$env_file"
+    done
+    chmod 600 "$env_file"
+    echo "Synced WalletConnect project id across VITE_/NEXT_PUBLIC_/WALLETCONNECT_ keys."
+  else
+    echo "WARN: no WalletConnect project id in .env — /wallet QR and 3GGA WC stay disabled until set." >&2
+  fi
+
+  # sectool MetaMask Embedded defaults (public client id only — never invent a secret).
+  grep -q '^WEB3AUTH_CLIENT_ID=.' "$env_file" || {
+    grep -v '^WEB3AUTH_CLIENT_ID=' "$env_file" >"${env_file}.tmp" || true
+    mv "${env_file}.tmp" "$env_file"
+    echo 'WEB3AUTH_CLIENT_ID=BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M' >>"$env_file"
+  }
+  grep -q '^VITE_WEB3AUTH_CLIENT_ID=.' "$env_file" || {
+    grep -v '^VITE_WEB3AUTH_CLIENT_ID=' "$env_file" >"${env_file}.tmp" || true
+    mv "${env_file}.tmp" "$env_file"
+    echo 'VITE_WEB3AUTH_CLIENT_ID=BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M' >>"$env_file"
+  }
+  grep -q '^WEB3AUTH_NETWORK=' "$env_file" || echo 'WEB3AUTH_NETWORK=sapphire_mainnet' >>"$env_file"
+  grep -q '^VITE_WEB3AUTH_NETWORK=' "$env_file" || echo 'VITE_WEB3AUTH_NETWORK=sapphire_mainnet' >>"$env_file"
 }
 
 sync_edge_caddy() {

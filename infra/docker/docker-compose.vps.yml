@@ -71,6 +71,10 @@ services:
       WEB3AUTH_CLIENT_SECRET: ${WEB3AUTH_CLIENT_SECRET:-}
       WEB3AUTH_JWKS_URL: ${WEB3AUTH_JWKS_URL:-https://api-auth.web3auth.io/.well-known/jwks.json}
       WEB3AUTH_NETWORK: ${WEB3AUTH_NETWORK:-sapphire_mainnet}
+      # Public WalletConnect Cloud project id for /v1/wallet/public-config (no secret).
+      # Deploy syncs NEXT_PUBLIC_* / VITE_* into WALLETCONNECT_PROJECT_ID on the VPS .env.
+      WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}
+      VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
       - "otv.poptrust.me:host-gateway"

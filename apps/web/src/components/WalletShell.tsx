@@ -18,13 +18,19 @@ import { useAuth } from "@/lib/auth";
 import {
   cancelWalletConnectPairing,
   disconnectWalletConnect,
+  ensureWalletConnectProjectId,
   restoreWalletConnect,
   startWalletConnectPairing,
   subscribeWalletConnect,
-  walletConnectProjectId,
   walletConnectRequest,
   WalletConnectPairingError,
 } from "@/lib/wallet-connect";
+import {
+  connectMetaMaskEmbedded,
+  disconnectMetaMaskEmbedded,
+  metamaskProjectName,
+  metamaskRequest,
+} from "@/lib/metamask-embedded";
 import {
   addressBook,
   connectedApps,
@@ -71,6 +77,7 @@ type Session =
   | { kind: "local"; address: string; accountIndex: number }
   | { kind: "injected"; address: string }
   | { kind: "walletconnect"; address: string; origin: string }
+  | { kind: "metamask"; address: string }
   | { kind: "watch"; address: string };
 
 interface EthereumRequest {
@@ -110,6 +117,8 @@ export function WalletShell() {
   const [qr, setQr] = useState<string | null>(null);
   const [pairingQr, setPairingQr] = useState<string | null>(null);
   const [pairing, setPairing] = useState(false);
+  const [wcConfigured, setWcConfigured] = useState<boolean | null>(null);
+  const [sectoolBusy, setSectoolBusy] = useState(false);
   const pairingTicket = useRef(0);
   const [activity, setActivity] = useState(0);
   const network = NETWORKS[networkIndex] ?? NETWORKS[0]!;
@@ -198,6 +207,13 @@ export function WalletShell() {
 
   useEffect(() => {
     let cancelled = false;
+    void ensureWalletConnectProjectId()
+      .then((id) => {
+        if (!cancelled) setWcConfigured(Boolean(id));
+      })
+      .catch(() => {
+        if (!cancelled) setWcConfigured(false);
+      });
     void restoreWalletConnect()
       .then((account) => {
         if (cancelled || !account || !isAddress(account.address)) return;
@@ -353,8 +369,12 @@ export function WalletShell() {
   async function connectWalletConnect() {
     setError(null);
     setNotice(null);
-    if (!walletConnectProjectId()) {
-      setError("WalletConnect is not configured on this deployment. Use an injected wallet or create a local wallet.");
+    const projectId = await ensureWalletConnectProjectId();
+    setWcConfigured(Boolean(projectId));
+    if (!projectId) {
+      setError(
+        "WalletConnect project id is missing. Set VITE_WALLETCONNECT_PROJECT_ID / WALLETCONNECT_PROJECT_ID from cloud.walletconnect.com and rebuild, or use MetaMask (sectool) / an injected wallet.",
+      );
       return;
     }
     const ticket = ++pairingTicket.current;
@@ -372,6 +392,7 @@ export function WalletShell() {
       const checksum = getAddress(account.address);
       rememberLinkedWallet(account.name, account.origin, checksum, network.network);
       setSession({ kind: "walletconnect", address: checksum, origin: account.origin });
+      setNotice("WalletConnect session linked. Scan QR completed — this wallet can sign.");
     } catch (err) {
       if (ticket !== pairingTicket.current) return;
       if (err instanceof WalletConnectPairingError && err.code === "cancelled") return;
@@ -379,8 +400,45 @@ export function WalletShell() {
     } finally {
       if (ticket === pairingTicket.current) {
         setPairing(false);
+        // Keep QR visible only while pairing; clear after success/fail.
         setPairingQr(null);
       }
+    }
+  }
+
+  async function connectSectoolMetaMask() {
+    setError(null);
+    setNotice(null);
+    setSectoolBusy(true);
+    try {
+      const linked = await connectMetaMaskEmbedded();
+      if (!isAddress(linked.address)) {
+        setError("sectool MetaMask did not return an account.");
+        return;
+      }
+      const checksum = getAddress(linked.address);
+      if (linked.idToken) {
+        const response = await fetch(`${apiBase()}/v1/wallet/metamask/verify`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ idToken: linked.idToken }),
+        });
+        if (!response.ok) {
+          await disconnectMetaMaskEmbedded();
+          const body = (await response.json().catch(() => null)) as { message?: string } | null;
+          throw new Error(body?.message ?? "sectool identity token was not verified.");
+        }
+        setNotice(`sectool MetaMask verified on ${metamaskProjectName()}.`);
+      } else {
+        setNotice(`sectool MetaMask connected (${metamaskProjectName()}). No id token returned to verify.`);
+      }
+      rememberLinkedWallet(metamaskProjectName(), "metamask-embedded", checksum, network.network);
+      setSession({ kind: "metamask", address: checksum });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "sectool MetaMask did not connect.";
+      if (!/closed the modal|user closed/i.test(message)) setError(message);
+    } finally {
+      setSectoolBusy(false);
     }
   }
 
@@ -422,6 +480,7 @@ export function WalletShell() {
     if (session.kind === "watch") return "WATCH ONLY";
     if (session.kind === "local") return `Account ${String(session.accountIndex + 1).padStart(2, "0")}`;
     if (session.kind === "walletconnect") return "WalletConnect";
+    if (session.kind === "metamask") return `MetaMask · ${metamaskProjectName()}`;
     return "Injected wallet";
   }, [session]);
 
@@ -453,8 +512,28 @@ export function WalletShell() {
             <Button type="button" size="sm" onClick={createWallet}>Create wallet</Button>
             <Button type="button" size="sm" variant="secondary" onClick={() => setSetup("import")}>Import wallet</Button>
             <Button type="button" size="sm" variant="secondary" onClick={connectInjected}>Connect wallet</Button>
-            <Button type="button" size="sm" variant="secondary" disabled={pairing} onClick={() => void connectWalletConnect()}>
-              Link with QR
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={pairing || wcConfigured === false}
+              title={
+                wcConfigured === false
+                  ? "Set WALLETCONNECT_PROJECT_ID / VITE_WALLETCONNECT_PROJECT_ID on the deployment"
+                  : "Show WalletConnect pairing QR"
+              }
+              onClick={() => void connectWalletConnect()}
+            >
+              {pairing ? "Waiting for scan…" : "WalletConnect QR"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={sectoolBusy}
+              onClick={() => void connectSectoolMetaMask()}
+            >
+              {sectoolBusy ? "Opening sectool…" : `MetaMask · ${metamaskProjectName()}`}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setSetup("watch")}>Watch address</Button>
             {hasVault() && (
@@ -550,6 +629,7 @@ export function WalletShell() {
                   variant="ghost"
                   onClick={() => {
                     if (session.kind === "walletconnect") void disconnectWalletConnect();
+                    if (session.kind === "metamask") void disconnectMetaMaskEmbedded();
                     lockVault();
                     setSession(null);
                     setPanel("home");
@@ -831,22 +911,26 @@ function SendPanel({
           value: asset.assetId === "native" ? BigInt(baseUnits) : 0n,
           data,
         });
-      } else if (session.kind === "walletconnect") {
+      } else if (session.kind === "walletconnect" || session.kind === "metamask") {
         const tx: { from: string; to: string; value: string; data?: string } = {
           from: session.address,
           to: asset.assetId === "native" ? recipient : getAddress(asset.contract ?? recipient),
           value: asset.assetId === "native" ? `0x${BigInt(baseUnits).toString(16)}` : "0x0",
         };
         if (data) tx.data = data;
-        await walletConnectRequest({
+        const request =
+          session.kind === "walletconnect"
+            ? walletConnectRequest
+            : (args: { method: string; params?: unknown[] }) => metamaskRequest(args);
+        await request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: `0x${network.chainId.toString(16)}` }],
         });
         setPhase("signed");
-        txHash = await walletConnectRequest<string>({
+        txHash = (await request({
           method: "eth_sendTransaction",
           params: [tx],
-        });
+        })) as string;
       } else {
         const provider = injectedProvider();
         if (!provider) {
