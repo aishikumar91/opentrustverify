@@ -275,6 +275,9 @@ importers:
       '@otv/verification-engine':
         specifier: workspace:*
         version: link:../../packages/verification-engine
+      '@otv/wallet-core':
+        specifier: workspace:*
+        version: link:../../packages/wallet-core
       fastify:
         specifier: ^5.2.1
         version: 5.12.1

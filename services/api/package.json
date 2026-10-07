@@ -27,6 +27,7 @@
     "@otv/crypto-signatures": "workspace:*",
     "@otv/verdict-schema": "workspace:*",
     "@otv/verification-engine": "workspace:*",
+    "@otv/wallet-core": "workspace:*",
     "fastify": "^5.2.1",
     "ioredis": "^5.6.1",
     "pg": "^8.14.1",
