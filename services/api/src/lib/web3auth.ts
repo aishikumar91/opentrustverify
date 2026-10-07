@@ -20,7 +20,7 @@ let jwksUrl: string | undefined;
 
 export function web3authStatus(): Web3AuthStatus {
   return {
-    projectName: WEB3AUTH_PROJECT_NAME,
+    projectName: process.env.WEB3AUTH_PROJECT_NAME?.trim() || WEB3AUTH_PROJECT_NAME,
     network: process.env.WEB3AUTH_NETWORK?.trim() || "sapphire_mainnet",
     clientIdConfigured: Boolean(clientId()),
     secretConfigured: Boolean(process.env.WEB3AUTH_CLIENT_SECRET?.trim()),

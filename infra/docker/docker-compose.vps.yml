@@ -71,6 +71,7 @@ services:
       WEB3AUTH_CLIENT_SECRET: ${WEB3AUTH_CLIENT_SECRET:-}
       WEB3AUTH_JWKS_URL: ${WEB3AUTH_JWKS_URL:-https://api-auth.web3auth.io/.well-known/jwks.json}
       WEB3AUTH_NETWORK: ${WEB3AUTH_NETWORK:-sapphire_mainnet}
+      WEB3AUTH_PROJECT_NAME: ${WEB3AUTH_PROJECT_NAME:-sectool}
       # Public WalletConnect Cloud project id for /v1/wallet/public-config (no secret).
       # Deploy syncs NEXT_PUBLIC_* / VITE_* into WALLETCONNECT_PROJECT_ID on the VPS .env.
       WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}

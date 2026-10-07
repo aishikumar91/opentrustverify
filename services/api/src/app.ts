@@ -638,6 +638,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         projectName: status.projectName,
         network: status.network,
         clientIdConfigured: status.clientIdConfigured,
+        secretConfigured: status.secretConfigured,
+        jwksUrl: status.jwksUrl,
         /** Public client id only — never the client secret. */
         clientId: status.clientIdConfigured
           ? process.env.WEB3AUTH_CLIENT_ID?.trim() ||
