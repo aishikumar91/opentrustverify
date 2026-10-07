@@ -8,8 +8,9 @@ ARG VITE_WEB3AUTH_NETWORK=sapphire_mainnet
 ENV VITE_OTV_API_URL=$VITE_OTV_API_URL
 ENV VITE_WEB3AUTH_CLIENT_ID=$VITE_WEB3AUTH_CLIENT_ID
 ENV VITE_WEB3AUTH_NETWORK=$VITE_WEB3AUTH_NETWORK
+# Include devDependencies so workspace packages have `tsc` available.
 RUN pnpm install --frozen-lockfile --filter @otv/web...
-RUN pnpm --filter @otv/design-tokens --filter @otv/config --filter @otv/verdict-schema --filter @otv/crypto-signatures --filter @otv/chain-adapters --filter @otv/verification-engine --filter @otv/api-client --filter @otv/sdk-core --filter @otv/ui --filter @otv/web run build
+RUN pnpm --filter @otv/design-tokens --filter @otv/config --filter @otv/verdict-schema --filter @otv/api-client --filter @otv/web run build
 
 FROM nginx:1.27-alpine
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
