@@ -72,6 +72,12 @@ Compose service `trigger` in `infra/docker/docker-compose.vps.yml` builds `infra
 Do not invent MetaMask / broadcast private keys. Without `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY`, login and the console still work; live execute routes refuse until a key is configured. Without a WalletConnect project id (Admin settings or env), MetaMask / injected connect still works when available; the WalletConnect button stays disabled until an admin pastes a real id from cloud.walletconnect.com.
 
 ```bash
+# Full stack (Open Trust Verify api/web/worker + 3GGA /trigger) from this tree:
+# export SSHPASS='…'
+DEPLOY_HOST=administrator@93.127.142.159 \
+  bash infra/deployment/deploy-vps-full.sh --remote
+
+# Trigger / 3GGA Admin only:
 # On the VPS (deploy root = /home/administrator/deployments/opentrust-verify)
 bash infra/deployment/deploy-vps-trigger.sh
 

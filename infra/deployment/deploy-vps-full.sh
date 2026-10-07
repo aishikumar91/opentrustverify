@@ -71,21 +71,10 @@ remote_rsync() {
   fi
 }
 
-# Reuse trigger env helpers from the sibling script when available.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 ensure_env_keys() {
-  # shellcheck disable=SC1091
-  if [[ -f "$SCRIPT_DIR/deploy-vps-trigger.sh" ]]; then
-    # Extract ensure_env_keys by sourcing is fragile; call the trigger script's
-    # function via bash -c after defining a thin wrapper:
-    bash -c '
-      set -euo pipefail
-      source /dev/null
-    ' 2>/dev/null || true
-  fi
-  # Inline the same required-key checks used by deploy-vps-trigger.sh
   local env_file="$1"
   if [[ ! -f "$env_file" ]]; then
     echo "ERROR: missing $env_file" >&2
