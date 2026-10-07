@@ -67,6 +67,10 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
+      WEB3AUTH_CLIENT_ID: ${WEB3AUTH_CLIENT_ID:-BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M}
+      WEB3AUTH_CLIENT_SECRET: ${WEB3AUTH_CLIENT_SECRET:-}
+      WEB3AUTH_JWKS_URL: ${WEB3AUTH_JWKS_URL:-https://api-auth.web3auth.io/.well-known/jwks.json}
+      WEB3AUTH_NETWORK: ${WEB3AUTH_NETWORK:-sapphire_mainnet}
     extra_hosts:
       - "host.docker.internal:host-gateway"
       - "otv.poptrust.me:host-gateway"
@@ -111,6 +115,8 @@ services:
       dockerfile: infra/docker/Dockerfile.web
       args:
         VITE_OTV_API_URL: ${VITE_OTV_API_URL:-https://otv.poptrust.me}
+        VITE_WEB3AUTH_CLIENT_ID: ${VITE_WEB3AUTH_CLIENT_ID:-BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M}
+        VITE_WEB3AUTH_NETWORK: ${VITE_WEB3AUTH_NETWORK:-sapphire_mainnet}
     container_name: otv-web
     restart: unless-stopped
     ports:
