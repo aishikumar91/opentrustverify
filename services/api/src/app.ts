@@ -19,6 +19,7 @@ import {
   getChain,
 } from "@otv/chain-adapters";
 import { isDemoScenario, isEvmAddress, reconcileBalanceReads, runDemo, type BalanceObservation } from "@otv/wallet-core";
+import { verifyWeb3AuthIdToken, web3authStatus } from "./lib/web3auth.js";
 import {
   authorizeUrl,
   createOidcCookie,
@@ -619,6 +620,33 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       source: "chain-adapter",
       sources: observations.length,
     };
+  });
+
+  app.post("/v1/wallet/metamask/verify", { schema: openapi.metamaskVerify }, async (req, reply) => {
+    await resolveProject(req);
+    const status = web3authStatus();
+    if (!status.clientIdConfigured) {
+      return reply.code(503).send({
+        error: "metamask_unconfigured",
+        message: "MetaMask Embedded Wallets is not configured on this server.",
+      });
+    }
+    const idToken = (req.body as { idToken?: string }).idToken ?? "";
+    try {
+      const payload = await verifyWeb3AuthIdToken(idToken);
+      return {
+        ok: true,
+        project: status.projectName,
+        network: status.network,
+        subject: typeof payload.sub === "string" ? payload.sub : undefined,
+      };
+    } catch (err) {
+      const unconfigured = err instanceof Error && err.message.includes("not configured");
+      return reply.code(unconfigured ? 503 : 401).send({
+        error: unconfigured ? "metamask_unconfigured" : "invalid_id_token",
+        message: unconfigured ? err.message : "The MetaMask identity token was not verified.",
+      });
+    }
   });
 
   app.post("/v1/wallet/audit", { schema: openapi.walletAudit }, async (req) => {

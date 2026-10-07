@@ -564,6 +564,21 @@ export const routes: Record<string, FastifySchema> = {
     },
     response: ok({ type: "object", additionalProperties: true }),
   },
+  metamaskVerify: {
+    tags: ["admin"],
+    summary: "Verify a MetaMask Embedded Wallets identity token with the project JWKS",
+    security: secured,
+    headers: authHeaders,
+    body: {
+      type: "object",
+      additionalProperties: false,
+      required: ["idToken"],
+      properties: {
+        idToken: { type: "string" },
+      },
+    },
+    response: ok({ type: "object", additionalProperties: true }),
+  },
   walletAudit: {
     tags: ["admin"],
     summary: "Record a wallet security event without key material",
