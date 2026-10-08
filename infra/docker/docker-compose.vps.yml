@@ -67,6 +67,15 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
+      WEB3AUTH_CLIENT_ID: ${WEB3AUTH_CLIENT_ID:-BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M}
+      WEB3AUTH_CLIENT_SECRET: ${WEB3AUTH_CLIENT_SECRET:-}
+      WEB3AUTH_JWKS_URL: ${WEB3AUTH_JWKS_URL:-https://api-auth.web3auth.io/.well-known/jwks.json}
+      WEB3AUTH_NETWORK: ${WEB3AUTH_NETWORK:-sapphire_mainnet}
+      WEB3AUTH_PROJECT_NAME: ${WEB3AUTH_PROJECT_NAME:-sectool}
+      # Public WalletConnect Cloud project id for /v1/wallet/public-config (no secret).
+      # Deploy syncs NEXT_PUBLIC_* / VITE_* into WALLETCONNECT_PROJECT_ID on the VPS .env.
+      WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}
+      VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
       - "otv.poptrust.me:host-gateway"
@@ -111,6 +120,9 @@ services:
       dockerfile: infra/docker/Dockerfile.web
       args:
         VITE_OTV_API_URL: ${VITE_OTV_API_URL:-https://otv.poptrust.me}
+        VITE_WEB3AUTH_CLIENT_ID: ${VITE_WEB3AUTH_CLIENT_ID:-BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M}
+        VITE_WEB3AUTH_NETWORK: ${VITE_WEB3AUTH_NETWORK:-sapphire_mainnet}
+        VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
     container_name: otv-web
     restart: unless-stopped
     ports:
@@ -118,6 +130,69 @@ services:
     depends_on:
       api:
         condition: service_started
+  # Open Trust Admin console at https://otv.poptrust.me/trigger (Caddy → :4091)
+  trigger:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.trigger
+    container_name: otv-trigger
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NODE_ENV: production
+      NEXT_PUBLIC_BASE_PATH: /trigger
+      NEXT_PUBLIC_SITE_URL: ${OTV_PUBLIC_URL:-https://otv.poptrust.me}
+      DATABASE_URL: postgres://otv:${OTV_PG_PASSWORD}@postgres:5432/otv
+      SESSION_SECRET: ${SESSION_SECRET}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
+      DEFAULT_ADMIN_USERNAME: admin
+      DEFAULT_ADMIN_PASSWORD: ${DEMO_PASSWORD:-otv-demo-change-me}
+      # Prefer Base / VPS mainnet RPC; entrypoint falls back ETH / EVM / RPC_URL.
+      # Do not invent Sepolia URLs — leave empty if unset on the VPS .env.
+      BASE_RPC_URL: ${BASE_RPC_URL:-}
+      ETH_RPC_URL: ${ETH_RPC_URL:-}
+      EVM_RPC_URL: ${EVM_RPC_URL:-}
+      RPC_URL: ${RPC_URL:-}
+      CHAIN_ID: ${TRIGGER_CHAIN_ID:-8453}
+      CHAIN_NAME: ${TRIGGER_CHAIN_NAME:-Base}
+      BLOCK_EXPLORER_BASE: ${TRIGGER_BLOCK_EXPLORER_BASE:-https://basescan.org}
+      EXPLORER_API_BASE: ${TRIGGER_EXPLORER_API_BASE:-https://api.basescan.org}
+      ALLOW_MAINNET: ${TRIGGER_ALLOW_MAINNET:-true}
+      ADMIN_ALLOWLIST: ${TRIGGER_ADMIN_ALLOWLIST:-}
+      # Never invent keys. Empty unless set on the VPS .env.
+      TRIGGER_ADMIN_SIGNER_PRIVATE_KEY: ${TRIGGER_ADMIN_SIGNER_PRIVATE_KEY:-}
+      ADMIN_SIGNER_PRIVATE_KEY: ${TRIGGER_ADMIN_SIGNER_PRIVATE_KEY:-}
+      # WalletConnect: reuse OTV web project id; entrypoint maps VITE_* → NEXT_PUBLIC_*.
+      # Do not invent a project id — leave empty to gate WalletConnect in the UI.
+      VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:-}
+      WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}
+      # WebAuthn / Passkeys — origin-bound; defaults match public host.
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-otv.poptrust.me}
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-https://otv.poptrust.me}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-3GGA Admin}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
+      BASESCAN_API_KEY: ${BASESCAN_API_KEY:-}
+      GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
+      VERTEX_AGENT_ENDPOINT: ${VERTEX_AGENT_ENDPOINT:-}
+    # Bind on all interfaces so edge Caddy (host.docker.internal → docker0)
+    # can reach the console. Matches otv-web :4090 / otv-api :4080.
+    ports:
+      - "4091:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://127.0.0.1:3000/trigger/admin/login',r=>process.exit(r.statusCode&&r.statusCode<500?0:1)).on('error',()=>process.exit(1))\"",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
 volumes:
   otv_pg:
   otv_redis:

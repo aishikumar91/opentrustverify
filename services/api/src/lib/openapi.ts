@@ -564,6 +564,24 @@ export const routes: Record<string, FastifySchema> = {
     },
     response: ok({ type: "object", additionalProperties: true }),
   },
+  walletPublicConfig: {
+    tags: ["catalog"],
+    summary: "Public WalletConnect project id and sectool MetaMask Embedded Wallets status (no secrets)",
+    response: ok({ type: "object", additionalProperties: true }),
+  },
+  metamaskVerify: {
+    tags: ["admin"],
+    summary: "Verify a MetaMask Embedded Wallets identity token for /trigger/admin with the project JWKS",
+    body: {
+      type: "object",
+      additionalProperties: false,
+      required: ["idToken"],
+      properties: {
+        idToken: { type: "string" },
+      },
+    },
+    response: ok({ type: "object", additionalProperties: true }),
+  },
   walletAudit: {
     tags: ["admin"],
     summary: "Record a wallet security event without key material",

@@ -1,0 +1,153 @@
+@import url("https://fonts.googleapis.com/css2?family=Marcellus&family=Bodoni+Moda:opsz,wght@6..96,500;6..96,600;6..96,700&family=Urbanist:wght@400;500;600&family=Roboto:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: #0a121b;
+  background-image:
+    radial-gradient(ellipse 42% 28% at 12% 0%, rgba(225, 29, 72, 0.28), transparent 60%),
+    radial-gradient(ellipse 36% 24% at 88% 8%, rgba(120, 12, 32, 0.34), transparent 55%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  font-family: "Urbanist", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  font-feature-settings: "tnum";
+}
+
+::selection {
+  background-color: #e11d4855;
+}
+
+.font-brand {
+  font-family: "Marcellus", "Palatino Linotype", Palatino, serif;
+  font-weight: 400;
+}
+
+.font-caption {
+  font-family: "Bodoni Moda", Didot, "Times New Roman", serif;
+}
+
+button,
+a.rounded-full,
+.btn-primary {
+  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #ff4d6a !important;
+  border: 1px solid #e11d48 !important;
+  box-shadow: none !important;
+  min-height: 32px !important;
+  padding: 0.3rem 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.01em;
+  align-self: center !important;
+  height: auto !important;
+  width: auto !important;
+  max-width: 100%;
+}
+
+button:hover,
+a.rounded-full:hover,
+.btn-primary:hover {
+  color: #fff !important;
+  border-color: #ff4d6a !important;
+  background-image: linear-gradient(180deg, rgba(225, 29, 72, 0.22), rgba(225, 29, 72, 0.04)) !important;
+}
+
+button:disabled,
+a.rounded-full:disabled {
+  opacity: 0.4;
+}
+
+h1,
+h2,
+h3,
+label {
+  font-family: "Bodoni Moda", Didot, "Times New Roman", serif;
+}
+
+.font-ui {
+  font-family: "Urbanist", ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes brand-rise {
+  from {
+    opacity: 0;
+    transform: perspective(600px) rotateX(18deg) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(600px) rotateX(8deg) translateY(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full transition disabled:opacity-50;
+  }
+
+  /* Dimensional red 3GGA wordmark — letter-spacing comes from Tailwind size classes */
+  .brand-3gga {
+    color: #ff2d4a;
+    text-shadow:
+      0 1px 0 #b01028,
+      0 2px 0 #9a0e22,
+      0 3px 0 #840c1d,
+      0 4px 0 #6e0a18,
+      0 5px 0 #580814,
+      0 6px 10px rgba(0, 0, 0, 0.55),
+      0 0 24px rgba(225, 29, 72, 0.35);
+    transform: perspective(600px) rotateX(8deg);
+    transform-origin: left bottom;
+    max-width: 100%;
+  }
+
+  @media (min-width: 400px) {
+    .brand-3gga {
+      transform-origin: center bottom;
+    }
+  }
+
+  @media (max-width: 399px) {
+    .brand-3gga {
+      text-shadow:
+        0 1px 0 #b01028,
+        0 2px 0 #9a0e22,
+        0 3px 0 #840c1d,
+        0 4px 8px rgba(0, 0, 0, 0.5),
+        0 0 16px rgba(225, 29, 72, 0.3);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .brand-3gga {
+      animation: brand-rise 0.9s ease-out both;
+    }
+
+    .brand-fade-up {
+      animation: fade-up 0.7s ease-out both;
+    }
+
+    .brand-fade-up-delay {
+      animation: fade-up 0.7s ease-out 0.15s both;
+    }
+  }
+}

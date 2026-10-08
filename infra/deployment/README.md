@@ -8,6 +8,7 @@ OTV is a TypeScript Fastify API plus static Vite frontends. Postgres is the sour
 - `https://otv.poptrust.me/v1` → `@otv/api`
 - `https://otv.poptrust.me/docs` → product docs in the web app
 - `https://otv.poptrust.me/api/docs` → OpenAPI UI
+- `https://otv.poptrust.me/trigger` → Open Trust Admin (`open-trust`, Next.js on `:4091`)
 - Worker replica(s) run `node dist/worker.js` against the same Postgres + Redis
 
 ## Required environment
@@ -46,7 +47,49 @@ See `docs/OPERATIONS.md` for SLOs and incident steps.
 ## HTTPS on `otv.poptrust.me`
 
 Append `infra/caddy/otv.poptrust.me.caddy` to the edge Caddyfile and reload `edge-caddy`.
+The snippet proxies `/trigger*` to `host.docker.internal:4091`.
 
 If the hostname is orange-clouded on Cloudflare, visitors hit **525** until origin TLS exists for that name. Grey-cloud the A record until Caddy has a certificate, then proxy again with SSL mode **Full**. Do not point Cloudflare at origin HTTP-only with Full/Full (strict).
 
 Swagger UI is served by the API at `/api/docs`. Caddy must proxy `/api/docs*` without stripping `/api`, and should also rewrite legacy `/docs/static*` and `/docs/json` to `/api/...` so the SPA at `/docs` does not swallow those assets.
+
+## Open Trust Admin (`/trigger`)
+
+Compose service `trigger` in `infra/docker/docker-compose.vps.yml` builds `infra/docker/Dockerfile.trigger` from `open-trust/`. Edge Caddy proxies `/trigger*` to `host.docker.internal:4091` (see `infra/caddy/otv.poptrust.me.caddy`).
+
+| Env (VPS `.env`) | Used as |
+|------------------|---------|
+| `OTV_PG_PASSWORD` | Shared Postgres (`admin_users` table in `otv` DB) |
+| `SESSION_SECRET` | Admin session cookie HMAC |
+| `DEMO_PASSWORD` | Seeded `admin` password (`DEFAULT_ADMIN_PASSWORD`) |
+| `BASE_RPC_URL` / `ETH_RPC_URL` / `EVM_RPC_URL` | Mapped to `RPC_URL` in the container entrypoint. Prefer a dedicated VPS RPC; if unset (and otv-api has none), deploy falls back to catalog public Base (`https://base.publicnode.com`) for `TRIGGER_CHAIN_ID=8453` — same path as OTV `EVM_PUBLIC_RPC`, not Sepolia |
+| `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN` | Passkey (WebAuthn) RP for admin wallet linking. Defaults `otv.poptrust.me` / `https://otv.poptrust.me`. Challenges live in Postgres (`admin_webauthn_challenges`); credentials in `admin_passkeys` (no private keys). |
+| `TRIGGER_ALLOW_MAINNET` | Keep `true` when RPC/chain is Base mainnet (`TRIGGER_CHAIN_ID=8453`) |
+| `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY` | Optional broadcast key — leave empty unless intentionally set on the VPS |
+| `TRIGGER_ADMIN_ALLOWLIST` | Comma-separated allowlisted wallets; required for ALLOWLIST=YES — do not invent addresses |
+| `VITE_WALLETCONNECT_PROJECT_ID` / `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Optional WalletConnect fallback; Admin UI can save a project id to Postgres (`admin_settings`) without rebuild — never invent |
+
+Do not invent MetaMask / broadcast private keys. Without `TRIGGER_ADMIN_SIGNER_PRIVATE_KEY`, login and the console still work; live execute routes refuse until a key is configured. Without a WalletConnect project id (Admin settings or env), MetaMask / injected connect still works when available; the WalletConnect button stays disabled until an admin pastes a real id from cloud.walletconnect.com.
+
+```bash
+# Full stack (Open Trust Verify api/web/worker + 3GGA /trigger) from this tree:
+# export SSHPASS='…'
+DEPLOY_HOST=administrator@93.127.142.159 \
+  bash infra/deployment/deploy-vps-full.sh --remote
+
+# Trigger / 3GGA Admin only:
+# On the VPS (deploy root = /home/administrator/deployments/opentrust-verify)
+bash infra/deployment/deploy-vps-trigger.sh
+
+# From a workstation with SSH key access
+export VPS_SSH_PRIVATE_KEY="$(cat ~/.ssh/opentrustverify_vps)"   # or VPS_SSH_KEY=/path/to/key
+DEPLOY_HOST=administrator@93.127.142.159 \
+  bash infra/deployment/deploy-vps-trigger.sh --remote
+
+# Password auth (export SSHPASS in your shell; never commit it)
+# export SSHPASS='…'
+# DEPLOY_HOST=administrator@93.127.142.159 \
+#   bash infra/deployment/deploy-vps-trigger.sh --remote
+```
+
+Default login after seed: `admin` / value of `DEMO_PASSWORD` (fallback `otv-demo-change-me`).

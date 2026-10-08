@@ -3,7 +3,15 @@ WORKDIR /app
 RUN corepack enable
 COPY . .
 ARG VITE_OTV_API_URL=https://otv.poptrust.me
+ARG VITE_WEB3AUTH_CLIENT_ID=BFQnBp6tI9LtWdhNGIkBum0O2pDUefxYnQboLBIxnWV1oaAEZOJknjf6zQK5OEdai8sv9BMZR78Bx-Gk1UBwO2M
+ARG VITE_WEB3AUTH_NETWORK=sapphire_mainnet
+# WalletConnect Cloud project id — required for in-app pairing QR on /wallet.
+ARG VITE_WALLETCONNECT_PROJECT_ID=
 ENV VITE_OTV_API_URL=$VITE_OTV_API_URL
+ENV VITE_WEB3AUTH_CLIENT_ID=$VITE_WEB3AUTH_CLIENT_ID
+ENV VITE_WEB3AUTH_NETWORK=$VITE_WEB3AUTH_NETWORK
+ENV VITE_WALLETCONNECT_PROJECT_ID=$VITE_WALLETCONNECT_PROJECT_ID
+# Include devDependencies so workspace packages have `tsc` available.
 RUN pnpm install --frozen-lockfile --filter @otv/web...
 RUN pnpm --filter @otv/design-tokens --filter @otv/config --filter @otv/verdict-schema --filter @otv/api-client --filter @otv/web run build
 

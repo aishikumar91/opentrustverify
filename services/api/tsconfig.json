@@ -5,11 +5,7 @@
     "rootDir": "src",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@otv/wallet-core": ["../../packages/wallet-core/dist/index.js"]
-    }
+    "types": ["node"]
   },
   "include": ["src"]
 }

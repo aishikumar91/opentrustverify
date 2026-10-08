@@ -4,6 +4,10 @@
 # OpenAPI lives at /api/docs on the API. Do not strip /api — Swagger HTML
 # references /api/docs/static/*. /docs is the product SPA.
 # Legacy Swagger paths under /docs/static and /docs/json still proxy to the API.
+# Live /trigger, /trigger/admin, and /trigger/admin/login are the 3GGA Next.js
+# app (asset prefix /trigger), not the OTV SPA. Keep that upstream before the
+# SPA catch-all. The SPA also has /trigger/admin for hosts where web is the
+# only frontend.
 
 otv.poptrust.me {
 	encode gzip
@@ -39,6 +43,16 @@ otv.poptrust.me {
 	handle @swagger_legacy {
 		rewrite * /api{uri}
 		reverse_proxy host.docker.internal:4080 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Port 443
+		}
+	}
+
+	# Open Trust Admin trigger console (Next.js, basePath=/trigger)
+	handle /trigger* {
+		reverse_proxy host.docker.internal:4091 {
 			header_up Host {host}
 			header_up X-Forwarded-Proto https
 			header_up X-Forwarded-Host {host}
