@@ -35,9 +35,7 @@ export default function LoginPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(225,29,72,0.16),_transparent_55%)]" />
       <form onSubmit={onSubmit} className="relative w-full max-w-sm min-w-0">
         <BrandMark size="lg" as="h1" className="mb-3" />
-        <p className="brand-fade-up mb-8 text-sm leading-relaxed text-[#8A95A5]">
-          Admin console — sign in to trigger and verify.
-        </p>
+        <p className="brand-fade-up mb-4 font-caption text-sm text-[#8A95A5]">Sign in</p>
 
         <label className="text-xs text-[#6B7686]">Username</label>
         <input

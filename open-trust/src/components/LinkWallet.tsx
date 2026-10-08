@@ -65,6 +65,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const [passkeys, setPasskeys] = useState<PasskeyPublic[]>([]);
   const [associateDraft, setAssociateDraft] = useState("");
   const [pendingPasskeyId, setPendingPasskeyId] = useState<number | null>(null);
+  const [signingReady, setSigningReady] = useState(false);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const onLinkedRef = useRef(onLinked);
   onLinkedRef.current = onLinked;
 
@@ -132,6 +134,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             address: getAddress(first.address),
             source: (first.source as LinkedWallet["source"]) || "injected",
           });
+          // Address restored for allowlist display only — provider is gone after reload.
+          setSigningReady(false);
+          setNeedsReconnect(true);
         }
       })
       .catch(() => {
@@ -178,9 +183,44 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     const address = getAddress(raw);
     await persistLinkedWallet(address, source);
     // Passkey-only links have no signing provider; MetaMask/WC do.
+    // NOTE: provider lives only in this tab's memory — reload clears signing
+    // while the linked address is restored from Postgres (needs reconnect).
     setActiveWalletProvider(provider, provider ? address : null);
     setWallet({ address, source });
+    setSigningReady(Boolean(provider));
+    setNeedsReconnect(false);
     setError(null);
+  }
+
+  function subscribeProviderEvents(provider: Eip1193Provider, source: LinkedWallet["source"]) {
+    try {
+      const anyProvider = provider as unknown as {
+        on?: (event: string, cb: (...args: unknown[]) => void) => void;
+      };
+      if (!anyProvider?.on) return;
+      anyProvider.on("accountsChanged", (...args: unknown[]) => {
+        const accs = args[0] as string[] | undefined;
+        if (accs && accs.length > 0 && isAddress(accs[0])) {
+          const addr = getAddress(accs[0]);
+          setActiveWalletProvider(provider, addr);
+          setWallet({ address: addr, source });
+          setSigningReady(true);
+          setNeedsReconnect(false);
+          setError(null);
+        } else {
+          setActiveWalletProvider(null, null);
+          setSigningReady(false);
+          setNeedsReconnect(true);
+        }
+      });
+      anyProvider.on("disconnect", () => {
+        setActiveWalletProvider(null, null);
+        setSigningReady(false);
+        setNeedsReconnect(true);
+      });
+    } catch {
+      /* non-fatal */
+    }
   }
 
   async function connectInjected() {
@@ -202,6 +242,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         throw new Error("No accounts returned. Unlock MetaMask / Trust Wallet and try again.");
       }
       await applyAddress(accounts[0], "injected", provider);
+      subscribeProviderEvents(provider, "injected");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Injected wallet connection failed.");
     } finally {
@@ -275,6 +316,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       }
       // WalletConnect provider is EIP-1193 — keep it for real signing (Trust Wallet).
       await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
+      subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
       setPairingQr(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "WalletConnect did not connect.";
@@ -467,6 +509,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         } else {
           setActiveWalletProvider(null, null);
           setWallet(null);
+          setSigningReady(false);
         }
       }
       await refreshPasskeys();
@@ -480,6 +523,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     // allowlist in Postgres until explicitly removed.
     setActiveWalletProvider(null, null);
     setWallet(null);
+    setSigningReady(false);
+    setNeedsReconnect(false);
     setError(null);
   }
 
@@ -500,6 +545,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       window.dispatchEvent(new Event("otv-admin-settings-updated"));
       setActiveWalletProvider(null, null);
       setWallet(null);
+      setSigningReady(false);
+      setNeedsReconnect(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to unlink wallet");
     }
@@ -525,6 +572,16 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             </p>
           ) : (
             <p className="mt-1 text-sm text-[#6B7686]">No wallet linked</p>
+          )}
+          {wallet && !signingReady && (
+            <p className="mt-1 break-words text-xs text-[#FFB020]">
+              {needsReconnect
+                ? "Linked for allowlist, but signing needs reconnect (reload clears the signing session)."
+                : "Passkey links identify the target only and cannot sign — connect MetaMask / WalletConnect to sign."}
+            </p>
+          )}
+          {wallet && signingReady && (
+            <p className="mt-1 text-xs text-[#7EE2A8]">Signing ready — this wallet will sign tx + gas.</p>
           )}
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
@@ -626,23 +683,10 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         </div>
       )}
 
-      {wallet && (
-        <p className="break-words text-xs leading-relaxed text-[#5A6575]">
-          {wallet.source === "passkey"
-            ? "Address is on the dashboard allowlist. Connect MetaMask or Trust Wallet / WC to sign triggers with that wallet."
-            : "Real wallet linked. Reconnect MetaMask or Trust Wallet / WC in this browser if signing is unavailable, then fire a vector."}
-        </p>
-      )}
-
       {pendingPasskeyId !== null && (
         <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#B9C4CE]">
-            Associate EVM address
-          </p>
-          <p className="break-words text-xs leading-relaxed text-[#5A6575]">
-            Passkeys identify you — they do not sign EVM txs. Paste an address to allowlist it,
-            or connect MetaMask / WalletConnect (Trust Wallet) to sign triggers with your real
-            wallet. Seed phrases are never collected.
+          <p className="font-caption text-xs uppercase tracking-[0.12em] text-[#B9C4CE]">
+            Associate address
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
             <input
@@ -727,27 +771,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         </div>
       )}
 
-      {config && !wcReady && (
-        <p className="break-words text-xs leading-relaxed text-[#6B7686]">
-          WalletConnect disabled — paste a project ID from{" "}
-          <a
-            href="https://cloud.walletconnect.com"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[#E11D48] underline-offset-2 hover:underline"
-          >
-            cloud.walletconnect.com
-          </a>{" "}
-          in Admin settings above (saved to Postgres; no image rebuild). MetaMask / injected
-          wallets and Passkeys still work when available in this browser.
-        </p>
-      )}
-      {!passkeyOk && (
-        <p className="break-words text-xs leading-relaxed text-[#6B7686]">
-          Passkeys unavailable in this browser — use MetaMask, WalletConnect, or a device with
-          a platform authenticator.
-        </p>
-      )}
       {error && <p className="break-words text-xs text-[#FF5C6C]">{error}</p>}
     </div>
   );
