@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getAddress, isAddress } from "viem";
 import { withBasePath } from "../lib/basePath";
+import { walletErrorMessage } from "../lib/walletErrors";
 import {
   getInjectedProvider,
   setActiveWalletProvider,
@@ -60,15 +61,16 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   >(null);
   const [pairingQr, setPairingQr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasInjected, setHasInjected] = useState(false);
   const [passkeyOk, setPasskeyOk] = useState(false);
   const [passkeys, setPasskeys] = useState<PasskeyPublic[]>([]);
   const [associateDraft, setAssociateDraft] = useState("");
   const [pendingPasskeyId, setPendingPasskeyId] = useState<number | null>(null);
   const [signingReady, setSigningReady] = useState(false);
-  const [needsReconnect, setNeedsReconnect] = useState(false);
   const onLinkedRef = useRef(onLinked);
+  const onUseAsTargetRef = useRef(onUseAsTarget);
   onLinkedRef.current = onLinked;
+  onUseAsTargetRef.current = onUseAsTarget;
+  const restoredRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +102,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   }, []);
 
   useEffect(() => {
-    setHasInjected(Boolean(getInjectedProvider()));
     setPasskeyOk(webAuthnAvailable());
   }, []);
 
@@ -113,40 +114,12 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       if (!res.ok) throw new Error(data.error ?? "Failed to load passkeys");
       setPasskeys(Array.isArray(data.passkeys) ? data.passkeys : []);
     } catch {
-      // Non-fatal on first paint (session or table may still be warming).
+      /* non-fatal */
     }
   }
 
   useEffect(() => {
     void refreshPasskeys();
-  }, []);
-
-  // Restore last linked dashboard wallet (address only — must reconnect to sign).
-  useEffect(() => {
-    let cancelled = false;
-    void fetch(withBasePath("/api/admin/wallets"), { credentials: "include" })
-      .then(async (res) => {
-        if (!res.ok) return;
-        const data = await res.json();
-        const first = Array.isArray(data.wallets) ? data.wallets[0] : null;
-        if (!cancelled && first?.address && isAddress(first.address) && !wallet) {
-          setWallet({
-            address: getAddress(first.address),
-            source: (first.source as LinkedWallet["source"]) || "injected",
-          });
-          // Address restored for allowlist display only — provider is gone after reload.
-          setSigningReady(false);
-          setNeedsReconnect(true);
-        }
-      })
-      .catch(() => {
-        /* non-fatal */
-      });
-    return () => {
-      cancelled = true;
-    };
-    // Intentionally once on mount — do not re-run when wallet changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -165,9 +138,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(
-        (data as { error?: string }).error ?? "Failed to save linked wallet to dashboard"
-      );
+      throw new Error((data as { error?: string }).error ?? "Failed to link wallet.");
     }
     window.dispatchEvent(new Event("otv-admin-settings-updated"));
   }
@@ -175,21 +146,21 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   async function applyAddress(
     raw: string,
     source: LinkedWallet["source"],
-    provider: Eip1193Provider | null = null
+    provider: Eip1193Provider | null = null,
+    opts: { setTarget?: boolean } = { setTarget: true }
   ) {
     if (!raw || !isAddress(raw)) {
-      throw new Error("Wallet did not return a valid EVM address.");
+      throw new Error("Invalid wallet address.");
     }
     const address = getAddress(raw);
     await persistLinkedWallet(address, source);
-    // Passkey-only links have no signing provider; MetaMask/WC do.
-    // NOTE: provider lives only in this tab's memory — reload clears signing
-    // while the linked address is restored from Postgres (needs reconnect).
     setActiveWalletProvider(provider, provider ? address : null);
     setWallet({ address, source });
     setSigningReady(Boolean(provider));
-    setNeedsReconnect(false);
     setError(null);
+    if (opts.setTarget !== false) {
+      onUseAsTargetRef.current(address);
+    }
   }
 
   function subscribeProviderEvents(provider: Eip1193Provider, source: LinkedWallet["source"]) {
@@ -205,18 +176,17 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           setActiveWalletProvider(provider, addr);
           setWallet({ address: addr, source });
           setSigningReady(true);
-          setNeedsReconnect(false);
           setError(null);
+          onUseAsTargetRef.current(addr);
+          void persistLinkedWallet(addr, source).catch(() => undefined);
         } else {
           setActiveWalletProvider(null, null);
           setSigningReady(false);
-          setNeedsReconnect(true);
         }
       });
       anyProvider.on("disconnect", () => {
         setActiveWalletProvider(null, null);
         setSigningReady(false);
-        setNeedsReconnect(true);
       });
     } catch {
       /* non-fatal */
@@ -229,31 +199,69 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     try {
       const provider = getInjectedProvider();
       if (!provider) {
-        const wcReady = Boolean(config?.walletConnectConfigured);
-        setError(
-          wcReady
-            ? "No browser wallet detected. Install MetaMask or Trust Wallet (extension), use WalletConnect for mobile Trust Wallet, or Link with Passkey."
-            : "No browser wallet detected, and WalletConnect is not configured. Install MetaMask, or set a WalletConnect project ID for Trust Wallet."
-        );
+        setError("No browser wallet.");
         return;
       }
       const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
       if (!accounts?.length) {
-        throw new Error("No accounts returned. Unlock MetaMask / Trust Wallet and try again.");
+        throw new Error("No accounts.");
       }
       await applyAddress(accounts[0], "injected", provider);
       subscribeProviderEvents(provider, "injected");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Injected wallet connection failed.");
+      setError(walletErrorMessage(err, "Connect failed."));
     } finally {
       setBusy(null);
     }
   }
 
+  /** Silent restore: reuse unlocked injected session without a prompt when possible. */
+  async function trySilentInjected() {
+    const provider = getInjectedProvider();
+    if (!provider) return false;
+    try {
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+      if (!accounts?.length || !isAddress(accounts[0])) return false;
+      await applyAddress(accounts[0], "injected", provider);
+      subscribeProviderEvents(provider, "injected");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      const silent = await trySilentInjected();
+      if (cancelled || silent) return;
+      try {
+        const res = await fetch(withBasePath("/api/admin/wallets"), { credentials: "include" });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const first = Array.isArray(data.wallets) ? data.wallets[0] : null;
+        if (first?.address && isAddress(first.address)) {
+          setWallet({
+            address: getAddress(first.address),
+            source: (first.source as LinkedWallet["source"]) || "injected",
+          });
+          setSigningReady(false);
+          onUseAsTargetRef.current(getAddress(first.address));
+        }
+      } catch {
+        /* non-fatal */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function connectWalletConnect() {
     setError(null);
-    // Re-fetch runtime config so a freshly saved Admin project id is picked up
-    // without a full page reload.
     let projectId = config?.walletConnectProjectId ?? "";
     let chainId = config?.chainId || 8453;
     try {
@@ -265,13 +273,11 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         chainId = fresh.chainId || chainId;
       }
     } catch {
-      // keep prior config
+      /* keep prior */
     }
 
     if (!projectId) {
-      setError(
-        "WalletConnect is not configured. Paste a project ID from cloud.walletconnect.com in Admin settings (or set VITE_WALLETCONNECT_PROJECT_ID on the VPS)."
-      );
+      setError("WalletConnect not configured.");
       return;
     }
     setBusy("walletconnect");
@@ -286,7 +292,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         showQrModal: false,
         metadata: {
           name: "3GGA Admin",
-          description: "Link an allowlisted wallet for 3GGA trigger vectors",
+          description: "3GGA",
           url:
             typeof window !== "undefined"
               ? window.location.origin
@@ -312,20 +318,13 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       }
       const account = provider.accounts?.[0];
       if (!account) {
-        throw new Error("WalletConnect session opened but no account was returned.");
+        throw new Error("No account.");
       }
-      // WalletConnect provider is EIP-1193 — keep it for real signing (Trust Wallet).
       await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
       subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
       setPairingQr(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "WalletConnect did not connect.";
-      // User closed modal — soft message
-      if (/user rejected|closed|cancel/i.test(msg)) {
-        setError("WalletConnect cancelled.");
-      } else {
-        setError(msg);
-      }
+      setError(walletErrorMessage(err, "WalletConnect failed."));
     } finally {
       setBusy(null);
     }
@@ -334,9 +333,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   async function linkWithPasskey() {
     setError(null);
     if (!webAuthnAvailable()) {
-      setError(
-        "Passkeys are not available in this browser. Use a platform authenticator (iOS/Android/desktop), or connect MetaMask / WalletConnect."
-      );
+      setError("Passkeys unavailable.");
       return;
     }
     setBusy("passkey-register");
@@ -345,7 +342,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         "@simplewebauthn/browser"
       );
       if (!browserSupportsWebAuthn()) {
-        setError("WebAuthn is not supported in this browser.");
+        setError("Passkeys unavailable.");
         return;
       }
 
@@ -354,7 +351,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         credentials: "include",
       });
       const optData = await optRes.json();
-      if (!optRes.ok) throw new Error(optData.error ?? "Failed to start passkey registration");
+      if (!optRes.ok) throw new Error(optData.error ?? "Passkey failed.");
 
       const attestation = await startRegistration({ optionsJSON: optData.options });
 
@@ -369,7 +366,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         }),
       });
       const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey registration failed");
+      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey failed.");
 
       const passkey = verifyData.passkey as PasskeyPublic;
       await refreshPasskeys();
@@ -381,15 +378,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       } else {
         setPendingPasskeyId(passkey.id);
         setAssociateDraft("");
-        setError(null);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Passkey registration failed.";
-      if (/not allowed|abort|cancel/i.test(msg)) {
-        setError("Passkey registration cancelled.");
-      } else {
-        setError(msg);
-      }
+      setError(walletErrorMessage(err, "Passkey failed."));
     } finally {
       setBusy(null);
     }
@@ -397,12 +388,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
 
   async function assertPasskey() {
     setError(null);
-    if (!webAuthnAvailable()) {
-      setError("Passkeys are not available in this browser.");
-      return;
-    }
-    if (passkeys.length === 0) {
-      setError("No passkeys linked yet. Use “Link with Passkey” first.");
+    if (!webAuthnAvailable() || passkeys.length === 0) {
+      setError("No passkey.");
       return;
     }
     setBusy("passkey-assert");
@@ -411,7 +398,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         "@simplewebauthn/browser"
       );
       if (!browserSupportsWebAuthn()) {
-        setError("WebAuthn is not supported in this browser.");
+        setError("Passkeys unavailable.");
         return;
       }
 
@@ -420,7 +407,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         credentials: "include",
       });
       const optData = await optRes.json();
-      if (!optRes.ok) throw new Error(optData.error ?? "Failed to start passkey assertion");
+      if (!optRes.ok) throw new Error(optData.error ?? "Passkey failed.");
 
       const assertion = await startAuthentication({ optionsJSON: optData.options });
 
@@ -431,7 +418,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         body: JSON.stringify({ response: assertion }),
       });
       const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey assertion failed");
+      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey failed.");
 
       await refreshPasskeys();
       const linked = verifyData.linkedAddress as string | null;
@@ -441,17 +428,10 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       } else {
         const pk = verifyData.passkey as PasskeyPublic;
         setPendingPasskeyId(pk.id);
-        setError(
-          "Passkey verified, but no EVM address is associated yet. Paste a wallet address below (or connect MetaMask / WalletConnect to sign)."
-        );
+        setError("Associate an address.");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Passkey assertion failed.";
-      if (/not allowed|abort|cancel/i.test(msg)) {
-        setError("Passkey cancelled.");
-      } else {
-        setError(msg);
-      }
+      setError(walletErrorMessage(err, "Passkey failed."));
     } finally {
       setBusy(null);
     }
@@ -471,7 +451,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to associate address");
+      if (!res.ok) throw new Error(data.error ?? "Save failed.");
       const passkey = data.passkey as PasskeyPublic;
       await refreshPasskeys();
       if (passkey.linkedAddress) {
@@ -480,7 +460,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         setAssociateDraft("");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to associate address");
+      setError(walletErrorMessage(err, "Save failed."));
     } finally {
       setBusy(null);
     }
@@ -496,7 +476,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         body: JSON.stringify({ id }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to unlink passkey");
+      if (!res.ok) throw new Error(data.error ?? "Unlink failed.");
       if (pendingPasskeyId === id) {
         setPendingPasskeyId(null);
         setAssociateDraft("");
@@ -514,17 +494,14 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       }
       await refreshPasskeys();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to unlink passkey");
+      setError(walletErrorMessage(err, "Unlink failed."));
     }
   }
 
   function disconnect() {
-    // Clears the active signing session only. Linked address stays on the
-    // allowlist in Postgres until explicitly removed.
     setActiveWalletProvider(null, null);
     setWallet(null);
     setSigningReady(false);
-    setNeedsReconnect(false);
     setError(null);
   }
 
@@ -540,15 +517,14 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error((data as { error?: string }).error ?? "Failed to unlink wallet");
+        throw new Error((data as { error?: string }).error ?? "Unlink failed.");
       }
       window.dispatchEvent(new Event("otv-admin-settings-updated"));
       setActiveWalletProvider(null, null);
       setWallet(null);
       setSigningReady(false);
-      setNeedsReconnect(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to unlink wallet");
+      setError(walletErrorMessage(err, "Unlink failed."));
     }
   }
 
@@ -564,38 +540,28 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs text-[#6B7686]">Linked wallet</p>
+          <p className="text-xs text-[#6B7686]">Wallet</p>
           {wallet ? (
             <p className="mt-1 break-all font-mono text-sm text-[#ECEFF3] sm:break-normal">
               {shortAddress(wallet.address)}
               <span className="ml-2 text-xs text-[#6B7686]">{sourceLabel}</span>
+              {signingReady ? (
+                <span className="ml-2 text-xs text-[#7EE2A8]">signing</span>
+              ) : (
+                <span className="ml-2 text-xs text-[#FFB020]">reconnect</span>
+              )}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-[#6B7686]">No wallet linked</p>
-          )}
-          {wallet && !signingReady && (
-            <p className="mt-1 break-words text-xs text-[#FFB020]">
-              {needsReconnect
-                ? "Linked for allowlist, but signing needs reconnect (reload clears the signing session)."
-                : "Passkey links identify the target only and cannot sign — connect MetaMask / WalletConnect to sign."}
-            </p>
-          )}
-          {wallet && signingReady && (
-            <p className="mt-1 text-xs text-[#7EE2A8]">Signing ready — this wallet will sign tx + gas.</p>
+            <p className="mt-1 text-sm text-[#6B7686]">Not connected</p>
           )}
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
-          {!wallet ? (
+          {(!wallet || !signingReady) && (
             <>
               <button
                 type="button"
                 onClick={() => void connectInjected()}
                 disabled={busy !== null}
-                title={
-                  hasInjected
-                    ? "Connect MetaMask / injected wallet"
-                    : "Requires MetaMask or another injected wallet in this browser"
-                }
                 className="min-h-[44px] w-full rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {busy === "injected" ? "Connecting…" : "Connect MetaMask"}
@@ -604,41 +570,31 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                 type="button"
                 onClick={() => void connectWalletConnect()}
                 disabled={busy !== null || !wcReady}
-                title={
-                  wcReady
-                    ? "Connect with WalletConnect"
-                    : "Set a WalletConnect project ID in Admin settings to enable"
-                }
                 className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
-                {busy === "walletconnect" ? "Connecting…" : "Trust Wallet / WC"}
+                {busy === "walletconnect" ? "Connecting…" : "WalletConnect"}
               </button>
               <button
                 type="button"
                 onClick={() => void linkWithPasskey()}
                 disabled={busy !== null || !passkeyOk}
-                title={
-                  passkeyOk
-                    ? "Create a platform passkey and optionally associate an allowlisted address"
-                    : "WebAuthn / passkeys are not available in this browser"
-                }
                 className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
-                {busy === "passkey-register" ? "Linking…" : "Link with Passkey"}
+                {busy === "passkey-register" ? "Linking…" : "Passkey"}
               </button>
               {passkeys.length > 0 && (
                 <button
                   type="button"
                   onClick={() => void assertPasskey()}
                   disabled={busy !== null || !passkeyOk}
-                  title="Unlock a previously linked passkey and use its associated address"
                   className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
                 >
                   {busy === "passkey-assert" ? "Verifying…" : "Use Passkey"}
                 </button>
               )}
             </>
-          ) : (
+          )}
+          {wallet && signingReady && (
             <>
               <button
                 type="button"
@@ -659,7 +615,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                 onClick={() => void unlinkFromDashboard()}
                 className="min-h-[44px] w-full rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
               >
-                Unlink from dashboard
+                Unlink
               </button>
             </>
           )}
@@ -668,107 +624,87 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
 
       {busy === "walletconnect" && (
         <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#B9C4CE]">
-            WalletConnect QR
-          </p>
-          <p className="text-xs leading-relaxed text-[#5A6575]">
-            Scan with Trust Wallet / MetaMask mobile. This is a pairing link — not a receive address.
-          </p>
           {pairingQr ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={pairingQr} alt="WalletConnect pairing QR" width={280} height={280} />
+            <img src={pairingQr} alt="WalletConnect QR" width={280} height={280} />
           ) : (
-            <p className="text-xs text-[#6B7686]">Preparing pairing code…</p>
+            <p className="text-xs text-[#6B7686]">Preparing QR…</p>
           )}
         </div>
       )}
 
       {pendingPasskeyId !== null && (
-        <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
-          <p className="font-caption text-xs uppercase tracking-[0.12em] text-[#B9C4CE]">
-            Associate address
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-            <input
-              type="text"
-              value={associateDraft}
-              onChange={(e) => setAssociateDraft(e.target.value)}
-              placeholder="0x…"
-              autoComplete="off"
-              spellCheck={false}
-              className="min-h-[44px] w-full min-w-0 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"
-            />
-            <button
-              type="button"
-              onClick={() => void saveAssociatedAddress(pendingPasskeyId)}
-              disabled={busy !== null || !associateDraft.trim()}
-              className="min-h-[44px] w-full shrink-0 rounded-full bg-[#E11D48] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
-            >
-              {busy === "passkey-save" ? "Saving…" : "Save address"}
-            </button>
-          </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <input
+            type="text"
+            value={associateDraft}
+            onChange={(e) => setAssociateDraft(e.target.value)}
+            placeholder="0x…"
+            autoComplete="off"
+            spellCheck={false}
+            className="min-h-[44px] w-full min-w-0 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"
+          />
+          <button
+            type="button"
+            onClick={() => void saveAssociatedAddress(pendingPasskeyId)}
+            disabled={busy !== null || !associateDraft.trim()}
+            className="min-h-[44px] w-full shrink-0 rounded-full bg-[#E11D48] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+          >
+            {busy === "passkey-save" ? "Saving…" : "Save"}
+          </button>
         </div>
       )}
 
       {passkeys.length > 0 && (
-        <div className="space-y-2 border-t border-[#171B22] pt-3">
-          <p className="text-xs text-[#6B7686]">Linked passkeys</p>
-          <ul className="space-y-2">
-            {passkeys.map((p) => (
-              <li
-                key={p.id}
-                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="break-all font-mono text-xs text-[#ECEFF3]">
-                    {shortCredentialId(p.credentialId)}
-                    {p.linkedAddress ? (
-                      <span className="ml-2 text-[#8A95A5]">
-                        → {shortAddress(p.linkedAddress)}
-                      </span>
-                    ) : (
-                      <span className="ml-2 text-[#5A6575]">no address</span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  {!p.linkedAddress && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPendingPasskeyId(p.id);
-                        setAssociateDraft("");
-                      }}
-                      className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
-                    >
-                      Associate address
-                    </button>
-                  )}
-                  {p.linkedAddress && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void applyAddress(p.linkedAddress!, "passkey", null).then(() => {
-                          onUseAsTarget(getAddress(p.linkedAddress!));
-                        });
-                      }}
-                      className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
-                    >
-                      Use as target
-                    </button>
-                  )}
+        <ul className="space-y-2 border-t border-[#171B22] pt-3">
+          {passkeys.map((p) => (
+            <li
+              key={p.id}
+              className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p className="break-all font-mono text-xs text-[#ECEFF3]">
+                {shortCredentialId(p.credentialId)}
+                {p.linkedAddress ? (
+                  <span className="ml-2 text-[#8A95A5]">→ {shortAddress(p.linkedAddress)}</span>
+                ) : null}
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {!p.linkedAddress && (
                   <button
                     type="button"
-                    onClick={() => void unlinkPasskey(p.id)}
-                    className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                    onClick={() => {
+                      setPendingPasskeyId(p.id);
+                      setAssociateDraft("");
+                    }}
+                    className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
                   >
-                    Unlink
+                    Associate
                   </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                )}
+                {p.linkedAddress && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void applyAddress(p.linkedAddress!, "passkey", null).then(() => {
+                        onUseAsTarget(getAddress(p.linkedAddress!));
+                      });
+                    }}
+                    className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                  >
+                    Target
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void unlinkPasskey(p.id)}
+                  className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                >
+                  Unlink
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
       {error && <p className="break-words text-xs text-[#FF5C6C]">{error}</p>}

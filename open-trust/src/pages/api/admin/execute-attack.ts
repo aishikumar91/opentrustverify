@@ -46,14 +46,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Admin session required." });
   }
 
-  // Server-signer path is intentionally disabled when no private key is configured.
-  // Signer = connected wallet model: the browser signs via MetaMask/WalletConnect
-  // (see lib/clientTriggers.ts), then POSTs to /api/admin/record-run.
-  // execute-attack stays only for legacy server-key deployments.
+  // Legacy server-key path only. Production signs in-browser via clientTriggers → record-run.
   if (!process.env.ADMIN_SIGNER_PRIVATE_KEY || process.env.ADMIN_SIGNER_PRIVATE_KEY === "0xreplace_me") {
-    return res.status(503).json({
-      error: "Server signer not configured. Use the linked-wallet flow: connect MetaMask/WalletConnect on the dashboard, 'Use as target' (signer == target for self-test), fire the vector client-side, then record-run + verify.",
-    });
+    return res.status(503).json({ error: "Use linked wallet to sign." });
   }
 
   const { vector, targetAddress, amount, fakeTokenContract } = req.body as Body;

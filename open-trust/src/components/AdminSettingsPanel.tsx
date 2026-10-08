@@ -72,11 +72,7 @@ export default function AdminSettingsPanel() {
       if (!res.ok) throw new Error(data.error ?? "Failed to save");
       setSettings(data);
       setProjectIdDraft(data.walletConnectProjectId ?? "");
-      setSaveMsg(
-        data.walletConnectConfigured
-          ? `WalletConnect saved (${data.walletConnectSource}). Connect wallets below without restarting.`
-          : "Cleared DB project id. Env fallback still applies if set on the VPS."
-      );
+      setSaveMsg(data.walletConnectConfigured ? "Saved." : "Cleared.");
       // Notify LinkWallet (sibling) to re-fetch /api/config/public.
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("otv-admin-settings-updated"));
@@ -91,15 +87,9 @@ export default function AdminSettingsPanel() {
   return (
     <section className="mb-8 overflow-x-hidden rounded-xl border border-[#1C2430] bg-[#0D121A] p-3.5 sm:mb-10 sm:p-5">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#8A95A5]">
-            Admin settings
-          </h2>
-          <p className="mt-1 break-words text-xs leading-relaxed text-[#5A6575]">
-            Live status from server — WalletConnect project id persists in Postgres (DB over
-            env). Passkeys link under Linked wallet (credential id + public key only).
-          </p>
-        </div>
+        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#8A95A5]">
+          Settings
+        </h2>
         {settings && (
           <p className="max-w-full break-all font-mono text-[11px] leading-relaxed text-[#5A6575] sm:break-normal sm:text-right">
             {settings.chainName} · {settings.chainId}
@@ -151,29 +141,15 @@ export default function AdminSettingsPanel() {
               htmlFor="wc-project-id"
               className="block text-xs font-medium uppercase tracking-[0.14em] text-[#B9C4CE]"
             >
-              WalletConnect project ID
+              WalletConnect · {settings.walletConnectSource}
             </label>
-            <p className="break-words text-xs leading-relaxed text-[#5A6575]">
-              Paste from{" "}
-              <a
-                href="https://cloud.walletconnect.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[#E11D48] underline-offset-2 hover:underline"
-              >
-                cloud.walletconnect.com
-              </a>
-              . Source:{" "}
-              <span className="font-mono text-[#8A95A5]">{settings.walletConnectSource}</span>
-              . Empty clears the DB override (env still used if set).
-            </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 id="wc-project-id"
                 type="text"
                 value={projectIdDraft}
                 onChange={(e) => setProjectIdDraft(e.target.value)}
-                placeholder="WalletConnect Cloud project id"
+                placeholder="Project ID"
                 autoComplete="off"
                 spellCheck={false}
                 className="min-h-[44px] w-full min-w-0 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"

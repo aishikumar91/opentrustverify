@@ -40,10 +40,7 @@ export async function getAllowlist(): Promise<Set<string>> {
 
 export class NotAllowlistedError extends Error {
   constructor(address: string) {
-    super(
-      `Refusing to target ${address}: not allowlisted. ` +
-        `Link the wallet on the admin dashboard (MetaMask / WalletConnect) or add it to ADMIN_ALLOWLIST.`
-    );
+    super(`Not allowlisted: ${address}`);
     this.name = "NotAllowlistedError";
   }
 }
@@ -52,10 +49,7 @@ export async function assertAllowlisted(address: string): Promise<void> {
   const normalized = address.trim().toLowerCase();
   const allowlist = await getAllowlist();
   if (allowlist.size === 0) {
-    throw new Error(
-      "Allowlist is empty. Connect MetaMask or WalletConnect on the admin dashboard " +
-        "to link a real wallet, or set ADMIN_ALLOWLIST."
-    );
+    throw new Error("Allowlist empty — connect a wallet first.");
   }
   if (!allowlist.has(normalized)) {
     throw new NotAllowlistedError(address);

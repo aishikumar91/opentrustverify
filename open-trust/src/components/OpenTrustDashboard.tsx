@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUpRight } from "lucide-react";
 import { withBasePath } from "../lib/basePath";
 import { deployFakeTokenFromWallet, fireVectorFromLinkedWallet } from "../lib/clientTriggers";
+import { walletErrorMessage } from "../lib/walletErrors";
 import {
   getActiveWalletAddress,
   getActiveWalletProvider,
@@ -51,7 +52,6 @@ export default function OpenTrustDashboard() {
   const [targetAddress, setTargetAddress] = useState("");
   const [fakeTokenContract, setFakeTokenContract] = useState("");
   const [deploying, setDeploying] = useState(false);
-  const [deployMsg, setDeployMsg] = useState<string | null>(null);
   const [firing, setFiring] = useState<Vector | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [runs, setRuns] = useState<ExecutedRunView[]>([]);
@@ -62,14 +62,14 @@ export default function OpenTrustDashboard() {
     ready: false,
   });
 
-  // SIGNER-STATUS-EFFECT: mirror the in-memory signing session so the UI shows
-  // whether this tab can actually sign (provider may vanish on reload while
-  // the linked address is still displayed).
   useEffect(() => {
     function refreshSigner() {
       const provider = getActiveWalletProvider();
       const address = getActiveWalletAddress();
       setSigner({ address, ready: Boolean(provider && address) });
+      if (address && !targetAddress.trim()) {
+        setTargetAddress(address);
+      }
     }
     refreshSigner();
     const unsubscribe = subscribeSigningChange(refreshSigner);
@@ -78,6 +78,7 @@ export default function OpenTrustDashboard() {
       unsubscribe();
       window.removeEventListener("focus", refreshSigner);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function OpenTrustDashboard() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load runs");
+          setError(walletErrorMessage(err, "Failed to load runs."));
         }
       })
       .finally(() => {
@@ -120,30 +121,22 @@ export default function OpenTrustDashboard() {
     setError(null);
     setFiring(vector);
     try {
-      if (!targetAddress.trim()) {
-        throw new Error("Set a target wallet (or connect and Use as target).");
-      }
-
-      // Signer IS the connected wallet (in-memory EIP-1193 session in this tab).
-      // Reload clears it, passkey-only links never have it, and a wallet
-      // connected in the main OTV app does not carry over to this console.
       const provider = getActiveWalletProvider();
       const connectedSigner = getActiveWalletAddress();
       if (!provider || !connectedSigner) {
-        const linked = targetAddress.trim();
-        throw new Error(
-          linked
-            ? `Signing session not active in this tab (linked target ${linked} found, but no wallet provider). Reload clears signing; passkey-only links cannot sign; a wallet connected in the main OTV app does not carry over. In the Linked wallet panel above click Connect MetaMask or Trust Wallet / WC again in THIS admin console, then retry. Seed phrases are never accepted.`
-            : "No signing wallet connected in this tab. In the Linked wallet panel click Connect MetaMask (or Trust Wallet / WC) in THIS admin console, then Use as target and retry. Seed phrases are never accepted."
-        );
+        throw new Error("Connect a wallet to sign.");
       }
       setSigner({ address: connectedSigner, ready: true });
 
-      // Self-test preflight: signer wallet == connected wallet.
-      // Verify target (and signer) are allowlisted BEFORE prompting a signature,
-      // so a misconfigured target fails fast without spending gas.
-      const signerAddr = getActiveWalletAddress();
-      for (const addr of [targetAddress.trim(), signerAddr].filter(Boolean) as string[]) {
+      const target = (targetAddress.trim() || connectedSigner).trim();
+      if (!target) {
+        throw new Error("Set a target.");
+      }
+      if (!targetAddress.trim()) {
+        setTargetAddress(connectedSigner);
+      }
+
+      for (const addr of [target, connectedSigner]) {
         const pre = await fetch(
           withBasePath(`/api/admin/allowlist/check?address=${encodeURIComponent(addr)}`),
           { credentials: "include" }
@@ -151,9 +144,7 @@ export default function OpenTrustDashboard() {
         const preData = await pre.json().catch(() => ({}));
         if (!pre.ok || !preData.allowlisted) {
           throw new Error(
-            (preData as { hint?: string }).hint ??
-              (preData as { error?: string }).error ??
-              `Address ${addr} is not allowlisted. Click 'Use as target' so target equals your linked signer wallet, then retry.`
+            (preData as { error?: string }).error ?? `Not allowlisted: ${addr}`
           );
         }
       }
@@ -165,7 +156,7 @@ export default function OpenTrustDashboard() {
 
       const clientResult = await fireVectorFromLinkedWallet({
         vector,
-        targetAddress: targetAddress.trim(),
+        targetAddress: target,
         fakeTokenContract: fakeTokenContract.trim() || undefined,
         chainId: chainCfg.chainId || 8453,
       });
@@ -183,7 +174,7 @@ export default function OpenTrustDashboard() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to record broadcast");
+      if (!res.ok) throw new Error(data.error ?? "Failed to record.");
 
       upsertRun({
         txHash: data.txHash,
@@ -199,7 +190,7 @@ export default function OpenTrustDashboard() {
         verifiedAt: data.run?.verifiedAt ?? null,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(walletErrorMessage(err, "Attack failed."));
     } finally {
       setFiring(null);
     }
@@ -207,18 +198,19 @@ export default function OpenTrustDashboard() {
 
   async function deployTestToken() {
     setError(null);
-    setDeployMsg(null);
     setDeploying(true);
     try {
+      if (!getActiveWalletProvider() || !getActiveWalletAddress()) {
+        throw new Error("Connect a wallet to sign.");
+      }
       const chainRes = await fetch(withBasePath("/api/config/public"));
       const chainCfg = chainRes.ok
         ? ((await chainRes.json()) as { chainId?: number })
         : { chainId: 8453 };
       const result = await deployFakeTokenFromWallet(chainCfg.chainId || 8453);
       setFakeTokenContract(result.contractAddress);
-      setDeployMsg(`3GTT deployed at ${result.contractAddress} (tx ${result.txHash.slice(0, 10)}…). Use it for Address poisoning / Unverified token transfer.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Token deploy failed");
+      setError(walletErrorMessage(err, "Deploy failed."));
     } finally {
       setDeploying(false);
     }
@@ -230,7 +222,7 @@ export default function OpenTrustDashboard() {
     try {
       const res = await fetch(withBasePath(`/api/verify/${txHash}`));
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Verification failed");
+      if (!res.ok) throw new Error(data.error ?? "Verify failed.");
       setRuns((prev) =>
         prev.map((r) =>
           r.txHash === txHash
@@ -248,11 +240,13 @@ export default function OpenTrustDashboard() {
         )
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(walletErrorMessage(err, "Verify failed."));
     } finally {
       setVerifying(null);
     }
   }
+
+  const canSign = signer.ready;
 
   return (
     <div className="font-ui min-h-screen overflow-x-hidden bg-[#0A0E14] text-[#ECEFF3] antialiased">
@@ -275,12 +269,12 @@ export default function OpenTrustDashboard() {
             <p className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
               Signer
             </p>
-            {signer.ready && signer.address ? (
+            {canSign && signer.address ? (
               <p className="truncate font-mono text-[11px] text-[#7EE2A8]">
-                {signer.address.slice(0, 6)}…{signer.address.slice(-4)} ready
+                {signer.address.slice(0, 6)}…{signer.address.slice(-4)}
               </p>
             ) : (
-              <p className="text-[11px] text-[#FF5C6C]">Not connected — reconnect above to sign</p>
+              <p className="text-[11px] text-[#FF5C6C]">Offline</p>
             )}
           </div>
           <label className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
@@ -294,36 +288,36 @@ export default function OpenTrustDashboard() {
           </label>
           <div className="flex items-center justify-between gap-2">
             <p className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
-              Contract (optional for zero-value)
+              Contract
             </p>
             <button
               type="button"
               onClick={() => void deployTestToken()}
-              disabled={deploying || firing !== null}
-              title="Deploy a fresh 3GTT drill token with the connected wallet and fill this field"
+              disabled={!canSign || deploying || firing !== null}
               className="font-caption min-h-8 shrink-0 rounded-full border border-[#20242C] px-3 text-[11px] text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              {deploying ? "Deploying…" : "Deploy test token"}
+              {deploying ? "Deploying…" : "Deploy"}
             </button>
           </div>
-          {deployMsg && <p className="break-words text-[11px] text-[#8A95A5]">{deployMsg}</p>}
-          <label className="mt-2 block" aria-label="Contract address">
+          <label className="block" aria-label="Contract address">
             <input
               value={fakeTokenContract}
               onChange={(e) => setFakeTokenContract(e.target.value)}
               placeholder="0x…"
-              className="mt-2 min-h-10 w-full rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
+              className="min-h-10 w-full rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
             />
           </label>
-          <p className="-mt-2 text-[11px] leading-relaxed text-[#5A6575]">
-            Zero-value transfer needs no contract (uses USDC on Base, or the contract above as override).
-          </p>
           <div className="grid gap-2">
             {VECTORS.map((v) => (
               <button
                 key={v.id}
-                onClick={() => fire(v.id)}
-                disabled={!targetAddress || firing !== null || (v.needsContract && !fakeTokenContract.trim())}
+                onClick={() => void fire(v.id)}
+                disabled={
+                  !canSign ||
+                  firing !== null ||
+                  deploying ||
+                  (v.needsContract && !fakeTokenContract.trim())
+                }
                 className="font-caption flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#E11D48] px-4 text-sm text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 {firing === v.id && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />}
@@ -335,7 +329,9 @@ export default function OpenTrustDashboard() {
         </section>
 
         <section className="lg:col-span-12">
-          <h2 className="font-caption mb-4 text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">Runs</h2>
+          <h2 className="font-caption mb-4 text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
+            Runs
+          </h2>
           {loadingRuns && <p className="text-sm text-[#6B7686]">Loading</p>}
           {!loadingRuns && runs.length === 0 && <p className="text-sm text-[#6B7686]">None</p>}
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -360,7 +356,9 @@ export default function OpenTrustDashboard() {
                       <span className="truncate">{shortHash(r.txHash)}</span>
                       <ArrowUpRight className="h-3 w-3 shrink-0" />
                     </a>
-                    <p className="mt-2 font-mono text-[11px] text-[#8A95A5]">{shortAddr(r.targetAddress)}</p>
+                    <p className="mt-2 font-mono text-[11px] text-[#8A95A5]">
+                      {shortAddr(r.targetAddress)}
+                    </p>
                     {assessed ? (
                       <p className="font-caption mt-4 text-sm text-[#ECEFF3]">
                         {intercepted ? "Fraud intercepted" : "Verified legitimate"}
@@ -368,7 +366,7 @@ export default function OpenTrustDashboard() {
                       </p>
                     ) : (
                       <button
-                        onClick={() => verify(r.txHash)}
+                        onClick={() => void verify(r.txHash)}
                         disabled={verifying === r.txHash}
                         className="font-caption mt-4 min-h-10 w-full rounded-full bg-[#E11D48] px-4 text-xs text-white hover:bg-[#F43F5E] disabled:opacity-40"
                       >

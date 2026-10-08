@@ -18,6 +18,7 @@ import {
   getActiveWalletProvider,
   type Eip1193Provider,
 } from "./walletProvider";
+import { walletErrorMessage } from "./walletErrors";
 
 export type ClientVector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer" | "zeroValue";
 
@@ -54,9 +55,7 @@ export function resolveZeroValueToken(chainId: number | undefined, override: str
   if (chainId && ZERO_VALUE_DEFAULT_TOKENS[chainId]) {
     return ZERO_VALUE_DEFAULT_TOKENS[chainId];
   }
-  throw new Error(
-    `No default zero-value token for chainId ${chainId ?? "unknown"} — paste an ERC-20 contract address.`
-  );
+  throw new Error(`No default token for chain ${chainId ?? "?"}. Set a contract.`);
 }
 
 export type ClientTriggerResult = {
@@ -71,12 +70,28 @@ function requireProvider(): { provider: Eip1193Provider; from: string } {
   const provider = getActiveWalletProvider();
   const from = getActiveWalletAddress();
   if (!provider || !from) {
-    throw new Error(
-      "No signing wallet connected. Connect MetaMask or WalletConnect (Trust Wallet) first — seed phrases are never accepted."
-    );
+    throw new Error("Connect a wallet to sign.");
   }
   return { provider, from };
 }
+
+const CHAIN_META: Record<
+  number,
+  { chainName: string; rpcUrls: string[]; nativeCurrency: { name: string; symbol: string; decimals: number }; blockExplorerUrls: string[] }
+> = {
+  8453: {
+    chainName: "Base",
+    rpcUrls: ["https://mainnet.base.org"],
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    blockExplorerUrls: ["https://basescan.org"],
+  },
+  1: {
+    chainName: "Ethereum",
+    rpcUrls: ["https://cloudflare-eth.com"],
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    blockExplorerUrls: ["https://etherscan.io"],
+  },
+};
 
 async function sendTx(
   provider: Eip1193Provider,
@@ -90,17 +105,21 @@ async function sendTx(
     maxPriorityFeePerGas?: Hex;
   }
 ): Promise<Hash> {
-  const hash = (await provider.request({
-    method: "eth_sendTransaction",
-    params: [tx],
-  })) as string;
-  if (!hash || typeof hash !== "string" || !hash.startsWith("0x")) {
-    throw new Error("Wallet did not return a transaction hash.");
+  try {
+    const hash = (await provider.request({
+      method: "eth_sendTransaction",
+      params: [tx],
+    })) as string;
+    if (!hash || typeof hash !== "string" || !hash.startsWith("0x")) {
+      throw new Error("No transaction hash.");
+    }
+    return hash as Hash;
+  } catch (err) {
+    throw new Error(walletErrorMessage(err, "Transaction failed."));
   }
-  return hash as Hash;
 }
 
-/** Optional: ask wallet to switch to the configured chain. */
+/** Ask wallet to switch (and add if missing) to the configured chain. */
 export async function ensureWalletChain(chainId: number): Promise<void> {
   const { provider } = requireProvider();
   const hexId = `0x${chainId.toString(16)}`;
@@ -112,14 +131,33 @@ export async function ensureWalletChain(chainId: number): Promise<void> {
       params: [{ chainId: hexId }],
     });
   } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err ? Number((err as { code: unknown }).code) : NaN;
     const msg = err instanceof Error ? err.message : String(err);
-    if (/4001|user rejected|denied/i.test(msg)) {
-      throw new Error("Chain switch rejected in wallet.");
+    if (code === 4001 || /user rejected|denied/i.test(msg)) {
+      throw new Error("Rejected in wallet.");
     }
-    // Some wallets return unrecognized chain; leave user to switch manually.
-    throw new Error(
-      `Switch your wallet to chainId ${chainId} (hex ${hexId}), then retry.`
-    );
+    const meta = CHAIN_META[chainId];
+    if (meta && (code === 4902 || /unrecognized chain|unknown chain/i.test(msg))) {
+      try {
+        await provider.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: hexId,
+              chainName: meta.chainName,
+              rpcUrls: meta.rpcUrls,
+              nativeCurrency: meta.nativeCurrency,
+              blockExplorerUrls: meta.blockExplorerUrls,
+            },
+          ],
+        });
+        return;
+      } catch (addErr) {
+        throw new Error(walletErrorMessage(addErr, `Add chain ${chainId} in wallet.`));
+      }
+    }
+    throw new Error(walletErrorMessage(err, `Switch wallet to chain ${chainId}.`));
   }
 }
 
@@ -305,9 +343,7 @@ export async function deployFakeTokenFromWallet(chainId?: number): Promise<Deplo
       };
     }
   }
-  throw new Error(
-    `Deploy tx ${txHash} sent but no receipt yet — it may still be mining. Check the explorer, then paste the contract address manually.`
-  );
+  throw new Error(`Deploy pending: ${txHash}. Paste contract when mined.`);
 }
 
 export async function fireVectorFromLinkedWallet(input: {
@@ -326,7 +362,7 @@ export async function fireVectorFromLinkedWallet(input: {
       );
     case "addressPoisoning":
       if (!input.fakeTokenContract) {
-        throw new Error("Contract is required for Address poisoning — paste a test contract exposing emitPoisonedTransfer(address), or use Zero-value transfer (no contract needed).");
+        throw new Error("Contract required.");
       }
       return fireAddressPoisoningFromWallet(
         input.targetAddress,
@@ -335,7 +371,7 @@ export async function fireVectorFromLinkedWallet(input: {
       );
     case "fakeTokenTransfer":
       if (!input.fakeTokenContract) {
-        throw new Error("Contract is required for Unverified token transfer — paste an ERC-20 contract address, or use Zero-value transfer (no contract needed).");
+        throw new Error("Contract required.");
       }
       return fireFakeTokenTransferFromWallet(
         input.targetAddress,
