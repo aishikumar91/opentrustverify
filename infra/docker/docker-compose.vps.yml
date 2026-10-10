@@ -1,5 +1,10 @@
 # Isolated OTV stack for the HealFast VPS.
 # Does not share healfast-redis (6379) or existing Postgres containers.
+#
+# Always load repo-root .env (this file lives under infra/docker/):
+#   ./infra/docker/compose-vps.sh up -d --force-recreate --no-deps trigger
+# Or: docker compose --project-directory . --env-file .env -f infra/docker/docker-compose.vps.yml …
+
 services:
   postgres:
     image: postgres:16-alpine
