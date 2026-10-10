@@ -30,6 +30,8 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="keywords" content="3GGA, crypto fraud detection, on-chain verification, mempool lure, address poisoning, zero-value transfer, fake token detection, Base, Polygon, threat scoring, web3 security" />
         <meta name="robots" content="index, follow" />
         <meta name="theme-color" content="#101828" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/trigger/favicon-32.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/trigger/icon-192.png" />
         <link rel="icon" type="image/svg+xml" href="/trigger/favicon.svg" />
         <link rel="apple-touch-icon" href="/trigger/apple-touch-icon.png" />
         <link rel="manifest" href="/trigger/manifest.webmanifest" />

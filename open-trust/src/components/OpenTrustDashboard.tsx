@@ -487,7 +487,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             : "border-[#DDE1EA] bg-white/95 text-[#101828]"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
           <BrandMark size="sm" />
           <div className="hidden min-w-0 flex-1 sm:block">
             <p className={`truncate text-sm font-semibold ${theme === "dark" ? "text-[#ECEFF3]" : "text-[#101828]"}`}>
@@ -543,8 +543,16 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           className="sticky top-20 hidden w-16 shrink-0 flex-col items-center gap-1 rounded-[24px] bg-[#101828] py-4 md:flex"
           aria-label="Admin sections"
         >
-          <div className="font-brand mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#D7FF00] text-sm text-[#0B0F14]">
-            3G
+          <div className="mb-2 flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[#0B0F14] ring-1 ring-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={withBasePath("/logo.png")}
+              alt=""
+              width={430}
+              height={580}
+              className="h-9 w-auto object-contain"
+              aria-hidden
+            />
           </div>
           {navTabs.map(({ id, Icon, label }) => (
             <button
