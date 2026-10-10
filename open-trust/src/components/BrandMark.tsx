@@ -1,19 +1,21 @@
+import { withBasePath } from "../lib/basePath";
+
 type BrandMarkProps = {
   size?: "sm" | "md" | "lg" | "hero";
   className?: string;
   as?: "span" | "h1" | "div";
 };
 
-const sizeClass: Record<NonNullable<BrandMarkProps["size"]>, string> = {
-  sm: "text-xl tracking-[0.12em]",
-  md: "text-3xl tracking-[0.14em] sm:tracking-[0.16em] md:text-4xl",
-  /* Mobile: smaller type + tighter tracking so the wordmark fits 320–430px without crowding */
-  lg: "text-4xl tracking-[0.12em] min-[400px]:text-5xl min-[400px]:tracking-[0.16em] md:text-6xl md:tracking-[0.18em]",
-  hero: "text-5xl tracking-[0.14em] sm:text-7xl sm:tracking-[0.2em] md:text-8xl",
+const heightClass: Record<NonNullable<BrandMarkProps["size"]>, string> = {
+  sm: "h-7 max-h-7",
+  md: "h-10 max-h-10",
+  lg: "h-12 max-h-12 sm:h-14 sm:max-h-14",
+  hero: "h-20 max-h-20 sm:h-24 sm:max-h-24",
 };
 
 /**
- * 3GGA wordmark — dimensional red lettering for dark admin surfaces.
+ * 3GGA system logo — stacked lime lockup with tagline (public/logo.png).
+ * Single mark everywhere; theme-proof (transparent PNG, outlined glyphs).
  */
 export default function BrandMark({
   size = "md",
@@ -21,11 +23,15 @@ export default function BrandMark({
   as: Tag = "span",
 }: BrandMarkProps) {
   return (
-    <Tag
-      className={`brand-3gga inline-block max-w-full font-brand uppercase leading-none ${sizeClass[size]} ${className}`}
-      aria-label="3GGA"
-    >
-      3GGA
+    <Tag className={`inline-block max-w-full shrink-0 leading-none ${className}`} aria-label="3GGA">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={withBasePath("/logo.png")}
+        alt="3GGA — Live on chain fraud opsec"
+        width={1000}
+        height={640}
+        className={`w-auto max-w-[42vw] object-contain object-left sm:max-w-none ${heightClass[size]}`}
+      />
     </Tag>
   );
 }
