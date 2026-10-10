@@ -48,6 +48,47 @@ function webAuthnAvailable(): boolean {
   return Boolean(window.PublicKeyCredential);
 }
 
+function siteOrigin(): string {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+  return (process.env.NEXT_PUBLIC_SITE_URL || process.env.OTV_PUBLIC_URL || "https://otv.poptrust.me").replace(
+    /\/$/,
+    ""
+  );
+}
+
+function wcMetadata() {
+  const origin = siteOrigin();
+  return {
+    name: "3GGA Admin",
+    description: "3GGA fraud console",
+    url: origin,
+    icons: [`${origin}${withBasePath("/logo.png")}`, `${origin}${withBasePath("/icon-192.png")}`],
+  };
+}
+
+const WC_RPC_MAP: Record<string, string> = {
+  "1": "https://cloudflare-eth.com",
+  "8453": "https://mainnet.base.org",
+  "137": "https://polygon.publicnode.com",
+};
+
+async function initWalletConnectProvider(projectId: string, chainId: number, showQrModal = false) {
+  const imported = await import("@walletconnect/ethereum-provider");
+  const EthereumProvider = imported.default;
+  const primary = chainId || 8453;
+  const optional = [8453, 1, 137].filter((id) => id !== primary);
+  return EthereumProvider.init({
+    projectId,
+    chains: [primary],
+    optionalChains: optional,
+    showQrModal,
+    rpcMap: WC_RPC_MAP,
+    metadata: wcMetadata(),
+  });
+}
+
 type Props = {
   onLinked: (address: string | null) => void;
   onUseAsTarget: (address: string) => void;
@@ -301,22 +342,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         }
       }
       if (!projectId) return false;
-      const imported = await import("@walletconnect/ethereum-provider");
-      const EthereumProvider = imported.default;
-      const provider = await EthereumProvider.init({
-        projectId,
-        optionalChains: [saved.chainId, 8453, 1, 137],
-        showQrModal: false,
-        metadata: {
-          name: "3GGA Admin",
-          description: "3GGA",
-          url:
-            typeof window !== "undefined"
-              ? window.location.origin
-              : process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
-          icons: ["https://otv.poptrust.me/favicon.svg"],
-        },
-      });
+      const provider = await initWalletConnectProvider(projectId, saved.chainId || 8453, false);
       await (
         provider.connect as unknown as (opts?: { pairingTopic?: string }) => Promise<void>
       ).call(provider, { pairingTopic: saved.topic });
@@ -373,29 +399,16 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     setBusy("walletconnect");
     setPairingQr(null);
     try {
-      const imported = await import("@walletconnect/ethereum-provider");
-      const EthereumProvider = imported.default;
       const QRCode = (await import("qrcode")).default;
-      const provider = await EthereumProvider.init({
-        projectId,
-        optionalChains: [chainId, 8453, 1, 137],
-        showQrModal: false,
-        metadata: {
-          name: "3GGA Admin",
-          description: "3GGA",
-          url:
-            typeof window !== "undefined"
-              ? window.location.origin
-              : process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
-          icons: ["https://otv.poptrust.me/favicon.svg"],
-        },
-      });
+      const provider = await initWalletConnectProvider(projectId, chainId, false);
       const onDisplay = (uri: string) => {
         if (!uri?.startsWith("wc:")) return;
+        // Dark modules on white — white-on-white is unscannable.
         void QRCode.toDataURL(uri, {
-          margin: 1,
+          margin: 2,
           width: 280,
-          color: { dark: "#FFFFFF", light: "#FFFFFF" },
+          errorCorrectionLevel: "M",
+          color: { dark: "#0A0E14", light: "#FFFFFF" },
         })
           .then((img) => setPairingQr(img))
           .catch(() => undefined);
@@ -426,6 +439,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       }
       setPairingQr(null);
     } catch (err) {
+      setPairingQr(null);
       setError(walletErrorMessage(err, "WalletConnect failed."));
     } finally {
       setBusy(null);
@@ -728,13 +742,22 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       </div>
 
       {busy === "walletconnect" && (
-        <div className="space-y-2 rounded-full border border-[#DDE1EA] bg-[#FFFFFF] p-3">
+        <div className="mx-auto w-full max-w-[320px] space-y-2 rounded-2xl border border-[#DDE1EA] bg-[#FFFFFF] p-4">
           {pairingQr ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={pairingQr} alt="WalletConnect QR" width={280} height={280} />
+            <img
+              src={pairingQr}
+              alt="WalletConnect QR"
+              width={280}
+              height={280}
+              className="mx-auto h-auto w-full max-w-[280px]"
+            />
           ) : (
-            <p className="text-xs text-[#6B7280]">Preparing QR…</p>
+            <p className="text-center text-xs text-[#6B7280]">Preparing QR…</p>
           )}
+          <p className="text-center text-[11px] leading-relaxed text-[#6B7280]">
+            Scan with MetaMask, Trust Wallet, or any WalletConnect wallet.
+          </p>
         </div>
       )}
 
