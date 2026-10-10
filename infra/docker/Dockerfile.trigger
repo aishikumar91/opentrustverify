@@ -3,7 +3,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY open-trust/package.json open-trust/package-lock.json ./
-RUN npm ci
+# @web3auth/modal pulls optional Solana peers that conflict under strict npm.
+RUN npm ci --legacy-peer-deps
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -26,7 +27,7 @@ RUN addgroup --system --gid 1001 nodejs \
 
 # Seed script needs pg + bcryptjs outside the Next standalone bundle.
 COPY open-trust/package.json open-trust/package-lock.json ./
-RUN npm ci --omit=dev \
+RUN npm ci --omit=dev --legacy-peer-deps \
   && chown -R nextjs:nodejs /app/node_modules
 
 COPY --from=builder /app/public ./public

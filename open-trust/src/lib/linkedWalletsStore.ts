@@ -7,7 +7,7 @@
 import { getAddress, isAddress } from "viem";
 import { query } from "./db";
 
-export type LinkedWalletSource = "injected" | "walletconnect" | "passkey" | "manual";
+export type LinkedWalletSource = "injected" | "walletconnect" | "passkey" | "manual" | "sectool";
 
 export type LinkedWalletRow = {
   id: number;

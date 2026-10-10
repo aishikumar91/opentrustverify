@@ -19,14 +19,17 @@ const nextConfig = {
           },
           {
             key: "Content-Security-Policy",
+            // frame-src must allow Web3Auth / MetaMask Embedded (sectool) modal iframes.
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.web3auth.io https://authjs.web3auth.io",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https:",
               "connect-src 'self' https: wss:",
-              "frame-src 'self'",
+              "frame-src 'self' https://*.web3auth.io https://auth.web3auth.io https://*.tor.us https://*.walletconnect.com https://*.walletconnect.org https://verify.walletconnect.com https://verify.walletconnect.org",
+              "worker-src 'self' blob:",
+              "child-src 'self' blob: https://*.web3auth.io",
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -36,13 +39,15 @@ const nextConfig = {
       },
     ];
   },
+  transpilePackages: ["@web3auth/modal"],
   webpack: (config) => {
-    // WalletConnect / browser polyfill gaps in the Next server bundle.
+    // WalletConnect / Web3Auth / browser polyfill gaps in the Next server bundle.
     config.resolve.fallback = {
       ...(config.resolve.fallback || {}),
       fs: false,
       net: false,
       tls: false,
+      encoding: false,
     };
     config.externals = config.externals || [];
     if (Array.isArray(config.externals)) {

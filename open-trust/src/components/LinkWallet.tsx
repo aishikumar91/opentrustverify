@@ -12,7 +12,7 @@ import {
 
 type LinkedWallet = {
   address: string;
-  source: "injected" | "walletconnect" | "passkey";
+  source: "injected" | "walletconnect" | "passkey" | "sectool";
 };
 
 type PublicConfig = {
@@ -21,6 +21,12 @@ type PublicConfig = {
   walletConnectSource?: "database" | "env" | "none";
   chainId: number;
   chainName: string;
+  sectool?: {
+    projectName: string;
+    clientId: string;
+    network: string;
+    configured: boolean;
+  };
 };
 
 type PasskeyPublic = {
@@ -98,7 +104,13 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [wallet, setWallet] = useState<LinkedWallet | null>(null);
   const [busy, setBusy] = useState<
-    "injected" | "walletconnect" | "passkey-register" | "passkey-assert" | "passkey-save" | null
+    | "injected"
+    | "walletconnect"
+    | "sectool"
+    | "passkey-register"
+    | "passkey-assert"
+    | "passkey-save"
+    | null
   >(null);
   const [pairingQr, setPairingQr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -252,6 +264,38 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       subscribeProviderEvents(provider, "injected");
     } catch (err) {
       setError(walletErrorMessage(err, "Connect failed."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** MetaMask Embedded Wallets (sectool / Web3Auth sapphire). */
+  async function connectSectoolWallet() {
+    setError(null);
+    setBusy("sectool");
+    try {
+      let clientId = config?.sectool?.clientId ?? "";
+      let network = config?.sectool?.network ?? "sapphire_mainnet";
+      try {
+        const res = await fetch(withBasePath("/api/config/public"));
+        if (res.ok) {
+          const fresh = (await res.json()) as PublicConfig;
+          setConfig(fresh);
+          clientId = fresh.sectool?.clientId || clientId;
+          network = fresh.sectool?.network || network;
+        }
+      } catch {
+        /* keep prior */
+      }
+      const { connectSectool } = await import("../lib/sectool");
+      const linked = await connectSectool({ clientId, network });
+      await applyAddress(linked.address, "sectool", linked.provider);
+      subscribeProviderEvents(linked.provider, "sectool");
+    } catch (err) {
+      const msg = walletErrorMessage(err, "sectool connect failed.");
+      if (!/closed the modal|user closed|User closed/i.test(msg)) {
+        setError(msg);
+      }
     } finally {
       setBusy(null);
     }
@@ -646,12 +690,15 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   }
 
   const wcReady = Boolean(config?.walletConnectConfigured);
+  const sectoolReady = Boolean(config?.sectool?.configured ?? true);
   const sourceLabel =
     wallet?.source === "walletconnect"
       ? "WalletConnect"
       : wallet?.source === "passkey"
         ? "Passkey"
-        : "Injected";
+        : wallet?.source === "sectool"
+          ? "sectool"
+          : "Injected";
 
   return (
     <div className="space-y-3">
@@ -677,10 +724,19 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             <>
               <button
                 type="button"
+                title="MetaMask Embedded Wallets — sectool project (sapphire_mainnet)"
+                onClick={() => void connectSectoolWallet()}
+                disabled={busy !== null || !sectoolReady}
+                className="min-h-[44px] w-full rounded-full bg-[#D7FF00] px-4 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+              >
+                {busy === "sectool" ? "Opening sectool…" : "MetaMask · sectool"}
+              </button>
+              <button
+                type="button"
                 title="Browser-extension wallets (MetaMask, Trust Wallet extension, Rabby)"
                 onClick={() => void connectInjected()}
                 disabled={busy !== null}
-                className="min-h-[44px] w-full rounded-full bg-[#D7FF00] px-4 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {busy === "injected" ? "Connecting…" : "Connect Browser Wallet"}
               </button>
