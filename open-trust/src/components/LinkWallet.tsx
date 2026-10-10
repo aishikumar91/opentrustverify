@@ -113,6 +113,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     | null
   >(null);
   const [pairingQr, setPairingQr] = useState<string | null>(null);
+  const [pairingUri, setPairingUri] = useState<string | null>(null);
+  const [pairingCopied, setPairingCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passkeyOk, setPasskeyOk] = useState(false);
   const [passkeys, setPasskeys] = useState<PasskeyPublic[]>([]);
@@ -442,17 +444,36 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
     setBusy("walletconnect");
     setPairingQr(null);
+    setPairingUri(null);
+    setPairingCopied(false);
     try {
+      // Drop stale WC keys that block a fresh display_uri / pairing topic.
+      try {
+        window.localStorage.removeItem("otv-wc-session");
+        for (const key of Object.keys(window.localStorage)) {
+          if (
+            key.startsWith("wc@2:") ||
+            key.startsWith("WALLETCONNECT") ||
+            key.includes("walletconnect")
+          ) {
+            window.localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+
       const QRCode = (await import("qrcode")).default;
       const provider = await initWalletConnectProvider(projectId, chainId, false);
       const onDisplay = (uri: string) => {
         if (!uri?.startsWith("wc:")) return;
-        // Dark modules on white — white-on-white is unscannable.
+        setPairingUri(uri);
+        // Pure black on white — maximum scanner contrast.
         void QRCode.toDataURL(uri, {
           margin: 2,
           width: 280,
           errorCorrectionLevel: "M",
-          color: { dark: "#0A0E14", light: "#FFFFFF" },
+          color: { dark: "#000000", light: "#FFFFFF" },
         })
           .then((img) => setPairingQr(img))
           .catch(() => undefined);
@@ -482,8 +503,10 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         /* persistence is best-effort */
       }
       setPairingQr(null);
+      setPairingUri(null);
     } catch (err) {
       setPairingQr(null);
+      setPairingUri(null);
       setError(walletErrorMessage(err, "WalletConnect failed."));
     } finally {
       setBusy(null);
@@ -806,7 +829,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               alt="WalletConnect QR"
               width={280}
               height={280}
-              className="mx-auto h-auto w-full max-w-[280px]"
+              className="mx-auto h-auto w-full max-w-[280px] bg-white"
             />
           ) : (
             <p className="text-center text-xs text-[#6B7280]">Preparing QR…</p>
@@ -814,6 +837,19 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           <p className="text-center text-[11px] leading-relaxed text-[#6B7280]">
             Scan with MetaMask, Trust Wallet, or any WalletConnect wallet.
           </p>
+          {pairingUri && (
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard?.writeText(pairingUri).catch(() => {});
+                setPairingCopied(true);
+                window.setTimeout(() => setPairingCopied(false), 2000);
+              }}
+              className="min-h-10 w-full rounded-full border border-[#CBD1DE] px-3 text-xs font-medium text-[#101828] transition hover:border-[#B8E600]"
+            >
+              {pairingCopied ? "Pairing link copied" : "Copy pairing link"}
+            </button>
+          )}
         </div>
       )}
 
