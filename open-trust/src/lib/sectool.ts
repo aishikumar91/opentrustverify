@@ -1,9 +1,9 @@
 /**
  * MetaMask Embedded Wallets (Web3Auth) for the "sectool" project.
  * Client-only — import dynamically from LinkWallet click handlers.
+ * Uses dynamic import so Next typecheck does not load the full Web3Auth graph.
  */
 
-import { Web3Auth, WEB3AUTH_NETWORK } from "@web3auth/modal";
 import type { Eip1193Provider } from "./walletProvider";
 
 export const SECTOOL_PROJECT_NAME = "sectool";
@@ -18,28 +18,48 @@ type SectoolResult = {
   idToken?: string;
 };
 
-let sdk: Web3Auth | null = null;
+type Web3AuthLike = {
+  connected: boolean;
+  init: () => Promise<void>;
+  connect: () => Promise<unknown>;
+  logout: () => Promise<void>;
+  getAuthTokenInfo?: () => Promise<{ idToken?: string }>;
+  connection?: { ethereumProvider?: Eip1193Provider };
+  provider?: Eip1193Provider;
+};
+
+let sdk: Web3AuthLike | null = null;
 let inflight: Promise<SectoolResult> | null = null;
 
-function networkConstant(network: string) {
-  return network === "sapphire_devnet"
-    ? WEB3AUTH_NETWORK.SAPPHIRE_DEVNET
-    : WEB3AUTH_NETWORK.SAPPHIRE_MAINNET;
+async function loadModal(): Promise<{
+  Web3Auth: new (opts: Record<string, unknown>) => Web3AuthLike;
+  WEB3AUTH_NETWORK: { SAPPHIRE_MAINNET: string; SAPPHIRE_DEVNET: string };
+}> {
+  const mod = (await import("@web3auth/modal")) as {
+    Web3Auth: new (opts: Record<string, unknown>) => Web3AuthLike;
+    WEB3AUTH_NETWORK: { SAPPHIRE_MAINNET: string; SAPPHIRE_DEVNET: string };
+  };
+  return mod;
 }
 
-async function instance(clientId: string, network: string): Promise<Web3Auth> {
+async function instance(clientId: string, network: string): Promise<Web3AuthLike> {
   if (sdk) return sdk;
+  const { Web3Auth, WEB3AUTH_NETWORK } = await loadModal();
+  const web3AuthNetwork =
+    network === "sapphire_devnet"
+      ? WEB3AUTH_NETWORK.SAPPHIRE_DEVNET
+      : WEB3AUTH_NETWORK.SAPPHIRE_MAINNET;
   sdk = new Web3Auth({
     clientId,
-    web3AuthNetwork: networkConstant(network),
+    web3AuthNetwork,
     uiConfig: { appName: SECTOOL_PROJECT_NAME },
   });
   await sdk.init();
   return sdk;
 }
 
-function ethProvider(current: Web3Auth): Eip1193Provider | null {
-  const provider = current.connection?.ethereumProvider as Eip1193Provider | undefined;
+function ethProvider(current: Web3AuthLike): Eip1193Provider | null {
+  const provider = current.connection?.ethereumProvider || current.provider;
   if (!provider || typeof provider.request !== "function") return null;
   return provider;
 }
@@ -73,8 +93,8 @@ async function openSectool(opts?: {
   if (!address) throw new Error("sectool did not return an account.");
   let idToken: string | undefined;
   try {
-    const info = await current.getAuthTokenInfo();
-    idToken = info.idToken || undefined;
+    const info = current.getAuthTokenInfo ? await current.getAuthTokenInfo() : undefined;
+    idToken = info?.idToken || undefined;
   } catch {
     idToken = undefined;
   }

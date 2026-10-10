@@ -12,6 +12,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY open-trust/ ./
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_BASE_PATH=/trigger
+# @web3auth/modal typecheck is memory-heavy on small VPS builders.
+ENV NODE_OPTIONS=--max-old-space-size=6144
 RUN npm run build
 
 FROM node:20-alpine AS runner
