@@ -35,7 +35,7 @@ async function loadModal(): Promise<{
   Web3Auth: new (opts: Record<string, unknown>) => Web3AuthLike;
   WEB3AUTH_NETWORK: { SAPPHIRE_MAINNET: string; SAPPHIRE_DEVNET: string };
 }> {
-  const mod = (await import("@web3auth/modal")) as {
+  const mod = (await import("@web3auth/modal")) as unknown as {
     Web3Auth: new (opts: Record<string, unknown>) => Web3AuthLike;
     WEB3AUTH_NETWORK: { SAPPHIRE_MAINNET: string; SAPPHIRE_DEVNET: string };
   };
