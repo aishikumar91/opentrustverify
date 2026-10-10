@@ -44,20 +44,43 @@ function extractEmail(raw: string): string | null {
   return null;
 }
 
-/** Providers (Yahoo/Gmail) reject From addresses that don't match the authenticated mailbox. */
+/**
+ * Build a provider-safe From header.
+ * - Mailbox auth (Yahoo/Gmail): From email must equal the authenticated user.
+ * - API-key auth (TurboSMTP etc.): auth user is not an email — use configured From
+ *   (DB / SMTP_FROM / TURBO_SMTP_FROM), never the API user id.
+ */
 export function resolveFromHeader(s: SmtpSettings): string {
   let raw = (s.from || "").trim();
   if (raw.startsWith("(") && raw.endsWith(")")) raw = raw.slice(1, -1).trim();
-  const authUser = (s.user || "").trim().toLowerCase();
+  const authUser = (s.user || "").trim();
   if (!authUser) {
     throw new Error("SMTP user is not configured.");
   }
-  const fromEmail = extractEmail(raw);
-  // Always send as the authenticated mailbox — spoofed From domains are rejected.
-  if (fromEmail && fromEmail === authUser && /^[^<]+<[^>]+>$/.test(raw)) {
+  const authEmail = extractEmail(authUser);
+  const configured =
+    extractEmail(raw) ||
+    extractEmail(process.env.SMTP_FROM || "") ||
+    extractEmail(process.env.TURBO_SMTP_FROM || "") ||
+    null;
+
+  // Mailbox providers reject spoofed From domains — pin to the auth mailbox.
+  if (authEmail) {
+    if (configured && configured === authEmail && /^[^<]+<[^>]+>$/.test(raw)) {
+      return raw;
+    }
+    return `${SYSTEM_SENDER_NAME} <${authEmail}>`;
+  }
+
+  // API-key SMTP: require a real From mailbox.
+  const fromEmail = configured || extractEmail(process.env.TURBO_SMTP_FROM || "ceo@poptrust.me");
+  if (!fromEmail) {
+    throw new Error("SMTP From must include a valid email address (API-key SMTP).");
+  }
+  if (/^[^<]+<[^>]+>$/.test(raw) && extractEmail(raw) === fromEmail) {
     return raw;
   }
-  return `${SYSTEM_SENDER_NAME} <${authUser}>`;
+  return `${SYSTEM_SENDER_NAME} <${fromEmail}>`;
 }
 
 function buildTransport(s: SmtpSettings) {

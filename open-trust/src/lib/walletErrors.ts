@@ -33,6 +33,15 @@ export function walletErrorMessage(err: unknown, fallback = "Wallet request fail
   if (/network|fetch|timeout|disconnected/i.test(raw)) {
     return "Network error — retry.";
   }
+  if (/proposal expired|session expired|request reset|connection request reset/i.test(raw)) {
+    return "Pairing expired — tap WalletConnect and scan again.";
+  }
+  if (/unauthorized|project id|invalid project|not authorized/i.test(raw)) {
+    return "WalletConnect project ID rejected. Check Admin → Settings.";
+  }
+  if (/no matching key|keychain|pairing/i.test(raw)) {
+    return "Stale WalletConnect session — disconnect and pair again.";
+  }
   if (raw && raw.length <= 120) return raw;
   return fallback;
 }
