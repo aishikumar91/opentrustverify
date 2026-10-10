@@ -17,10 +17,14 @@ export default function ThemeToggle({
       onClick={onToggle}
       title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
       aria-label="Toggle theme"
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#DDE1EA] bg-white transition hover:border-[#B8E600] ${className}`}
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:border-[#B8E600] ${
+        theme === "dark"
+          ? "border-[#1C2430] bg-[#0A0E14] text-[#D7FF00]"
+          : "border-[#DDE1EA] bg-white text-[#5B6472]"
+      } ${className}`}
     >
       {theme === "dark" ? (
-        <Sun className="h-4 w-4 text-[#B54708]" strokeWidth={1.5} />
+        <Sun className="h-4 w-4 text-[#D7FF00]" strokeWidth={1.5} />
       ) : (
         <Moon className="h-4 w-4 text-[#5B6472]" strokeWidth={1.5} />
       )}

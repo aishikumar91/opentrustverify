@@ -158,15 +158,22 @@ export async function getSmtpSettings(): Promise<SmtpSettings> {
     smtp_from: "SMTP_FROM",
   };
   const env = (k: string) => (process.env[k] ?? "").trim();
-  const pick = (k: string, fb: string) => map.get(k) ?? (env(ENV_FOR[k] ?? "") || fb);
+  // Empty DB values must fall through to env (so compose SMTP_* still works).
+  const pick = (k: string, fb: string) => {
+    const db = (map.get(k) ?? "").trim();
+    if (db) return db;
+    return env(ENV_FOR[k] ?? "") || fb;
+  };
   const portRaw = pick("smtp_port", "587");
+  let from = pick("smtp_from", "");
+  if (from.startsWith("(") && from.endsWith(")")) from = from.slice(1, -1).trim();
   return {
     host: pick("smtp_host", ""),
     port: Number(portRaw) || 587,
     secure: pick("smtp_secure", "false").toLowerCase() === "true",
     user: pick("smtp_user", ""),
     pass: pick("smtp_pass", ""),
-    from: pick("smtp_from", ""),
+    from,
   };
 }
 

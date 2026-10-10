@@ -23,7 +23,7 @@ export default function ActionStatus({
   return (
     <div
       role="status"
-      className={`flex items-start gap-3 rounded-[24px] border bg-white p-4 ${t.border}`}
+      className={`action-status flex items-start gap-3 rounded-[24px] border bg-white p-4 ${t.border}`}
     >
       <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${t.dot}`} />
       <div className="min-w-0 flex-1">

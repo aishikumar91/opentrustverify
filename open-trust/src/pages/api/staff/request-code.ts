@@ -26,10 +26,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { code } = await issueStaffOtp(member.id);
         await sendStaffOtpEmail(member.email, code);
       } catch (err) {
-        console.error("Staff OTP email failed:", err instanceof Error ? err.message : err);
+        const message = err instanceof Error ? err.message : "Email delivery failed.";
+        console.error("Staff OTP email failed:", message);
+        // Known member — surface delivery failure so they are not stuck waiting on a code that never arrives.
+        return res.status(502).json({ error: "Could not send sign-in code. Check SMTP settings or retry shortly." });
       }
     }
-    // Always OK — do not reveal whether the email is registered.
+    // Unknown email: still OK (do not reveal registration).
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(400).json({ error: err instanceof Error ? err.message : "Request failed" });

@@ -209,6 +209,16 @@ body.nui-dark main .bg-\[\#F7F7F8\] { background-color: #0d121a !important; }
 body.nui-dark header .bg-\[\#F7F7F8\] { background-color: #0d121a !important; }
 body.nui-dark main .bg-white { background-color: #0a0e14 !important; }
 body.nui-dark header .bg-white { background-color: #0a0e14 !important; }
+/* Header / chrome often uses opacity variants Tailwind won't match as .bg-white */
+body.nui-dark header.bg-white\/95,
+body.nui-dark header .bg-white\/95,
+body.nui-dark header[class*="bg-white"] { background-color: #0a0e14 !important; }
+body.nui-dark header { color: #eceff3; }
+body.nui-dark .nui > header,
+body.nui-dark div.nui > header {
+  background-color: rgba(10, 14, 20, 0.95) !important;
+  border-color: #1c2430 !important;
+}
 body.nui-dark main .text-\[\#101828\] { color: #eceff3 !important; }
 body.nui-dark header .text-\[\#101828\] { color: #eceff3 !important; }
 body.nui-dark main .text-\[\#374151\] { color: #b9c4ce !important; }
@@ -238,11 +248,14 @@ body.nui-dark main svg text[fill="#6B7280"] { fill: #8a95a5; }
 body.nui-dark main svg circle[stroke="#E6E9F0"] { stroke: #1c2430; }
 body.nui-dark main svg circle[stroke="#DDE1EA"] { stroke: #2a3442; }
 
-/* ---------- Dark theme: bottom nav (light chrome -> dark chrome) ---------- */
-body.nui-dark nav[aria-label="Admin sections"] { background-color: #101828 !important; border-color: #1c2430 !important; }
-body.nui-dark nav[aria-label="Admin sections"] .text-\[\#8A8D93\] { color: #8a95a5 !important; }
-body.nui-dark nav[aria-label="Admin sections"] .bg-\[\#101828\] { background-color: #ffffff !important; }
-body.nui-dark nav[aria-label="Admin sections"] .bg-\[\#101828\].text-white { color: #101828 !important; }
+/* ---------- Dark theme: bottom / side nav chrome (keep dark — do not invert to white) ---------- */
+body.nui-dark nav[aria-label="Admin sections"],
+body.nui-dark aside[aria-label="Admin sections"] {
+  background-color: #101828 !important;
+  border-color: #1c2430 !important;
+}
+body.nui-dark nav[aria-label="Admin sections"] .text-\[\#8A8D93\],
+body.nui-dark aside[aria-label="Admin sections"] .text-\[\#8A8D93\] { color: #8a95a5 !important; }
 .nui-on .font-roboto {
   font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
 }
@@ -254,7 +267,15 @@ body.nui-dark header .bg-\[\#FFFFFF\] { background-color: #060607 !important; }
 body.nui-dark main .bg-\[\#F4F6FA\] { background-color: #060607 !important; }
 body.nui-dark main .bg-white { background-color: #000000 !important; }
 body.nui-dark header .bg-white { background-color: #000000 !important; }
+body.nui-dark header.bg-white\/95,
+body.nui-dark header .bg-white\/95,
+body.nui-dark header[class*="bg-white"] { background-color: #000000 !important; }
 body.nui-dark header .bg-\[\#F7F7F8\]\/90 { background-color: #101828 !important; }
+body.nui-dark .nui > header,
+body.nui-dark div.nui > header {
+  background-color: rgba(0, 0, 0, 0.92) !important;
+  border-color: #1c2430 !important;
+}
 body.nui-on div.nui {
   background-image:
     radial-gradient(ellipse 42% 24% at 10% 0%, rgba(183, 230, 0, 0.07), transparent 60%),

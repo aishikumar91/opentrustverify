@@ -480,25 +480,39 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
 
   return (
     <div className="nui font-ui min-h-screen bg-[#E9EDF4] pb-24 text-[#101828] antialiased md:pb-0">
-      <header className="sticky top-0 z-20 border-b border-[#DDE1EA] bg-white/95 backdrop-blur">
+      <header
+        className={`sticky top-0 z-20 border-b backdrop-blur ${
+          theme === "dark"
+            ? "border-[#1C2430] bg-[#0A0E14]/95 text-[#ECEFF3]"
+            : "border-[#DDE1EA] bg-white/95 text-[#101828]"
+        }`}
+      >
         <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
           <BrandMark size="sm" />
           <div className="hidden min-w-0 flex-1 sm:block">
-            <p className="truncate text-sm font-semibold text-[#101828]">Greetings 👋</p>
-            <p className="truncate text-[11px] text-[#6B7280]">
+            <p className={`truncate text-sm font-semibold ${theme === "dark" ? "text-[#ECEFF3]" : "text-[#101828]"}`}>
+              Greetings 👋
+            </p>
+            <p className={`truncate text-[11px] ${theme === "dark" ? "text-[#8A95A5]" : "text-[#6B7280]"}`}>
               Fraud console · {chain ? `${chain.chainName} · ${chain.chainId}` : "…"}
             </p>
           </div>
           <label
-            className="mx-auto hidden w-full max-w-xs items-center gap-2 rounded-full border border-[#DDE1EA] bg-white px-3 py-2 md:flex"
+            className={`mx-auto hidden w-full max-w-xs items-center gap-2 rounded-full border px-3 py-2 md:flex ${
+              theme === "dark"
+                ? "border-[#1C2430] bg-[#0A0E14]"
+                : "border-[#DDE1EA] bg-white"
+            }`}
             aria-label="Search runs"
           >
-            <Search className="h-3.5 w-3.5 shrink-0 text-[#8A8D93]" />
+            <Search className={`h-3.5 w-3.5 shrink-0 ${theme === "dark" ? "text-[#8A95A5]" : "text-[#8A8D93]"}`} />
             <input
               value={runQuery}
               onChange={(e) => setRunQuery(e.target.value)}
               placeholder="Search runs…"
-              className="w-full bg-transparent text-xs text-[#101828] outline-none placeholder:text-[#AEB4C2]"
+              className={`w-full bg-transparent text-xs outline-none placeholder:text-[#AEB4C2] ${
+                theme === "dark" ? "text-[#ECEFF3]" : "text-[#101828]"
+              }`}
             />
           </label>
           <button
@@ -514,7 +528,11 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <a
             href={withBasePath("/api/auth/logout")}
-            className="inline-flex min-h-8 items-center rounded-full border border-[#DDE1EA] bg-white px-4 text-xs font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14]"
+            className={`inline-flex min-h-8 items-center rounded-full border px-4 text-xs font-medium transition hover:border-[#B8E600] ${
+              theme === "dark"
+                ? "border-[#1C2430] bg-[#0A0E14] text-[#ECEFF3] hover:text-[#D7FF00]"
+                : "border-[#DDE1EA] bg-white text-[#101828] hover:text-[#0B0F14]"
+            }`}
           >
             Sign out
           </a>

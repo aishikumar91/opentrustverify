@@ -168,8 +168,15 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to save SMTP");
       setHasPass(Boolean(data.hasPass));
-      setSmtp((s) => ({ ...s, pass: "" }));
-      setSmtpMsg("SMTP saved. Use provider App Passwords, never mailbox passwords.");
+      setSmtp((s) => ({
+        ...s,
+        pass: "",
+        from:
+          typeof data.resolvedFrom === "string" && data.resolvedFrom
+            ? data.resolvedFrom
+            : s.from,
+      }));
+      setSmtpMsg("SMTP saved.");
     } catch (err) {
       setSmtpMsg(err instanceof Error ? err.message : "Failed to save SMTP");
     } finally {
@@ -181,6 +188,14 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
     setSmtpMsg(null);
     setSaving(true);
     try {
+      const verifyRes = await fetch(withBasePath("/api/admin/smtp"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify" }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error ?? "SMTP verify failed");
       const res = await fetch(withBasePath("/api/admin/smtp"), {
         method: "POST",
         credentials: "include",
@@ -189,7 +204,7 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Test failed");
-      setSmtpMsg(`Test email sent to ${testTo.trim()}.`);
+      setSmtpMsg(`Verified + test email sent to ${testTo.trim()}.`);
     } catch (err) {
       setSmtpMsg(err instanceof Error ? err.message : "Test failed");
     } finally {
@@ -457,7 +472,15 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
               </button>
               <button
                 type="button"
-                onClick={() => setSmtp((s) => ({ ...s, host: "smtp.mail.yahoo.com", port: "465", secure: true }))}
+                onClick={() =>
+                  setSmtp((s) => ({
+                    ...s,
+                    host: "smtp.mail.yahoo.com",
+                    port: "465",
+                    secure: true,
+                    from: s.user ? `3GGA ENGINE <${s.user.trim()}>` : s.from,
+                  }))
+                }
                 className="rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
               >
                 Yahoo preset
@@ -476,17 +499,13 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
               >
                 TurboSMTP preset
               </button>
-              <p className="w-full break-words text-[11px] leading-relaxed text-[#8A8D93]">
-                Any provider works — Roundcube, Zimbra, cPanel or company mail: enter its SMTP host,
-                port and credentials (adjust to your provider&apos;s docs).
-              </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <input value={smtp.host} onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))} placeholder="Host (smtp.gmail.com)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
               <input value={smtp.port} onChange={(e) => setSmtp((s) => ({ ...s, port: e.target.value }))} placeholder="Port (587)" inputMode="numeric" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
               <input value={smtp.user} onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))} placeholder="Username (full email)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
               <input value={smtp.pass} onChange={(e) => setSmtp((s) => ({ ...s, pass: e.target.value }))} placeholder={hasPass ? "App password (saved — leave blank to keep)" : "App password"} type="password" autoComplete="new-password" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
-              <input value={smtp.from} onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))} placeholder="From (Name <mail@x>)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600] sm:col-span-2" />
+              <input value={smtp.from} onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))} placeholder="From must match username (3GGA ENGINE <you@yahoo.com>)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600] sm:col-span-2" />
               <label className="flex min-h-[44px] items-center gap-2 text-xs text-[#5B6472]">
                 <input type="checkbox" checked={smtp.secure} onChange={(e) => setSmtp((s) => ({ ...s, secure: e.target.checked }))} className="h-4 w-4" />
                 SSL / port 465 (off = STARTTLS on 587)

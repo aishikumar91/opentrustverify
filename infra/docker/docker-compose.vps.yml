@@ -172,6 +172,16 @@ services:
       WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-otv.poptrust.me}
       WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-https://otv.poptrust.me}
       WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-3GGA Admin}
+      # SMTP env fallback (DB admin_settings wins when set). Required for subscriber OTP + alerts.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      OTV_PUBLIC_URL: ${OTV_PUBLIC_URL:-https://otv.poptrust.me}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
       BASESCAN_API_KEY: ${BASESCAN_API_KEY:-}
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
