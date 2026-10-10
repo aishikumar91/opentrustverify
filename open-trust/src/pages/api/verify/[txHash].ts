@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { verifyTransaction } from "../../../services/verifierService";
+import { verifyTransaction, explorerTxUrl } from "../../../services/verifierService";
 import { updateExecutedRunAssessment } from "../../../lib/runs";
+import { checkRateLimitAsync, clientIp } from "../../../lib/rateLimit";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { txHash } = req.query;
@@ -9,11 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "txHash must be a 0x-prefixed 32-byte hash" });
   }
 
+  const ip = clientIp(req);
+  const rl = await checkRateLimitAsync(`verify:${ip}`, 120, 60_000);
+  if (!rl.ok) {
+    return res.status(429).json({ error: "Too many attempts. Retry shortly." });
+  }
+  const chainRaw = req.query.chainId;
+  const cid = chainRaw === "137" ? 137 : 8453;
   try {
-    const assessment = await verifyTransaction(txHash);
+    const assessment = await verifyTransaction(txHash, cid);
     try {
       await updateExecutedRunAssessment({
         txHash: assessment.txHash,
+        chainId: cid,
+        explorerUrl: explorerTxUrl(cid, txHash),
         status: assessment.status,
         threatScore: assessment.threatScore,
         vector: assessment.vector !== "NONE" ? assessment.vector : undefined,

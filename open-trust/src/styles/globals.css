@@ -32,9 +32,9 @@ body {
   font-family: "Bodoni Moda", Didot, "Times New Roman", serif;
 }
 
-button,
-a.rounded-full,
-.btn-primary {
+body:not(.nui-on) button,
+body:not(.nui-on) a.rounded-full,
+body:not(.nui-on) .btn-primary {
   font-family: "Roboto", ui-sans-serif, system-ui, sans-serif !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -53,23 +53,23 @@ a.rounded-full,
   max-width: 100%;
 }
 
-button:hover,
-a.rounded-full:hover,
-.btn-primary:hover {
+body:not(.nui-on) button:hover,
+body:not(.nui-on) a.rounded-full:hover,
+body:not(.nui-on) .btn-primary:hover {
   color: #fff !important;
   border-color: #ff4d6a !important;
   background-image: linear-gradient(180deg, rgba(225, 29, 72, 0.22), rgba(225, 29, 72, 0.04)) !important;
 }
 
-button:disabled,
-a.rounded-full:disabled {
+body:not(.nui-on) button:disabled,
+body:not(.nui-on) a.rounded-full:disabled {
   opacity: 0.4;
 }
 
-h1,
-h2,
-h3,
-label {
+body:not(.nui-on) h1,
+body:not(.nui-on) h2,
+body:not(.nui-on) h3,
+body:not(.nui-on) label {
   font-family: "Bodoni Moda", Didot, "Times New Roman", serif;
 }
 
@@ -106,15 +106,18 @@ label {
 
   /* Dimensional red 3GGA wordmark — letter-spacing comes from Tailwind size classes */
   .brand-3gga {
-    color: #ff2d4a;
+    color: #d7ff00;
     text-shadow:
-      0 1px 0 #b01028,
-      0 2px 0 #9a0e22,
-      0 3px 0 #840c1d,
-      0 4px 0 #6e0a18,
-      0 5px 0 #580814,
-      0 6px 10px rgba(0, 0, 0, 0.55),
-      0 0 24px rgba(225, 29, 72, 0.35);
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 1px 0 #000,
+      0 -2px 0 #000,
+      0 2px 0 #000,
+      -2px 0 0 #000,
+      2px 0 0 #000,
+      0 6px 12px rgba(0, 0, 0, 0.45),
+      0 0 22px rgba(215, 255, 0, 0.3);
     transform: perspective(600px) rotateX(8deg);
     transform-origin: left bottom;
     max-width: 100%;
@@ -129,11 +132,12 @@ label {
   @media (max-width: 399px) {
     .brand-3gga {
       text-shadow:
-        0 1px 0 #b01028,
-        0 2px 0 #9a0e22,
-        0 3px 0 #840c1d,
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
         0 4px 8px rgba(0, 0, 0, 0.5),
-        0 0 16px rgba(225, 29, 72, 0.3);
+        0 0 16px rgba(215, 255, 0, 0.3);
     }
   }
 
@@ -150,4 +154,173 @@ label {
       animation: fade-up 0.7s ease-out 0.15s both;
     }
   }
+}
+
+/* ---------- 3GGA banking tokens (light admin console, .nui scope) ---------- */
+:root {
+  --nui-canvas: #e9edf4;
+  --nui-surface: #ffffff;
+  --nui-surface-2: #f4f6fa;
+  --nui-hairline: #e6e9f0;
+  --nui-border: #dde1ea;
+  --nui-border-strong: #cbd1de;
+  --nui-ink: #101828;
+  --nui-ink-2: #374151;
+  --nui-muted: #6b7280;
+  --nui-faint: #8a8d93;
+  --nui-placeholder: #aeb4c2;
+  --nui-blue: #2e7cf6;
+  --nui-blue-hover: #1d6ff2;
+  --nui-dark: #101828;
+  --nui-danger: #d92d20;
+  --nui-success: #12805c;
+  --nui-warn: #b54708;
+  --nui-mint: #cdebe5;
+  --nui-peach: #fbe3b5;
+  --nui-lilac: #e6d5f5;
+  --nui-lime: #d7ff00;
+  --nui-coral: #f26b7a;
+}
+.nui .tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Roboto on console buttons (Urbanist stays for body) ---------- */
+.nui-on button {
+  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+/* ---------- System 3GGA wordmark: fluorescence green + black outline, both themes ---------- */
+.nui-on .brand-3gga,
+.nui-on.nui-dark .brand-3gga {
+  color: #d7ff00;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    0 6px 12px rgba(0, 0, 0, 0.45);
+  transform: none;
+}
+/* ---------- Dark theme override layer (light classes -> dark surfaces) ---------- */
+body.nui-dark main .bg-\[\#FFFFFF\] { background-color: #0d121a !important; }
+body.nui-dark header .bg-\[\#FFFFFF\] { background-color: #0d121a !important; }
+body.nui-dark main .bg-\[\#F4F6FA\] { background-color: #0a0e14 !important; }
+body.nui-dark main .bg-\[\#F7F7F8\] { background-color: #0d121a !important; }
+body.nui-dark header .bg-\[\#F7F7F8\] { background-color: #0d121a !important; }
+body.nui-dark main .bg-white { background-color: #0a0e14 !important; }
+body.nui-dark header .bg-white { background-color: #0a0e14 !important; }
+body.nui-dark main .text-\[\#101828\] { color: #eceff3 !important; }
+body.nui-dark header .text-\[\#101828\] { color: #eceff3 !important; }
+body.nui-dark main .text-\[\#374151\] { color: #b9c4ce !important; }
+body.nui-dark main .text-\[\#5B6472\] { color: #b9c4ce !important; }
+body.nui-dark main .text-\[\#6B7280\] { color: #8a95a5 !important; }
+body.nui-dark header .text-\[\#6B7280\] { color: #8a95a5 !important; }
+body.nui-dark main .text-\[\#8A8D93\] { color: #8a95a5 !important; }
+body.nui-dark header .text-\[\#8A8D93\] { color: #8a95a5 !important; }
+body.nui-dark main .placeholder\:text-\[\#AEB4C2\]::placeholder { color: #3a4150 !important; }
+body.nui-dark header .placeholder\:text-\[\#AEB4C2\]::placeholder { color: #3a4150 !important; }
+body.nui-dark main .border-\[\#DDE1EA\] { border-color: #1c2430 !important; }
+body.nui-dark header .border-\[\#DDE1EA\] { border-color: #1c2430 !important; }
+body.nui-dark main .border-\[\#CBD1DE\] { border-color: #2a3442 !important; }
+body.nui-dark main .border-\[\#E6E9F0\] { border-color: #171b22 !important; }
+body.nui-dark main .divide-\[\#E6E9F0\] > :not([hidden]) ~ :not([hidden]) { border-color: #1c2430 !important; }
+body.nui-dark main .divide-\[\#171B22\] > :not([hidden]) ~ :not([hidden]) { border-color: #1c2430 !important; }
+body.nui-dark main .text-\[\#D92D20\] { color: #ff7a8a !important; }
+body.nui-dark header .text-\[\#D92D20\] { color: #ff7a8a !important; }
+body.nui-dark main .text-\[\#12805C\] { color: #7ee2a8 !important; }
+body.nui-dark main .text-\[\#B54708\] { color: #ffb020 !important; }
+body.nui-dark main .bg-\[\#D6EFD0\] { background-color: #14332a !important; }
+body.nui-dark main .text-\[\#2E7D32\] { color: #7ee2a8 !important; }
+body.nui-dark main .bg-\[\#E6E9F0\] { background-color: #1c2430 !important; }
+body.nui-dark main .text-\[\#0B0F14\] { color: #0b0f14 !important; }
+body.nui-dark main svg text[fill="#101828"] { fill: #eceff3; }
+body.nui-dark main svg text[fill="#6B7280"] { fill: #8a95a5; }
+body.nui-dark main svg circle[stroke="#E6E9F0"] { stroke: #1c2430; }
+body.nui-dark main svg circle[stroke="#DDE1EA"] { stroke: #2a3442; }
+
+/* ---------- Dark theme: bottom nav (light chrome -> dark chrome) ---------- */
+body.nui-dark nav[aria-label="Admin sections"] { background-color: #101828 !important; border-color: #1c2430 !important; }
+body.nui-dark nav[aria-label="Admin sections"] .text-\[\#8A8D93\] { color: #8a95a5 !important; }
+body.nui-dark nav[aria-label="Admin sections"] .bg-\[\#101828\] { background-color: #ffffff !important; }
+body.nui-dark nav[aria-label="Admin sections"] .bg-\[\#101828\].text-white { color: #101828 !important; }
+.nui-on .font-roboto {
+  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* btn-3d-marker-v1 ---------- Dark theme: pure-black canvas + green accent washes ---------- */
+body.nui-dark div.nui.bg-\[\#E9EDF4\] { background-color: #000000 !important; }
+body.nui-dark main .bg-\[\#FFFFFF\] { background-color: #060607 !important; }
+body.nui-dark header .bg-\[\#FFFFFF\] { background-color: #060607 !important; }
+body.nui-dark main .bg-\[\#F4F6FA\] { background-color: #060607 !important; }
+body.nui-dark main .bg-white { background-color: #000000 !important; }
+body.nui-dark header .bg-white { background-color: #000000 !important; }
+body.nui-dark header .bg-\[\#F7F7F8\]\/90 { background-color: #101828 !important; }
+body.nui-on div.nui {
+  background-image:
+    radial-gradient(ellipse 42% 24% at 10% 0%, rgba(183, 230, 0, 0.07), transparent 60%),
+    radial-gradient(ellipse 38% 22% at 90% 4%, rgba(46, 124, 246, 0.07), transparent 60%);
+}
+body.nui-dark div.nui {
+  background-image:
+    radial-gradient(ellipse 42% 24% at 10% 0%, rgba(183, 230, 0, 0.06), transparent 60%),
+    radial-gradient(ellipse 38% 22% at 90% 4%, rgba(183, 230, 0, 0.03), transparent 60%);
+}
+/* ---------- Dark theme: red micro-dots (left) + ash curves (right) on cards ---------- */
+body.nui-dark main section[class*="rounded-"] { position: relative; }
+body.nui-dark main section[class*="rounded-"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 84px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image: radial-gradient(rgba(255, 130, 140, 0.28) 2px, transparent 2.8px);
+  background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(to right, black, transparent);
+  mask-image: linear-gradient(to right, black, transparent);
+}
+
+/* ---------- 3D press treatment for lime CTA buttons ---------- */
+.nui-on button.bg-\[\#D7FF00\] {
+  box-shadow: 0 3px 0 #7a9a00, 0 6px 16px rgba(0, 0, 0, 0.18);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%);
+}
+.nui-on button.bg-\[\#D7FF00\]:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #7a9a00, 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+.nui-on button.bg-\[\#D7FF00\]:focus-visible {
+  outline: 2px solid #0b0f14;
+  outline-offset: 2px;
+}
+/* ---------- Dark theme: bottom nav chrome ---------- */
+body.nui-dark nav[aria-label="Admin sections"] .border-\[\#DDE1EA\] { border-color: #2a3442 !important; }
+
+/* ---------- Dark theme: plain content navs (legal pages) ---------- */
+body.nui-dark nav.nui-legal-nav { background-color: transparent; }
+body.nui-dark nav.nui-legal-nav .text-\[\#5B6472\] { color: #b9c4ce !important; }
+body.nui-dark main li[class*="rounded-"] { position: relative; }
+body.nui-dark main li[class*="rounded-"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 84px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image: radial-gradient(rgba(255, 130, 140, 0.28) 2px, transparent 2.8px);
+  background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(to right, black, transparent);
+  mask-image: linear-gradient(to right, black, transparent);
+}
+
+/* ---------- Landing hero: red micro-dots backdrop (dark brand hero) ---------- */
+.landing-dots {
+  background-image: radial-gradient(rgba(255, 130, 140, 0.16) 1.5px, transparent 2.2px);
+  background-size: 18px 18px;
 }

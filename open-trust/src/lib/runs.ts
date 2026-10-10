@@ -17,6 +17,7 @@ export interface ExecutedRunRow {
   action_recommended: string | null;
   broadcast_at: string | null;
   verified_at: string | null;
+  chain_id: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +35,7 @@ export interface ExecutedRun {
   actionRecommended: string | null;
   broadcastAt: string | null;
   verifiedAt: string | null;
+  chainId: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +66,7 @@ export async function ensureExecutedRunsTable(): Promise<void> {
     CREATE INDEX IF NOT EXISTS executed_runs_broadcast_at_idx
       ON executed_runs (broadcast_at DESC NULLS LAST, created_at DESC);
   `);
+  await query(`ALTER TABLE executed_runs ADD COLUMN IF NOT EXISTS chain_id INTEGER NOT NULL DEFAULT 8453;`);
   ensured = true;
 }
 
@@ -88,6 +91,7 @@ function mapRow(row: ExecutedRunRow): ExecutedRun {
     actionRecommended: row.action_recommended,
     broadcastAt: row.broadcast_at,
     verifiedAt: row.verified_at,
+    chainId: row.chain_id ?? 8453,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -99,12 +103,13 @@ export async function insertExecutedRun(input: {
   targetAddress: string;
   explorerUrl: string;
   broadcastAt: string;
+  chainId?: number;
 }): Promise<ExecutedRun> {
   await ensureExecutedRunsTable();
   const result = await query<ExecutedRunRow>(
     `INSERT INTO executed_runs (
-       tx_hash, vector, target_address, explorer_url, status, broadcast_at
-     ) VALUES ($1, $2, $3, $4, 'BROADCAST', $5)
+       tx_hash, vector, target_address, explorer_url, status, broadcast_at, chain_id
+     ) VALUES ($1, $2, $3, $4, 'BROADCAST', $5, $6)
      ON CONFLICT (tx_hash) DO UPDATE SET
        vector = EXCLUDED.vector,
        target_address = EXCLUDED.target_address,
@@ -118,6 +123,7 @@ export async function insertExecutedRun(input: {
       input.targetAddress,
       input.explorerUrl,
       input.broadcastAt,
+      input.chainId ?? 8453,
     ]
   );
   return mapRow(result.rows[0]);
@@ -127,6 +133,7 @@ export async function updateExecutedRunAssessment(input: {
   txHash: string;
   status: string;
   threatScore: number;
+  chainId?: number;
   vector?: string;
   realBalanceImpact: string;
   reasons: string[];
@@ -139,10 +146,10 @@ export async function updateExecutedRunAssessment(input: {
     `INSERT INTO executed_runs (
        tx_hash, vector, target_address, explorer_url,
        status, threat_score, real_balance_impact, reasons, action_recommended,
-       verified_at
+       verified_at, chain_id
      ) VALUES (
        $1, COALESCE($2, 'UNKNOWN'), COALESCE($3, ''), $4,
-       $5, $6, $7, $8::jsonb, $9, NOW()
+       $5, $6, $7, $8::jsonb, $9, NOW(), $10
      )
      ON CONFLICT (tx_hash) DO UPDATE SET
        status = EXCLUDED.status,
@@ -152,6 +159,7 @@ export async function updateExecutedRunAssessment(input: {
        reasons = EXCLUDED.reasons,
        action_recommended = EXCLUDED.action_recommended,
        verified_at = NOW(),
+       chain_id = EXCLUDED.chain_id,
        updated_at = NOW()
      RETURNING *`,
     [
@@ -164,6 +172,7 @@ export async function updateExecutedRunAssessment(input: {
       input.realBalanceImpact,
       JSON.stringify(input.reasons),
       input.actionRecommended,
+      input.chainId ?? 8453,
     ]
   );
   return mapRow(result.rows[0]);

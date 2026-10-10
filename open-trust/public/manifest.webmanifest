@@ -1,0 +1,16 @@
+{
+  "name": "3GGA Console",
+  "short_name": "3GGA",
+  "description": "Live on-chain fraud interception and verification console.",
+  "start_url": "/trigger/admin/",
+  "scope": "/trigger/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101828",
+  "theme_color": "#101828",
+  "icons": [
+    { "src": "/trigger/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/trigger/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/trigger/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,11 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import { createSessionToken, COOKIE_NAME } from "../../../lib/auth";
+import { checkRateLimitAsync, clientIp } from "../../../lib/rateLimit";
+import { verifyTurnstile } from "../../../lib/turnstile";
 import { findAdminByUsername } from "../../../lib/db";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const ip = clientIp(req);
+  const rl = await checkRateLimitAsync(`login:${ip}`, 10, 60_000);
+  if (!rl.ok) {
+    return res.status(429).json({ error: "Too many attempts. Retry shortly." });
   }
 
   const { username, password } = req.body ?? {};
@@ -24,6 +32,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const captcha = await verifyTurnstile((req.body as { turnstile?: string })?.turnstile, ip);
+    if (!captcha.ok) {
+      return res.status(400).json({ error: captcha.error ?? "Captcha failed." });
+    }
+
+    try {
+      const { sendLoginAlert } = await import("../../../lib/mailer");
+      void sendLoginAlert({ kind: "admin", id: user.username, ip }).catch((err) => {
+        console.error("Login alert failed:", err instanceof Error ? err.message : err);
+      });
+    } catch {
+      /* alert must never block sign-in */
     }
 
     const token = createSessionToken(user.username);

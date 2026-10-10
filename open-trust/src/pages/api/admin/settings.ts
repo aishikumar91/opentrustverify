@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../lib/auth";
+import { getRequester } from "../../../lib/auth";
 import { getAdminSettingsFlags } from "../../../lib/settings";
 import { setWalletConnectProjectId } from "../../../lib/adminSettingsStore";
 
@@ -9,10 +9,11 @@ import { setWalletConnectProjectId } from "../../../lib/adminSettingsStore";
  * PUT/PATCH — persist WalletConnect project id in admin_settings (DB).
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
-  if (!session) {
+  const requester = getRequester(req);
+  if (!requester || requester.role !== "admin") {
     return res.status(401).json({ error: "Admin session required." });
   }
+  const session = { username: requester.id };
 
   res.setHeader("Cache-Control", "no-store");
 

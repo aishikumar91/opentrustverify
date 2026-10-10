@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../lib/auth";
+import { getRequester } from "../../../lib/auth";
 import { listExecutedRuns } from "../../../lib/runs";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -7,9 +7,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const session = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
-  if (!session) {
-    return res.status(401).json({ error: "Admin session required." });
+  const requester = getRequester(req);
+  if (!requester) {
+    return res.status(401).json({ error: "Sign in required." });
   }
 
   try {

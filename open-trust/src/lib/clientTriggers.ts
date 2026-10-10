@@ -6,6 +6,7 @@
 
 import {
   encodeFunctionData,
+  formatEther,
   getAddress,
   isAddress,
   parseEther,
@@ -41,21 +42,88 @@ const TRANSFER_ABI = [
  * the classic zero-value poisoning pattern — without needing a custom contract.
  */
 const ZERO_VALUE_DEFAULT_TOKENS: Record<number, `0x${string}`> = {
-  8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
+  8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base (verified on-chain: USD Coin, 6 decimals)
   1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
 };
 
-export function resolveZeroValueToken(chainId: number | undefined, override: string | undefined): `0x${string}` {
+export type ZeroValuePreset = "USDC" | "USDT" | "WETH" | "cbBTC" | "WBTC" | "WPOL" | "cbLTC";
+
+/** Per-preset chain defaults. Lowercase in source; getAddress() checksums at runtime. */
+const ZERO_VALUE_PRESET_TOKENS: Record<ZeroValuePreset, Record<number, `0x${string}`>> = {
+  USDC: {
+    8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
+    1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+    137: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // USDC on Polygon (verified: USDC, 6)
+  },
+  cbBTC: {
+    // Coinbase Wrapped BTC — verified on-chain (Base): code present, cbBTC, 8 decimals.
+    8453: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+    1: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf", // cbBTC on Ethereum
+  },
+  USDT: {
+    // Tether USD — verified on-chain (Base): code present, USDT, 6 decimals.
+    8453: "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
+    1: "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT on Ethereum
+    137: "0xc2132d05d31c914a87c6611c10748aeb04b58e8f", // USDT on Polygon (verified: USDT, 6)
+  },
+  WETH: {
+    // Wrapped ETH — verified on-chain (Base): code present, WETH, 18 decimals.
+    8453: "0x4200000000000000000000000000000000000006",
+    1: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // WETH on Ethereum
+    137: "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619", // WETH on Polygon (verified: WETH, 18)
+  },
+  WBTC: {
+    // Wrapped BTC on Polygon — verified on-chain: code present, WBTC, 8 decimals.
+    137: "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+  },
+  WPOL: {
+    // Wrapped POL on Polygon — verified on-chain: code present, WPOL, 18 decimals.
+    137: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+  },
+  cbLTC: {
+    // Coinbase Wrapped LTC — verified on-chain (Base): code present, cbLTC, 8 decimals.
+    8453: "0xcb17c9db87b595717c857a08468793f5bab6445f",
+  },
+};
+
+export const ZERO_VALUE_PRESET_META: Record<ZeroValuePreset, { symbol: string; decimals: number; blurb: string }> = {
+  USDC: { symbol: "USDC", decimals: 6, blurb: "USD Coin" },
+  WBTC: { symbol: "WBTC", decimals: 8, blurb: "Wrapped BTC (1:1 BTC)" },
+  WPOL: { symbol: "WPOL", decimals: 18, blurb: "Wrapped POL" },
+  USDT: { symbol: "USDT", decimals: 6, blurb: "Tether USD" },
+  WETH: { symbol: "WETH", decimals: 18, blurb: "Wrapped ETH" },
+  cbBTC: { symbol: "cbBTC", decimals: 8, blurb: "Coinbase Wrapped BTC (1:1 BTC)" },
+  cbLTC: { symbol: "cbLTC", decimals: 8, blurb: "Coinbase Wrapped LTC (1:1 LTC)" },
+};
+
+/** Preset token address for a chain, or null when the preset is not deployed there. */
+export function zeroValuePresetAddress(
+  preset: ZeroValuePreset,
+  chainId: number | undefined
+): `0x${string}` | null {
+  if (!chainId) return null;
+  return ZERO_VALUE_PRESET_TOKENS[preset]?.[chainId] ?? null;
+}
+
+export function resolveZeroValueToken(
+  chainId: number | undefined,
+  override: string | undefined,
+  preset: ZeroValuePreset = "USDC"
+): `0x${string}` {
   if (override && override.trim()) {
     if (!isAddress(override.trim())) {
       throw new Error("Contract override is not a valid EVM address.");
     }
     return getAddress(override.trim());
   }
+  const presetMap = ZERO_VALUE_PRESET_TOKENS[preset] ?? ZERO_VALUE_PRESET_TOKENS.USDC;
+  if (chainId && presetMap[chainId]) {
+    return presetMap[chainId];
+  }
   if (chainId && ZERO_VALUE_DEFAULT_TOKENS[chainId]) {
     return ZERO_VALUE_DEFAULT_TOKENS[chainId];
   }
-  throw new Error(`No default token for chain ${chainId ?? "?"}. Set a contract.`);
+  throw new Error(`No ${preset} token for chain ${chainId ?? "?"}. Set a contract.`);
 }
 
 export type ClientTriggerResult = {
@@ -84,6 +152,12 @@ const CHAIN_META: Record<
     rpcUrls: ["https://mainnet.base.org"],
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
     blockExplorerUrls: ["https://basescan.org"],
+  },
+  137: {
+    chainName: "Polygon",
+    rpcUrls: ["https://polygon.publicnode.com"],
+    nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
+    blockExplorerUrls: ["https://polygonscan.com"],
   },
   1: {
     chainName: "Ethereum",
@@ -124,8 +198,16 @@ export async function ensureWalletChain(chainId: number): Promise<void> {
   const { provider } = requireProvider();
   const hexId = `0x${chainId.toString(16)}`;
   try {
-    const current = (await provider.request({ method: "eth_chainId" })) as string;
-    if (current?.toLowerCase() === hexId.toLowerCase()) return;
+    // Some wallets answer eth_chainId with a decimal number instead of a hex
+    // string — normalize before comparing so we never call toLowerCase on one.
+    const rawChainId: unknown = await provider.request({ method: "eth_chainId" });
+    const currentHex =
+      typeof rawChainId === "number"
+        ? `0x${rawChainId.toString(16)}`
+        : typeof rawChainId === "string"
+          ? rawChainId
+          : null;
+    if (currentHex && currentHex.toLowerCase() === hexId.toLowerCase()) return;
     await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: hexId }],
@@ -274,13 +356,14 @@ export async function fireFakeTokenTransferFromWallet(
 export async function fireZeroValueTransferFromWallet(
   targetAddress: string,
   tokenOverride?: string,
-  chainId?: number
+  chainId?: number,
+  preset?: ZeroValuePreset
 ): Promise<ClientTriggerResult> {
   const { provider, from } = requireProvider();
   if (!isAddress(targetAddress)) {
     throw new Error("Target is not a valid EVM address.");
   }
-  const token = resolveZeroValueToken(chainId, tokenOverride);
+  const token = resolveZeroValueToken(chainId, tokenOverride, preset ?? "USDC");
   if (chainId) await ensureWalletChain(chainId);
 
   const data = encodeFunctionData({
@@ -346,10 +429,57 @@ export async function deployFakeTokenFromWallet(chainId?: number): Promise<Deplo
   throw new Error(`Deploy pending: ${txHash}. Paste contract when mined.`);
 }
 
+export type GasEstimate = {
+  gasLimit: string;
+  gasPriceWei: string;
+  feeEth: string;
+};
+
+/**
+ * Read-only gas preview for the no-contract vectors (no signature, no broadcast).
+ * Estimates at current network price for reference; the mempool lure itself is
+ * broadcast at a deliberately starved fee so it stays pending.
+ */
+export async function estimateVectorGas(input: {
+  vector: "mempoolLure" | "zeroValue";
+  targetAddress: string;
+  amountEth?: string;
+  tokenPreset?: ZeroValuePreset;
+  fakeTokenContract?: string;
+  chainId?: number;
+}): Promise<GasEstimate> {
+  const { provider, from } = requireProvider();
+  if (!isAddress(input.targetAddress)) {
+    throw new Error("Target is not a valid EVM address.");
+  }
+  const target = getAddress(input.targetAddress);
+  let tx: { from: string; to: string; data?: Hex; value?: Hex };
+  if (input.vector === "mempoolLure") {
+    const amount = (input.amountEth ?? "0.001").trim();
+    if (!/^\d*\.?\d+$/.test(amount) || Number(amount) <= 0) {
+      throw new Error("Value must be a positive number.");
+    }
+    tx = { from, to: target, value: `0x${parseEther(amount).toString(16)}` as Hex };
+  } else {
+    const token = resolveZeroValueToken(input.chainId, input.fakeTokenContract, input.tokenPreset ?? "USDC");
+    tx = {
+      from,
+      to: token,
+      data: encodeFunctionData({ abi: TRANSFER_ABI, functionName: "transfer", args: [target, 0n] }),
+    };
+  }
+  const gasHex = (await provider.request({ method: "eth_estimateGas", params: [tx] })) as string;
+  const priceHex = (await provider.request({ method: "eth_gasPrice", params: [] })) as string;
+  const gas = BigInt(gasHex);
+  const price = BigInt(priceHex);
+  return { gasLimit: gas.toString(), gasPriceWei: price.toString(), feeEth: formatEther(gas * price) };
+}
+
 export async function fireVectorFromLinkedWallet(input: {
   vector: ClientVector;
   targetAddress: string;
   fakeTokenContract?: string;
+  tokenPreset?: ZeroValuePreset;
   amount?: string;
   chainId?: number;
 }): Promise<ClientTriggerResult> {
@@ -383,7 +513,8 @@ export async function fireVectorFromLinkedWallet(input: {
       return fireZeroValueTransferFromWallet(
         input.targetAddress,
         input.fakeTokenContract,
-        input.chainId
+        input.chainId,
+        input.tokenPreset ?? "USDC"
       );
     default:
       throw new Error(`Unknown vector: ${input.vector}`);

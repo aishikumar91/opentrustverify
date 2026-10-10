@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { isAddress, getAddress } from "viem";
-import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../lib/auth";
+import { getRequester } from "../../../lib/auth";
 import { assertAllowlisted, NotAllowlistedError } from "../../../lib/allowlist";
 import { insertExecutedRun } from "../../../lib/runs";
-import { activeChain } from "../../../lib/chain";
+import { getVerifyChain } from "../../../services/verifierService";
 
 type VectorName = "MEMPOOL_SPOOF_LURE" | "ADDRESS_POISONING" | "FAKE_TOKEN_TRANSFER";
 
@@ -13,11 +13,11 @@ interface Body {
   targetAddress: string;
   fromAddress?: string;
   broadcastAt?: string;
+  chainId?: number;
 }
 
-function explorerLink(txHash: string): string {
-  const base = process.env.BLOCK_EXPLORER_BASE ?? activeChain.blockExplorers.default.url;
-  return `${base}/tx/${txHash}`;
+function explorerLink(chainId: number, txHash: string): string {
+  return `${getVerifyChain(chainId).explorerTxBase}/tx/${txHash}`;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,12 +25,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const session = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
-  if (!session) {
+  const requester = getRequester(req);
+  if (!requester || requester.role !== "admin") {
     return res.status(401).json({ error: "Admin session required." });
   }
+  const session = { username: requester.id };
 
-  const { txHash, vector, targetAddress, fromAddress, broadcastAt } = req.body as Body;
+  const { txHash, vector, targetAddress, fromAddress, broadcastAt, chainId: chainIdRaw } = req.body as Body;
+  if (chainIdRaw !== undefined && chainIdRaw !== 8453 && chainIdRaw !== 137) {
+    return res.status(400).json({ error: "Unsupported chainId (use 8453 or 137)" });
+  }
+  const cid = chainIdRaw === 137 ? 137 : 8453;
 
   if (!txHash || !vector || !targetAddress) {
     return res.status(400).json({ error: "txHash, vector, and targetAddress are required" });
@@ -59,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const normalizedTarget = getAddress(targetAddress);
-    const explorerUrl = explorerLink(txHash);
+    const explorerUrl = explorerLink(cid, txHash);
     const at = broadcastAt || new Date().toISOString();
 
     const run = await insertExecutedRun({
@@ -68,6 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       targetAddress: normalizedTarget,
       explorerUrl,
       broadcastAt: at,
+      chainId: cid,
     });
 
     return res.status(200).json({
@@ -77,6 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       targetAddress: normalizedTarget,
       fromAddress: fromAddress && isAddress(fromAddress) ? getAddress(fromAddress) : null,
       broadcastAt: at,
+      chainId: cid,
       run,
     });
   } catch (err) {

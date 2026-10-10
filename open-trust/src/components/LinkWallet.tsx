@@ -187,6 +187,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       anyProvider.on("disconnect", () => {
         setActiveWalletProvider(null, null);
         setSigningReady(false);
+        clearWcPersist();
       });
     } catch {
       /* non-fatal */
@@ -236,7 +237,8 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     let cancelled = false;
     void (async () => {
       const silent = await trySilentInjected();
-      if (cancelled || silent) return;
+      const silentWc = silent ? true : await trySilentWalletConnect();
+      if (cancelled || silentWc) return;
       try {
         const res = await fetch(withBasePath("/api/admin/wallets"), { credentials: "include" });
         if (!res.ok || cancelled) return;
@@ -259,6 +261,94 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function clearWcPersist() {
+    try {
+      window.localStorage.removeItem("otv-wc-session");
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  /** Silent restore: reuse a live WalletConnect pairing without a QR scan when possible. */
+  type WcPersist = { topic: string; address: string; projectId: string; chainId: number };
+  async function trySilentWalletConnect(): Promise<boolean> {
+    let saved: WcPersist | null = null;
+    try {
+      const raw = window.localStorage.getItem("otv-wc-session");
+      if (!raw) return false;
+      const data = JSON.parse(raw) as Partial<WcPersist>;
+      if (typeof data.topic !== "string" || !data.topic || !isAddress(data.address ?? "")) {
+        return false;
+      }
+      saved = {
+        topic: data.topic,
+        address: getAddress(data.address ?? ""),
+        projectId: typeof data.projectId === "string" ? data.projectId : "",
+        chainId: typeof data.chainId === "number" ? data.chainId : 8453,
+      };
+    } catch {
+      return false;
+    }
+    try {
+      let projectId = saved.projectId || config?.walletConnectProjectId || "";
+      if (!projectId) {
+        const res = await fetch(withBasePath("/api/config/public"));
+        if (res.ok) {
+          const fresh = (await res.json()) as PublicConfig;
+          setConfig(fresh);
+          projectId = fresh.walletConnectProjectId || "";
+        }
+      }
+      if (!projectId) return false;
+      const imported = await import("@walletconnect/ethereum-provider");
+      const EthereumProvider = imported.default;
+      const provider = await EthereumProvider.init({
+        projectId,
+        optionalChains: [saved.chainId, 8453, 1, 137],
+        showQrModal: false,
+        metadata: {
+          name: "3GGA Admin",
+          description: "3GGA",
+          url:
+            typeof window !== "undefined"
+              ? window.location.origin
+              : process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
+          icons: ["https://otv.poptrust.me/favicon.svg"],
+        },
+      });
+      await (
+        provider.connect as unknown as (opts?: { pairingTopic?: string }) => Promise<void>
+      ).call(provider, { pairingTopic: saved.topic });
+      const account = provider.accounts?.[0];
+      if (!account || !isAddress(account)) throw new Error("No account.");
+      // Only restore if the wallet is still linked (an unlink must stay unlinked).
+      try {
+        const res = await fetch(withBasePath("/api/admin/wallets"), { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const linked = Array.isArray(data.wallets)
+            ? data.wallets.some(
+                (w: { address?: string }) =>
+                  typeof w?.address === "string" && w.address.toLowerCase() === account.toLowerCase()
+              )
+            : false;
+          if (!linked) {
+            clearWcPersist();
+            return false;
+          }
+        }
+      } catch {
+        /* allow restore when the list cannot be read */
+      }
+      await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
+      subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
+      return true;
+    } catch {
+      clearWcPersist();
+      return false;
+    }
+  }
 
   async function connectWalletConnect() {
     setError(null);
@@ -305,7 +395,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         void QRCode.toDataURL(uri, {
           margin: 1,
           width: 280,
-          color: { dark: "#0A0E14", light: "#FFFFFF" },
+          color: { dark: "#FFFFFF", light: "#FFFFFF" },
         })
           .then((img) => setPairingQr(img))
           .catch(() => undefined);
@@ -322,6 +412,18 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       }
       await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
       subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
+      try {
+        const topic = (provider as unknown as { session?: { pairingTopic?: string } }).session
+          ?.pairingTopic;
+        if (topic && isAddress(account)) {
+          window.localStorage.setItem(
+            "otv-wc-session",
+            JSON.stringify({ topic, address: getAddress(account), projectId, chainId })
+          );
+        }
+      } catch {
+        /* persistence is best-effort */
+      }
       setPairingQr(null);
     } catch (err) {
       setError(walletErrorMessage(err, "WalletConnect failed."));
@@ -503,6 +605,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     setWallet(null);
     setSigningReady(false);
     setError(null);
+    clearWcPersist();
   }
 
   async function unlinkFromDashboard() {
@@ -540,19 +643,19 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs text-[#6B7686]">Wallet</p>
+          <p className="text-xs text-[#6B7280]">Wallet</p>
           {wallet ? (
-            <p className="mt-1 break-all font-mono text-sm text-[#ECEFF3] sm:break-normal">
+            <p className="mt-1 break-all font-mono text-sm text-[#101828] sm:break-normal">
               {shortAddress(wallet.address)}
-              <span className="ml-2 text-xs text-[#6B7686]">{sourceLabel}</span>
+              <span className="ml-2 text-xs text-[#6B7280]">{sourceLabel}</span>
               {signingReady ? (
-                <span className="ml-2 text-xs text-[#7EE2A8]">signing</span>
+                <span className="ml-2 text-xs text-[#12805C]">signing</span>
               ) : (
-                <span className="ml-2 text-xs text-[#FFB020]">reconnect</span>
+                <span className="ml-2 text-xs text-[#B54708]">reconnect</span>
               )}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-[#6B7686]">Not connected</p>
+            <p className="mt-1 text-sm text-[#6B7280]">Not connected</p>
           )}
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
@@ -560,25 +663,27 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             <>
               <button
                 type="button"
+                title="Browser-extension wallets (MetaMask, Trust Wallet extension, Rabby)"
                 onClick={() => void connectInjected()}
                 disabled={busy !== null}
-                className="min-h-[44px] w-full rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                className="min-h-[44px] w-full rounded-full bg-[#D7FF00] px-4 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
-                {busy === "injected" ? "Connecting…" : "Connect MetaMask"}
+                {busy === "injected" ? "Connecting…" : "Connect Browser Wallet"}
               </button>
               <button
                 type="button"
+                title="Any wallet via WalletConnect pairing (mobile Trust Wallet, MetaMask Mobile, …)"
                 onClick={() => void connectWalletConnect()}
                 disabled={busy !== null || !wcReady}
-                className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
-                {busy === "walletconnect" ? "Connecting…" : "WalletConnect"}
+                {busy === "walletconnect" ? "Connecting…" : "WalletConnect · Any Wallet"}
               </button>
               <button
                 type="button"
                 onClick={() => void linkWithPasskey()}
                 disabled={busy !== null || !passkeyOk}
-                className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {busy === "passkey-register" ? "Linking…" : "Passkey"}
               </button>
@@ -587,7 +692,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                   type="button"
                   onClick={() => void assertPasskey()}
                   disabled={busy !== null || !passkeyOk}
-                  className="min-h-[44px] w-full rounded-full border border-[#20242C] bg-transparent px-4 py-2 text-sm font-medium text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                  className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
                 >
                   {busy === "passkey-assert" ? "Verifying…" : "Use Passkey"}
                 </button>
@@ -599,21 +704,21 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               <button
                 type="button"
                 onClick={() => onUseAsTarget(wallet.address)}
-                className="min-h-[44px] w-full rounded-full bg-[#E11D48] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] sm:w-auto"
+                className="min-h-[44px] w-full rounded-full bg-[#D7FF00] px-4 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] sm:w-auto"
               >
                 Use as target
               </button>
               <button
                 type="button"
                 onClick={disconnect}
-                className="min-h-[44px] w-full rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] px-4 py-2 text-sm text-[#6B7280] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
               >
                 Disconnect
               </button>
               <button
                 type="button"
                 onClick={() => void unlinkFromDashboard()}
-                className="min-h-[44px] w-full rounded-full border border-[#20242C] px-4 py-2 text-sm text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] px-4 py-2 text-sm text-[#6B7280] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
               >
                 Unlink
               </button>
@@ -623,12 +728,12 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       </div>
 
       {busy === "walletconnect" && (
-        <div className="space-y-2 rounded-lg border border-[#1C2430] bg-[#0A0E14] p-3">
+        <div className="space-y-2 rounded-full border border-[#DDE1EA] bg-[#FFFFFF] p-3">
           {pairingQr ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={pairingQr} alt="WalletConnect QR" width={280} height={280} />
           ) : (
-            <p className="text-xs text-[#6B7686]">Preparing QR…</p>
+            <p className="text-xs text-[#6B7280]">Preparing QR…</p>
           )}
         </div>
       )}
@@ -642,13 +747,13 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             placeholder="0x…"
             autoComplete="off"
             spellCheck={false}
-            className="min-h-[44px] w-full min-w-0 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4450] focus:border-[#E11D48]"
+            className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
           />
           <button
             type="button"
             onClick={() => void saveAssociatedAddress(pendingPasskeyId)}
             disabled={busy !== null || !associateDraft.trim()}
-            className="min-h-[44px] w-full shrink-0 rounded-full bg-[#E11D48] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+            className="min-h-[44px] w-full shrink-0 rounded-full bg-[#D7FF00] px-5 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
           >
             {busy === "passkey-save" ? "Saving…" : "Save"}
           </button>
@@ -656,16 +761,16 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       )}
 
       {passkeys.length > 0 && (
-        <ul className="space-y-2 border-t border-[#171B22] pt-3">
+        <ul className="space-y-2 border-t border-[#E6E9F0] pt-3">
           {passkeys.map((p) => (
             <li
               key={p.id}
               className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
             >
-              <p className="break-all font-mono text-xs text-[#ECEFF3]">
+              <p className="break-all font-mono text-xs text-[#101828]">
                 {shortCredentialId(p.credentialId)}
                 {p.linkedAddress ? (
-                  <span className="ml-2 text-[#8A95A5]">→ {shortAddress(p.linkedAddress)}</span>
+                  <span className="ml-2 text-[#5B6472]">→ {shortAddress(p.linkedAddress)}</span>
                 ) : null}
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -676,7 +781,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                       setPendingPasskeyId(p.id);
                       setAssociateDraft("");
                     }}
-                    className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                    className="min-h-[40px] w-full rounded-full border border-[#CBD1DE] px-3 py-1.5 text-xs text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
                   >
                     Associate
                   </button>
@@ -689,7 +794,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                         onUseAsTarget(getAddress(p.linkedAddress!));
                       });
                     }}
-                    className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                    className="min-h-[40px] w-full rounded-full border border-[#CBD1DE] px-3 py-1.5 text-xs text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
                   >
                     Target
                   </button>
@@ -697,7 +802,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
                 <button
                   type="button"
                   onClick={() => void unlinkPasskey(p.id)}
-                  className="min-h-[40px] w-full rounded-full border border-[#20242C] px-3 py-1.5 text-xs text-[#6B7686] transition hover:border-[#E11D48] hover:text-[#E11D48] sm:w-auto"
+                  className="min-h-[40px] w-full rounded-full border border-[#CBD1DE] px-3 py-1.5 text-xs text-[#6B7280] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
                 >
                   Unlink
                 </button>
@@ -707,7 +812,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         </ul>
       )}
 
-      {error && <p className="break-words text-xs text-[#FF5C6C]">{error}</p>}
+      {error && <p className="break-words text-xs text-[#D92D20]">{error}</p>}
     </div>
   );
 }

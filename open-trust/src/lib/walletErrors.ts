@@ -18,6 +18,12 @@ export function walletErrorMessage(err: unknown, fallback = "Wallet request fail
   if (code === 4902 || /unrecognized chain|unknown chain/i.test(raw)) {
     return "Switch wallet to the configured chain.";
   }
+  if (code === -32003 || /out\s*of\s*funds/i.test(raw)) {
+    return "Out of funds: the signer lacks native coin for gas + value on this network. Fund it or switch network.";
+  }
+  if (/is not a function|is not an object|undefined is not/i.test(raw)) {
+    return "Unexpected wallet response. Reconnect the wallet and retry.";
+  }
   if (/insufficient funds|gas/i.test(raw)) {
     return "Insufficient funds for gas.";
   }

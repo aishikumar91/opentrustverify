@@ -33,7 +33,9 @@ export async function getAllowlist(): Promise<Set<string>> {
   const entries = new Set(parseEnvAllowlistEntries());
   const linked = await listAllLinkedAddresses();
   for (const addr of linked) {
-    entries.add(addr.toLowerCase());
+    if (typeof addr === "string" && addr) {
+      entries.add(addr.toLowerCase());
+    }
   }
   return entries;
 }
@@ -46,6 +48,9 @@ export class NotAllowlistedError extends Error {
 }
 
 export async function assertAllowlisted(address: string): Promise<void> {
+  if (typeof address !== "string" || !address.trim()) {
+    throw new Error("Invalid address.");
+  }
   const normalized = address.trim().toLowerCase();
   const allowlist = await getAllowlist();
   if (allowlist.size === 0) {
@@ -57,6 +62,7 @@ export async function assertAllowlisted(address: string): Promise<void> {
 }
 
 export async function isAllowlisted(address: string): Promise<boolean> {
+  if (typeof address !== "string" || !address.trim()) return false;
   const allowlist = await getAllowlist();
   return allowlist.has(address.trim().toLowerCase());
 }

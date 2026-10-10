@@ -23,5 +23,6 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
     mainnet: settings.mainnet,
     allowlist: settings.allowlist,
     rpcSource: settings.rpcSource,
+    turnstileSiteKey: (process.env.TURNSTILE_SITE_KEY ?? "").trim(),
   });
 }

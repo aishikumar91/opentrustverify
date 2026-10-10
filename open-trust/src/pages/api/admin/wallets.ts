@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../lib/auth";
+import { getRequester } from "../../../lib/auth";
 import {
   listLinkedWallets,
   upsertLinkedWallet,
@@ -16,10 +16,11 @@ const SOURCES = new Set<LinkedWalletSource>([
 ]);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
-  if (!session) {
+  const requester = getRequester(req);
+  if (!requester || requester.role !== "admin") {
     return res.status(401).json({ error: "Admin session required." });
   }
+  const session = { username: requester.id };
 
   try {
     if (req.method === "GET") {

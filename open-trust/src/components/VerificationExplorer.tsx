@@ -51,13 +51,13 @@ export default function VerificationExplorer() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Paste a transaction hash — 0x…"
-            className="w-full rounded-full border border-[#20242C] bg-[#10141C] py-3 pl-11 pr-4 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
+            className="w-full rounded-full border border-[#20242C] bg-[#10141C] py-3 pl-11 pr-4 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#B8E600]"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="flex min-h-[48px] shrink-0 items-center justify-center rounded-full bg-[#E11D48] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#F43F5E] disabled:opacity-50"
+          className="flex min-h-[48px] shrink-0 items-center justify-center rounded-full bg-[#D7FF00] px-6 py-3 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
         </button>
@@ -69,14 +69,14 @@ export default function VerificationExplorer() {
         <div
           className={`mt-6 overflow-hidden rounded-2xl border p-4 sm:p-6 ${
             result.status === "FRAUD_INTERCEPTED"
-              ? "border-[#E11D48]/40 bg-[linear-gradient(135deg,rgba(225,29,72,0.16),rgba(16,20,28,0.9))]"
+              ? "border-[#B8E600]/40 bg-[linear-gradient(135deg,rgba(183,230,0,0.14),rgba(16,20,28,0.9))]"
               : "border-[#20242C] bg-[#10141C]"
           }`}
         >
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
-                result.status === "FRAUD_INTERCEPTED" ? "bg-[#FF5C6C]" : "bg-[#35D398]"
+                result.status === "FRAUD_INTERCEPTED" ? "bg-[#D7FF00]" : "bg-[#35D398]"
               }`}
             />
             <p className="text-base font-medium">
