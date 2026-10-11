@@ -53,13 +53,13 @@ export default function EnrollPage() {
       <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-8">
         <PromoBadge />
         <h1 className="text-xl font-semibold text-[#101828]">Get Onboard</h1>
-        <div className="grid items-stretch gap-4 sm:grid-cols-2">
-          <section aria-label="Price list" className="rounded-[24px] border border-[#DDE1EA] bg-white p-5">
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4">
+          <section aria-label="Price list" className="min-w-0 rounded-2xl border border-[#DDE1EA] bg-white p-3 sm:rounded-[24px] sm:p-5">
             <ul className="space-y-2">
               {TIERS.map((t) => (
                 <li
                   key={t.price + t.term}
-                  className="flex items-center justify-between gap-2 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] px-4 py-3"
+                  className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] px-3 py-2.5 sm:px-4 sm:py-3"
                 >
                   <span className="tnum font-mono text-base font-semibold text-[#101828]">{t.price}</span>
                   <span className="text-xs text-[#5B6472]">for {t.term}</span>
@@ -70,7 +70,7 @@ export default function EnrollPage() {
               ))}
             </ul>
           </section>
-          <section aria-label="Pay with Litecoin" className="flex flex-col rounded-[24px] border border-[#DDE1EA] bg-white p-5">
+          <section aria-label="Pay with Litecoin" className="flex min-w-0 flex-col rounded-2xl border border-[#DDE1EA] bg-white p-3 sm:rounded-[24px] sm:p-5">
             <p className="break-all font-mono text-[11px] leading-relaxed text-[#101828]">
               LTC ADDRESS: {LTC_ADDRESS}
             </p>
