@@ -26,6 +26,7 @@ import LinkWallet from "./LinkWallet";
 import BrandMark from "./BrandMark";
 import AdminSettingsPanel from "./AdminSettingsPanel";
 import ActionStatus, { type ActionTone } from "./ActionStatus";
+import CliTestPreloader from "./CliTestPreloader";
 
 type Vector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer" | "zeroValue";
 
@@ -81,6 +82,11 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   const [deploying, setDeploying] = useState(false);
   const [firing, setFiring] = useState<Vector | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [cliPreload, setCliPreload] = useState<{
+    task: string;
+    outcome: "ok" | "fail" | null;
+    detail?: string | null;
+  } | null>(null);
   const [runs, setRuns] = useState<ExecutedRunView[]>([]);
   const [loadingRuns, setLoadingRuns] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -278,6 +284,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   async function fire(vector: Vector) {
     setError(null);
     setFiring(vector);
+    setCliPreload({ task: vector, outcome: null });
     try {
       const provider = getActiveWalletProvider();
       const connectedSigner = getActiveWalletAddress();
@@ -351,17 +358,26 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         verifiedAt: data.run?.verifiedAt ?? null,
         chainId: data.chainId ?? data.run?.chainId ?? netId,
       });
-      pushStatus("ok", "Broadcast executed", `${vector} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`);
+      const detail = `${vector} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`;
+      setCliPreload({ task: vector, outcome: "ok", detail });
+      pushStatus("ok", "Broadcast executed", detail);
+      window.setTimeout(() => setCliPreload(null), 900);
     } catch (err) {
       setError(walletErrorMessage(err, "Attack failed."));
       {
         const rawMsg = err instanceof Error ? err.message : "";
         const chainIssue = /wrong chain|switch.*chain|unrecognized chain|unknown chain|4902/i.test(rawMsg);
+        setCliPreload({
+          task: vector,
+          outcome: "fail",
+          detail: rawMsg.slice(0, 160) || "Fire action failed",
+        });
         pushStatus(
           chainIssue ? "warn" : "fail",
           chainIssue ? "Incorrect chain or network" : "Fire action failed",
           rawMsg.slice(0, 160) || undefined
         );
+        window.setTimeout(() => setCliPreload(null), 1400);
       }
     } finally {
       setFiring(null);
@@ -371,16 +387,22 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   async function deployTestToken() {
     setError(null);
     setDeploying(true);
+    setCliPreload({ task: "deploy-token", outcome: null });
     try {
       if (!getActiveWalletProvider() || !getActiveWalletAddress()) {
         throw new Error("Connect a wallet to sign.");
       }
       const result = await deployFakeTokenFromWallet(netId);
       setFakeTokenContract(result.contractAddress);
+      setCliPreload({ task: "deploy-token", outcome: "ok", detail: result.contractAddress });
       pushStatus("ok", "Token deployed", result.contractAddress);
+      window.setTimeout(() => setCliPreload(null), 900);
     } catch (err) {
       setError(walletErrorMessage(err, "Deploy failed."));
-      pushStatus("fail", "Deploy action failed", err instanceof Error ? err.message.slice(0, 160) : undefined);
+      const msg = err instanceof Error ? err.message.slice(0, 160) : "Deploy action failed";
+      setCliPreload({ task: "deploy-token", outcome: "fail", detail: msg });
+      pushStatus("fail", "Deploy action failed", msg);
+      window.setTimeout(() => setCliPreload(null), 1400);
     } finally {
       setDeploying(false);
     }
@@ -389,6 +411,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   async function verify(txHash: string) {
     setError(null);
     setVerifying(txHash);
+    setCliPreload({ task: `verify:${shortHash(txHash)}`, outcome: null });
     try {
       const runChain = runs.find((rr) => rr.txHash === txHash)?.chainId ?? netId;
       const res = await fetch(withBasePath(`/api/verify/${txHash}?chainId=${runChain}`));
@@ -411,14 +434,23 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             : r
         )
       );
-      pushStatus(
-        data.status === "FRAUD_INTERCEPTED" ? "warn" : "ok",
-        data.status === "FRAUD_INTERCEPTED" ? "Fraud intercepted" : "Verified legitimate",
-        typeof data.threatScore === "number" ? `Threat score ${data.threatScore}` : undefined
-      );
+      const title =
+        data.status === "FRAUD_INTERCEPTED" ? "Fraud intercepted" : "Verified legitimate";
+      const detail =
+        typeof data.threatScore === "number" ? `Threat score ${data.threatScore}` : undefined;
+      setCliPreload({
+        task: `verify:${shortHash(txHash)}`,
+        outcome: "ok",
+        detail: detail ?? title,
+      });
+      pushStatus(data.status === "FRAUD_INTERCEPTED" ? "warn" : "ok", title, detail);
+      window.setTimeout(() => setCliPreload(null), 900);
     } catch (err) {
       setError(walletErrorMessage(err, "Verify failed."));
-      pushStatus("fail", "Verify action failed", err instanceof Error ? err.message.slice(0, 160) : undefined);
+      const msg = err instanceof Error ? err.message.slice(0, 160) : "Verify action failed";
+      setCliPreload({ task: `verify:${shortHash(txHash)}`, outcome: "fail", detail: msg });
+      pushStatus("fail", "Verify action failed", msg);
+      window.setTimeout(() => setCliPreload(null), 1400);
     } finally {
       setVerifying(null);
     }
@@ -483,6 +515,13 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
 
   return (
     <div className="nui font-ui min-h-screen overflow-x-hidden bg-[#E9EDF4] pb-28 text-[#101828] antialiased sm:pb-24 md:pb-0">
+      {cliPreload && (
+        <CliTestPreloader
+          task={cliPreload.task}
+          outcome={cliPreload.outcome}
+          detail={cliPreload.detail}
+        />
+      )}
       <header
         className={`sticky top-0 z-20 border-b backdrop-blur ${
           theme === "dark"
