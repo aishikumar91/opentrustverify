@@ -101,7 +101,11 @@ export function verifyStaffSessionToken(token: string | undefined | null): Staff
 
 export type Requester = { role: "admin"; id: string } | { role: "staff"; id: string } | null;
 
-/** Admin cookie first, staff cookie second. Use for read routes; write routes must require admin. */
+/**
+ * Admin cookie first, staff cookie second.
+ * Console testing routes (wallet link, fire, record-run) accept either role.
+ * System setup (settings, team, SMTP, fulfillment) stays admin-only.
+ */
 export function getRequester(req: { headers: { cookie?: string } }): Requester {
   const admin = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
   if (admin) return { role: "admin", id: admin.username };

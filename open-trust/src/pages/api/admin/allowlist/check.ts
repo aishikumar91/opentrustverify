@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { isAddress } from "viem";
-import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../../lib/auth";
+import { getRequester } from "../../../../lib/auth";
 import { isAllowlisted, getAllowlist } from "../../../../lib/allowlist";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
-  if (!session) {
-    return res.status(401).json({ error: "Admin session required." });
+  const requester = getRequester(req);
+  if (!requester) {
+    return res.status(401).json({ error: "Sign-in required." });
   }
   const address =
     typeof req.query.address === "string"
