@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUpRight } from "lucide-react";
 import { withBasePath } from "../lib/basePath";
@@ -14,6 +14,21 @@ import {
 import LinkWallet from "./LinkWallet";
 import BrandMark from "./BrandMark";
 import AdminSettingsPanel from "./AdminSettingsPanel";
+
+/** Retry a promise with exponential backoff. */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  baseDelay = 500
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries <= 0) throw err;
+    await new Promise((r) => setTimeout(r, baseDelay));
+    return retryWithBackoff(fn, retries - 1, baseDelay * 2);
+  }
+}
 
 type Vector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer" | "zeroValue";
 
@@ -121,6 +136,7 @@ export default function OpenTrustDashboard() {
     setError(null);
     setFiring(vector);
     try {
+      // Refresh signer state from walletProvider before firing
       const provider = getActiveWalletProvider();
       const connectedSigner = getActiveWalletAddress();
       if (!provider || !connectedSigner) {
@@ -136,17 +152,20 @@ export default function OpenTrustDashboard() {
         setTargetAddress(connectedSigner);
       }
 
+      // Check allowlist with retry for newly connected wallets
       for (const addr of [target, connectedSigner]) {
-        const pre = await fetch(
-          withBasePath(`/api/admin/allowlist/check?address=${encodeURIComponent(addr)}`),
-          { credentials: "include" }
-        );
-        const preData = await pre.json().catch(() => ({}));
-        if (!pre.ok || !preData.allowlisted) {
-          throw new Error(
-            (preData as { error?: string }).error ?? `Not allowlisted: ${addr}`
+        await retryWithBackoff(async () => {
+          const pre = await fetch(
+            withBasePath(`/api/admin/allowlist/check?address=${encodeURIComponent(addr)}`),
+            { credentials: "include" }
           );
-        }
+          const preData = await pre.json().catch(() => ({}));
+          if (!pre.ok || !preData.allowlisted) {
+            throw new Error(
+              (preData as { error?: string }).error ?? `Not allowlisted: ${addr}`
+            );
+          }
+        });
       }
 
       const chainRes = await fetch(withBasePath("/api/config/public"));

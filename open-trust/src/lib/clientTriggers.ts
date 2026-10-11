@@ -91,6 +91,30 @@ const CHAIN_META: Record<
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
     blockExplorerUrls: ["https://etherscan.io"],
   },
+  137: {
+    chainName: "Polygon",
+    rpcUrls: ["https://polygon-rpc.com"],
+    nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+    blockExplorerUrls: ["https://polygonscan.com"],
+  },
+  42161: {
+    chainName: "Arbitrum One",
+    rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    blockExplorerUrls: ["https://arbiscan.io"],
+  },
+  10: {
+    chainName: "Optimism",
+    rpcUrls: ["https://mainnet.optimism.io"],
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    blockExplorerUrls: ["https://optimistic.etherscan.io"],
+  },
+  56: {
+    chainName: "BNB Smart Chain",
+    rpcUrls: ["https://bsc-dataseed.binance.org"],
+    nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+    blockExplorerUrls: ["https://bscscan.com"],
+  },
 };
 
 async function sendTx(
@@ -116,6 +140,21 @@ async function sendTx(
     return hash as Hash;
   } catch (err) {
     throw new Error(walletErrorMessage(err, "Transaction failed."));
+  }
+}
+
+/** Retry a promise with exponential backoff. */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  baseDelay = 500
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries <= 0) throw err;
+    await new Promise((r) => setTimeout(r, baseDelay));
+    return retryWithBackoff(fn, retries - 1, baseDelay * 2);
   }
 }
 
