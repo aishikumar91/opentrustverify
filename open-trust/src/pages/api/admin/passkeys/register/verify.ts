@@ -3,7 +3,7 @@ import {
   verifyRegistrationResponse,
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
-import { requireAdminSession } from "../../../../../lib/adminSession";
+import { requireOperatorSession } from "../../../../../lib/adminSession";
 import {
   consumeChallenge,
   insertPasskey,
@@ -25,9 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const session = requireAdminSession(req);
+  const session = requireOperatorSession(req);
   if (!session) {
-    return res.status(401).json({ error: "Admin session required." });
+    return res.status(401).json({ error: "Sign-in required." });
   }
 
   res.setHeader("Cache-Control", "no-store");
