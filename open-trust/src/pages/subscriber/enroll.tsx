@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { withBasePath } from "../../lib/basePath";
 import BrandMark from "../../components/BrandMark";
 import PromoBadge from "../../components/PromoBadge";
@@ -6,6 +6,8 @@ import ThemeToggle from "../../components/ThemeToggle";
 import { useTheme } from "../../lib/useTheme";
 
 const LTC_ADDRESS = "ltc1q8v6w8ut3dynmkfs2agg599jahgtr74d3y3epx6";
+/** BIP-21 style URI so Litecoin wallets open a pay flow on scan. */
+const LTC_PAY_URI = `litecoin:${LTC_ADDRESS}`;
 
 const TIERS: { price: string; term: string }[] = [
   { price: "$35", term: "6 Days" },
@@ -18,6 +20,30 @@ const TIERS: { price: string; term: string }[] = [
 export default function EnrollPage() {
   const { theme, toggleTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const [qrSrc, setQrSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const img = await QRCode.toDataURL(LTC_PAY_URI, {
+          margin: 2,
+          width: 320,
+          errorCorrectionLevel: "M",
+          color: { dark: "#000000", light: "#FFFFFF" },
+        });
+        if (!cancelled) setQrSrc(img);
+      } catch {
+        // Static asset is a last-resort fallback (also encodes the LTC URI).
+        if (!cancelled) setQrSrc(withBasePath("/ltc-qr.png"));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="nui font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3">
@@ -59,13 +85,21 @@ export default function EnrollPage() {
             >
               {copied ? "Copied ✓" : "Copy LTC address"}
             </button>
-            <img
-              src={withBasePath("/ltc-qr.png")}
-              alt="LTC payment QR code"
-              width={600}
-              height={600}
-              className="mx-auto mt-3 h-auto w-full max-w-[240px] flex-1 rounded-2xl border border-[#CBD1DE] bg-white p-2 object-contain"
-            />
+            {qrSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={qrSrc}
+                alt="Litecoin payment QR code"
+                width={320}
+                height={320}
+                className="mx-auto mt-3 h-auto w-full max-w-[240px] flex-1 rounded-2xl border border-[#CBD1DE] bg-white p-2 object-contain"
+              />
+            ) : (
+              <p className="mt-3 text-center text-xs text-[#6B7280]">Preparing payment QR…</p>
+            )}
+            <p className="mt-2 text-center text-[11px] leading-relaxed text-[#6B7280]">
+              Scan with a Litecoin wallet to pay this address.
+            </p>
           </section>
         </div>
         <a

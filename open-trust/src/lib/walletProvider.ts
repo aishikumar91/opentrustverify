@@ -67,8 +67,12 @@ export function getInjectedProvider(): Eip1193Provider | null {
   if (typeof window === "undefined") return null;
   const eth = (window as unknown as { ethereum?: Eip1193Provider }).ethereum;
   if (!eth) return null;
-  if (Array.isArray(eth.providers) && eth.providers.length > 0) {
-    return eth.providers.find((p) => p?.isMetaMask) || eth.providers[0] || eth;
+  try {
+    if (Array.isArray(eth.providers) && eth.providers.length > 0) {
+      return eth.providers.find((p) => p?.isMetaMask) || eth.providers[0] || eth;
+    }
+  } catch {
+    /* some injected proxies throw on .providers access */
   }
-  return eth;
+  return typeof eth.request === "function" ? eth : null;
 }

@@ -1,19 +1,22 @@
+import { withBasePath } from "../lib/basePath";
+
 type BrandMarkProps = {
   size?: "sm" | "md" | "lg" | "hero";
   className?: string;
   as?: "span" | "h1" | "div";
 };
 
-const sizeClass: Record<NonNullable<BrandMarkProps["size"]>, string> = {
-  sm: "text-xl tracking-[0.12em]",
-  md: "text-3xl tracking-[0.14em] sm:tracking-[0.16em] md:text-4xl",
-  /* Mobile: smaller type + tighter tracking so the wordmark fits 320–430px without crowding */
-  lg: "text-4xl tracking-[0.12em] min-[400px]:text-5xl min-[400px]:tracking-[0.16em] md:text-6xl md:tracking-[0.18em]",
-  hero: "text-5xl tracking-[0.14em] sm:text-7xl sm:tracking-[0.2em] md:text-8xl",
+/** Tall stacked lockup (430×580). Size by height so the tagline stays legible. */
+const heightClass: Record<NonNullable<BrandMarkProps["size"]>, string> = {
+  sm: "h-9 max-h-9 sm:h-10 sm:max-h-10",
+  md: "h-14 max-h-14 sm:h-16 sm:max-h-16",
+  lg: "h-20 max-h-20 sm:h-24 sm:max-h-24",
+  hero: "h-28 max-h-28 sm:h-36 sm:max-h-36 md:h-44 md:max-h-44",
 };
 
 /**
- * 3GGA wordmark — dimensional red lettering for dark admin surfaces.
+ * 3GGA system logo — stacked lime lockup + tagline (public/logo.png, transparent).
+ * Single mark everywhere; drop-shadow keeps neon glyphs readable on light chrome.
  */
 export default function BrandMark({
   size = "md",
@@ -21,11 +24,16 @@ export default function BrandMark({
   as: Tag = "span",
 }: BrandMarkProps) {
   return (
-    <Tag
-      className={`brand-3gga inline-block max-w-full font-brand uppercase leading-none ${sizeClass[size]} ${className}`}
-      aria-label="3GGA"
-    >
-      3GGA
+    <Tag className={`brand-mark inline-block max-w-full shrink-0 leading-none ${className}`} aria-label="3GGA">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={withBasePath("/logo.png")}
+        alt="3GGA — Live on chain fraud opsec"
+        width={430}
+        height={580}
+        decoding="async"
+        className={`brand-mark-img h-auto w-auto max-w-[28vw] object-contain object-left sm:max-w-[160px] md:max-w-none ${heightClass[size]}`}
+      />
     </Tag>
   );
 }

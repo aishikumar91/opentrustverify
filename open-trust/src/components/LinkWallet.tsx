@@ -12,7 +12,7 @@ import {
 
 type LinkedWallet = {
   address: string;
-  source: "injected" | "walletconnect" | "passkey";
+  source: "injected" | "walletconnect" | "passkey" | "sectool";
 };
 
 type PublicConfig = {
@@ -21,6 +21,12 @@ type PublicConfig = {
   walletConnectSource?: "database" | "env" | "none";
   chainId: number;
   chainName: string;
+  sectool?: {
+    projectName: string;
+    clientId: string;
+    network: string;
+    configured: boolean;
+  };
 };
 
 type PasskeyPublic = {
@@ -48,6 +54,47 @@ function webAuthnAvailable(): boolean {
   return Boolean(window.PublicKeyCredential);
 }
 
+function siteOrigin(): string {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+  return (process.env.NEXT_PUBLIC_SITE_URL || process.env.OTV_PUBLIC_URL || "https://otv.poptrust.me").replace(
+    /\/$/,
+    ""
+  );
+}
+
+function wcMetadata() {
+  const origin = siteOrigin();
+  return {
+    name: "3GGA Admin",
+    description: "3GGA fraud console",
+    url: origin,
+    icons: [`${origin}${withBasePath("/logo.png")}`, `${origin}${withBasePath("/icon-192.png")}`],
+  };
+}
+
+const WC_RPC_MAP: Record<string, string> = {
+  "1": "https://cloudflare-eth.com",
+  "8453": "https://mainnet.base.org",
+  "137": "https://polygon.publicnode.com",
+};
+
+async function initWalletConnectProvider(projectId: string, chainId: number, showQrModal = false) {
+  const imported = await import("@walletconnect/ethereum-provider");
+  const EthereumProvider = imported.default;
+  const primary = chainId || 8453;
+  const optional = [8453, 1, 137].filter((id) => id !== primary);
+  return EthereumProvider.init({
+    projectId,
+    chains: [primary],
+    optionalChains: optional,
+    showQrModal,
+    rpcMap: WC_RPC_MAP,
+    metadata: wcMetadata(),
+  });
+}
+
 type Props = {
   onLinked: (address: string | null) => void;
   onUseAsTarget: (address: string) => void;
@@ -57,9 +104,17 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [wallet, setWallet] = useState<LinkedWallet | null>(null);
   const [busy, setBusy] = useState<
-    "injected" | "walletconnect" | "passkey-register" | "passkey-assert" | "passkey-save" | null
+    | "injected"
+    | "walletconnect"
+    | "sectool"
+    | "passkey-register"
+    | "passkey-assert"
+    | "passkey-save"
+    | null
   >(null);
   const [pairingQr, setPairingQr] = useState<string | null>(null);
+  const [pairingUri, setPairingUri] = useState<string | null>(null);
+  const [pairingCopied, setPairingCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passkeyOk, setPasskeyOk] = useState(false);
   const [passkeys, setPasskeys] = useState<PasskeyPublic[]>([]);
@@ -216,6 +271,38 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
   }
 
+  /** MetaMask Embedded Wallets (sectool / Web3Auth sapphire). */
+  async function connectSectoolWallet() {
+    setError(null);
+    setBusy("sectool");
+    try {
+      let clientId = config?.sectool?.clientId ?? "";
+      let network = config?.sectool?.network ?? "sapphire_mainnet";
+      try {
+        const res = await fetch(withBasePath("/api/config/public"));
+        if (res.ok) {
+          const fresh = (await res.json()) as PublicConfig;
+          setConfig(fresh);
+          clientId = fresh.sectool?.clientId || clientId;
+          network = fresh.sectool?.network || network;
+        }
+      } catch {
+        /* keep prior */
+      }
+      const { connectSectool } = await import("../lib/sectool");
+      const linked = await connectSectool({ clientId, network });
+      await applyAddress(linked.address, "sectool", linked.provider);
+      subscribeProviderEvents(linked.provider, "sectool");
+    } catch (err) {
+      const msg = walletErrorMessage(err, "sectool connect failed.");
+      if (!/closed the modal|user closed|User closed/i.test(msg)) {
+        setError(msg);
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
   /** Silent restore: reuse unlocked injected session without a prompt when possible. */
   async function trySilentInjected() {
     const provider = getInjectedProvider();
@@ -301,22 +388,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         }
       }
       if (!projectId) return false;
-      const imported = await import("@walletconnect/ethereum-provider");
-      const EthereumProvider = imported.default;
-      const provider = await EthereumProvider.init({
-        projectId,
-        optionalChains: [saved.chainId, 8453, 1, 137],
-        showQrModal: false,
-        metadata: {
-          name: "3GGA Admin",
-          description: "3GGA",
-          url:
-            typeof window !== "undefined"
-              ? window.location.origin
-              : process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
-          icons: ["https://otv.poptrust.me/favicon.svg"],
-        },
-      });
+      const provider = await initWalletConnectProvider(projectId, saved.chainId || 8453, false);
       await (
         provider.connect as unknown as (opts?: { pairingTopic?: string }) => Promise<void>
       ).call(provider, { pairingTopic: saved.topic });
@@ -372,30 +444,36 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
     setBusy("walletconnect");
     setPairingQr(null);
+    setPairingUri(null);
+    setPairingCopied(false);
     try {
-      const imported = await import("@walletconnect/ethereum-provider");
-      const EthereumProvider = imported.default;
+      // Drop stale WC keys that block a fresh display_uri / pairing topic.
+      try {
+        window.localStorage.removeItem("otv-wc-session");
+        for (const key of Object.keys(window.localStorage)) {
+          if (
+            key.startsWith("wc@2:") ||
+            key.startsWith("WALLETCONNECT") ||
+            key.includes("walletconnect")
+          ) {
+            window.localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+
       const QRCode = (await import("qrcode")).default;
-      const provider = await EthereumProvider.init({
-        projectId,
-        optionalChains: [chainId, 8453, 1, 137],
-        showQrModal: false,
-        metadata: {
-          name: "3GGA Admin",
-          description: "3GGA",
-          url:
-            typeof window !== "undefined"
-              ? window.location.origin
-              : process.env.NEXT_PUBLIC_SITE_URL || "https://otv.poptrust.me",
-          icons: ["https://otv.poptrust.me/favicon.svg"],
-        },
-      });
+      const provider = await initWalletConnectProvider(projectId, chainId, false);
       const onDisplay = (uri: string) => {
         if (!uri?.startsWith("wc:")) return;
+        setPairingUri(uri);
+        // Pure black on white — maximum scanner contrast.
         void QRCode.toDataURL(uri, {
-          margin: 1,
+          margin: 2,
           width: 280,
-          color: { dark: "#FFFFFF", light: "#FFFFFF" },
+          errorCorrectionLevel: "M",
+          color: { dark: "#000000", light: "#FFFFFF" },
         })
           .then((img) => setPairingQr(img))
           .catch(() => undefined);
@@ -425,7 +503,10 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         /* persistence is best-effort */
       }
       setPairingQr(null);
+      setPairingUri(null);
     } catch (err) {
+      setPairingQr(null);
+      setPairingUri(null);
       setError(walletErrorMessage(err, "WalletConnect failed."));
     } finally {
       setBusy(null);
@@ -632,12 +713,15 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   }
 
   const wcReady = Boolean(config?.walletConnectConfigured);
+  const sectoolReady = Boolean(config?.sectool?.configured ?? true);
   const sourceLabel =
     wallet?.source === "walletconnect"
       ? "WalletConnect"
       : wallet?.source === "passkey"
         ? "Passkey"
-        : "Injected";
+        : wallet?.source === "sectool"
+          ? "sectool"
+          : "Injected";
 
   return (
     <div className="space-y-3">
@@ -663,10 +747,19 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             <>
               <button
                 type="button"
+                title="MetaMask Embedded Wallets — sectool project (sapphire_mainnet)"
+                onClick={() => void connectSectoolWallet()}
+                disabled={busy !== null || !sectoolReady}
+                className="min-h-[44px] w-full rounded-full bg-[#D7FF00] px-4 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+              >
+                {busy === "sectool" ? "Opening sectool…" : "MetaMask · sectool"}
+              </button>
+              <button
+                type="button"
                 title="Browser-extension wallets (MetaMask, Trust Wallet extension, Rabby)"
                 onClick={() => void connectInjected()}
                 disabled={busy !== null}
-                className="min-h-[44px] w-full rounded-full bg-[#D7FF00] px-4 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
               >
                 {busy === "injected" ? "Connecting…" : "Connect Browser Wallet"}
               </button>
@@ -728,12 +821,34 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       </div>
 
       {busy === "walletconnect" && (
-        <div className="space-y-2 rounded-full border border-[#DDE1EA] bg-[#FFFFFF] p-3">
+        <div className="mx-auto w-full max-w-[320px] space-y-2 rounded-2xl border border-[#DDE1EA] bg-[#FFFFFF] p-4">
           {pairingQr ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={pairingQr} alt="WalletConnect QR" width={280} height={280} />
+            <img
+              src={pairingQr}
+              alt="WalletConnect QR"
+              width={280}
+              height={280}
+              className="mx-auto h-auto w-full max-w-[280px] bg-white"
+            />
           ) : (
-            <p className="text-xs text-[#6B7280]">Preparing QR…</p>
+            <p className="text-center text-xs text-[#6B7280]">Preparing QR…</p>
+          )}
+          <p className="text-center text-[11px] leading-relaxed text-[#6B7280]">
+            Scan with MetaMask, Trust Wallet, or any WalletConnect wallet.
+          </p>
+          {pairingUri && (
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard?.writeText(pairingUri).catch(() => {});
+                setPairingCopied(true);
+                window.setTimeout(() => setPairingCopied(false), 2000);
+              }}
+              className="min-h-10 w-full rounded-full border border-[#CBD1DE] px-3 text-xs font-medium text-[#101828] transition hover:border-[#B8E600]"
+            >
+              {pairingCopied ? "Pairing link copied" : "Copy pairing link"}
+            </button>
           )}
         </div>
       )}
