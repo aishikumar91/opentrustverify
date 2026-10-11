@@ -1,10 +1,12 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
+RUN apk add --no-cache git
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
 FROM node:20-alpine AS builder
 WORKDIR /app
+RUN apk add --no-cache git
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_BASE_PATH=/
 COPY --from=deps /app/node_modules ./node_modules
