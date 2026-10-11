@@ -1,15 +1,15 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_BASE_PATH=/trigger
-RUN npm run build
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build && ls -la .next/standalone .next/static
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -23,7 +23,7 @@ RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev \
+RUN npm ci --omit=dev --legacy-peer-deps \
   && chown -R nextjs:nodejs /app/node_modules
 
 COPY --from=builder /app/public ./public
