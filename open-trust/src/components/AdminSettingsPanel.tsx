@@ -217,7 +217,8 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
       <section className="mb-8 overflow-x-hidden rounded-xl border border-[#DDE1EA] bg-[#F4F6FA] p-3.5 sm:mb-10 sm:p-5">
         <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#5B6472]">Settings</h2>
         <p className="mt-2 text-xs leading-relaxed text-[#8A8D93]">
-          Read-only subscriber access — settings are managed by the admin.
+          Console testing (wallet connect, vectors, fire) is available under Vectors. System setup —
+          WalletConnect project id, team, SMTP, and fulfillment — is managed by the admin.
         </p>
       </section>
     );

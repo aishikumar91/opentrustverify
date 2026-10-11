@@ -62,7 +62,10 @@ function shortAddr(a: string) {
 }
 
 export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" }) {
+  /** System setup only (team, SMTP, WC project id, fulfillment). */
   const isAdmin = role !== "staff";
+  /** Console testing: wallet link, vectors, fire — admin and staff. */
+  const canOperate = role === "admin" || role === "staff" || role == null;
   const [targetAddress, setTargetAddress] = useState("");
   const [fakeTokenContract, setFakeTokenContract] = useState("");
   const [tokenPreset, setTokenPreset] = useState<ZeroValuePreset>("USDC");
@@ -427,7 +430,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
 
   const canSign = signer.ready;
   const navTabs: { id: "overview" | "vectors" | "runs" | "settings"; Icon: typeof LayoutGrid; label: string }[] =
-    isAdmin
+    canOperate
       ? [
           { id: "overview", Icon: LayoutGrid, label: "Overview" },
           { id: "vectors", Icon: Zap, label: "Vectors" },
@@ -758,7 +761,11 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               )}
               {!balances && (
                 <p className="text-sm text-[#6B7280]">
-                  {canSign ? "No balances loaded yet." : isAdmin ? "Connect a wallet to load balances." : "Sign in as admin to connect a wallet."}
+                  {canSign
+                    ? "No balances loaded yet."
+                    : canOperate
+                      ? "Connect a wallet to load balances."
+                      : "Sign in to connect a wallet."}
                 </p>
               )}
               {balances && (
@@ -772,7 +779,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                 </ul>
               )}
             </section>
-            {isAdmin && (
+            {canOperate && (
             <section className="flex flex-col gap-2 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-4 lg:col-span-5">
               <h2 className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">Quick fire</h2>
               {(["mempoolLure", "zeroValue"] as const).map((v) => (
@@ -830,7 +837,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             </section>
           </>
         )}
-        {tab === "vectors" && isAdmin && (
+        {tab === "vectors" && canOperate && (
         <>
         <section className="col-span-12 min-w-0 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-7">
           <LinkWallet onLinked={handleLinked} onUseAsTarget={useLinkedAsTarget} />

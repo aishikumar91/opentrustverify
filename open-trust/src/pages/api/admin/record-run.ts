@@ -26,8 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const requester = getRequester(req);
-  if (!requester || requester.role !== "admin") {
-    return res.status(401).json({ error: "Admin session required." });
+  if (!requester) {
+    return res.status(401).json({ error: "Sign-in required." });
   }
   const session = { username: requester.id };
 
