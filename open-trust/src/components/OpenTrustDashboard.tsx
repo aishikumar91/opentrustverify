@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ArrowUpRight } from "lucide-react";
+import { Loader2, ArrowUpRight, Copy } from "lucide-react";
+import { isAddress } from "viem";
 import { withBasePath } from "../lib/basePath";
-import { deployFakeTokenFromWallet, fireVectorFromLinkedWallet } from "../lib/clientTriggers";
+import { deployFakeTokenFromWallet, fireVectorFromLinkedWallet, generateLookalikeAddress } from "../lib/clientTriggers";
 import { walletErrorMessage } from "../lib/walletErrors";
 import {
   getActiveWalletAddress,
@@ -37,6 +38,7 @@ interface ExecutedRunView {
   explorerUrl: string;
   vector: string;
   targetAddress: string;
+  lookalikeAddress: string | null;
   broadcastAt: string | null;
   status: string | null;
   threatScore: number | null;
@@ -49,7 +51,7 @@ interface ExecutedRunView {
 const VECTORS: { id: Vector; label: string; needsContract: boolean }[] = [
   { id: "mempoolLure", label: "Mempool lure", needsContract: false },
   { id: "zeroValue", label: "Zero-value transfer", needsContract: false },
-  { id: "addressPoisoning", label: "Address poisoning", needsContract: true },
+  { id: "addressPoisoning", label: "Address poisoning", needsContract: false },
   { id: "fakeTokenTransfer", label: "Unverified token transfer", needsContract: true },
 ];
 
@@ -66,6 +68,7 @@ function shortAddr(a: string) {
 export default function OpenTrustDashboard() {
   const [targetAddress, setTargetAddress] = useState("");
   const [fakeTokenContract, setFakeTokenContract] = useState("");
+  const [lookalikeAddress, setLookalikeAddress] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [firing, setFiring] = useState<Vector | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
@@ -190,6 +193,7 @@ export default function OpenTrustDashboard() {
           targetAddress: clientResult.targetAddress,
           fromAddress: clientResult.fromAddress,
           broadcastAt: clientResult.broadcastAt,
+          lookalikeAddress: clientResult.lookalikeAddress,
         }),
       });
       const data = await res.json();
@@ -200,6 +204,7 @@ export default function OpenTrustDashboard() {
         explorerUrl: data.explorerUrl,
         vector: data.vector,
         targetAddress: data.targetAddress,
+        lookalikeAddress: data.lookalikeAddress,
         broadcastAt: data.broadcastAt,
         status: data.run?.status ?? "BROADCAST",
         threatScore: data.run?.threatScore ?? null,
@@ -305,6 +310,45 @@ export default function OpenTrustDashboard() {
               className="mt-2 min-h-10 w-full rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none placeholder:text-[#3A4150] focus:border-[#E11D48]"
             />
           </label>
+          {targetAddress && isAddress(targetAddress) && (
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
+                  Lookalike address (for poisoning)
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lookalike = generateLookalikeAddress(targetAddress);
+                    setLookalikeAddress(lookalike);
+                    navigator.clipboard.writeText(lookalike).catch(() => {});
+                  }}
+                  className="font-caption min-h-8 shrink-0 rounded-full border border-[#20242C] px-3 text-[11px] text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48]"
+                >
+                  Generate & Copy
+                </button>
+              </div>
+              {lookalikeAddress && (
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={lookalikeAddress}
+                    className="min-h-10 flex-1 rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#7EE2A8] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(lookalikeAddress).catch(() => {});
+                    }}
+                    className="min-h-10 shrink-0 rounded-full border border-[#20242C] px-3 text-[11px] text-[#ECEFF3] transition hover:border-[#E11D48] hover:text-[#E11D48]"
+                    title="Copy"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2">
             <p className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
               Contract
@@ -378,6 +422,11 @@ export default function OpenTrustDashboard() {
                     <p className="mt-2 font-mono text-[11px] text-[#8A95A5]">
                       {shortAddr(r.targetAddress)}
                     </p>
+                    {r.lookalikeAddress && (
+                      <p className="mt-1 font-mono text-[11px] text-[#7EE2A8]">
+                        Lookalike: {shortAddr(r.lookalikeAddress)}
+                      </p>
+                    )}
                     {assessed ? (
                       <p className="font-caption mt-4 text-sm text-[#ECEFF3]">
                         {intercepted ? "Fraud intercepted" : "Verified legitimate"}

@@ -9,6 +9,7 @@ export interface ExecutedRunRow {
   tx_hash: string;
   vector: string;
   target_address: string;
+  lookalike_address: string | null;
   explorer_url: string | null;
   status: string | null;
   threat_score: number | null;
@@ -26,6 +27,7 @@ export interface ExecutedRun {
   txHash: string;
   vector: string;
   targetAddress: string;
+  lookalikeAddress: string | null;
   explorerUrl: string;
   status: string | null;
   threatScore: number | null;
@@ -48,6 +50,7 @@ export async function ensureExecutedRunsTable(): Promise<void> {
       tx_hash TEXT NOT NULL UNIQUE,
       vector TEXT NOT NULL,
       target_address TEXT NOT NULL,
+      lookalike_address TEXT,
       explorer_url TEXT,
       status TEXT,
       threat_score INTEGER,
@@ -59,6 +62,9 @@ export async function ensureExecutedRunsTable(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `);
+  await query(`
+    ALTER TABLE executed_runs ADD COLUMN IF NOT EXISTS lookalike_address TEXT;
   `);
   await query(`
     CREATE INDEX IF NOT EXISTS executed_runs_broadcast_at_idx
@@ -80,6 +86,7 @@ function mapRow(row: ExecutedRunRow): ExecutedRun {
     txHash: row.tx_hash,
     vector: row.vector,
     targetAddress: row.target_address,
+    lookalikeAddress: row.lookalike_address,
     explorerUrl: row.explorer_url ?? "",
     status: row.status,
     threatScore: row.threat_score,
@@ -99,15 +106,17 @@ export async function insertExecutedRun(input: {
   targetAddress: string;
   explorerUrl: string;
   broadcastAt: string;
+  lookalikeAddress?: string;
 }): Promise<ExecutedRun> {
   await ensureExecutedRunsTable();
   const result = await query<ExecutedRunRow>(
     `INSERT INTO executed_runs (
-       tx_hash, vector, target_address, explorer_url, status, broadcast_at
-     ) VALUES ($1, $2, $3, $4, 'BROADCAST', $5)
+       tx_hash, vector, target_address, lookalike_address, explorer_url, status, broadcast_at
+     ) VALUES ($1, $2, $3, $4, $5, 'BROADCAST', $6)
      ON CONFLICT (tx_hash) DO UPDATE SET
        vector = EXCLUDED.vector,
        target_address = EXCLUDED.target_address,
+       lookalike_address = EXCLUDED.lookalike_address,
        explorer_url = EXCLUDED.explorer_url,
        broadcast_at = COALESCE(EXCLUDED.broadcast_at, executed_runs.broadcast_at),
        updated_at = NOW()
@@ -116,6 +125,7 @@ export async function insertExecutedRun(input: {
       input.txHash,
       input.vector,
       input.targetAddress,
+      input.lookalikeAddress ?? null,
       input.explorerUrl,
       input.broadcastAt,
     ]
@@ -133,21 +143,23 @@ export async function updateExecutedRunAssessment(input: {
   actionRecommended: string;
   targetAddress?: string;
   explorerUrl?: string;
+  lookalikeAddress?: string;
 }): Promise<ExecutedRun> {
   await ensureExecutedRunsTable();
   const result = await query<ExecutedRunRow>(
     `INSERT INTO executed_runs (
-       tx_hash, vector, target_address, explorer_url,
+       tx_hash, vector, target_address, lookalike_address, explorer_url,
        status, threat_score, real_balance_impact, reasons, action_recommended,
        verified_at
      ) VALUES (
-       $1, COALESCE($2, 'UNKNOWN'), COALESCE($3, ''), $4,
-       $5, $6, $7, $8::jsonb, $9, NOW()
+       $1, COALESCE($2, 'UNKNOWN'), COALESCE($3, ''), $4, $5,
+       $6, $7, $8, $9::jsonb, $10, NOW()
      )
      ON CONFLICT (tx_hash) DO UPDATE SET
        status = EXCLUDED.status,
        threat_score = EXCLUDED.threat_score,
        vector = COALESCE($2, executed_runs.vector),
+       lookalike_address = COALESCE($4, executed_runs.lookalike_address),
        real_balance_impact = EXCLUDED.real_balance_impact,
        reasons = EXCLUDED.reasons,
        action_recommended = EXCLUDED.action_recommended,
@@ -158,6 +170,7 @@ export async function updateExecutedRunAssessment(input: {
       input.txHash,
       input.vector ?? null,
       input.targetAddress ?? "",
+      input.lookalikeAddress ?? null,
       input.explorerUrl ?? null,
       input.status,
       input.threatScore,

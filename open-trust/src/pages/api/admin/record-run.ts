@@ -13,6 +13,7 @@ interface Body {
   targetAddress: string;
   fromAddress?: string;
   broadcastAt?: string;
+  lookalikeAddress?: string;
 }
 
 function explorerLink(txHash: string): string {
@@ -30,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Admin session required." });
   }
 
-  const { txHash, vector, targetAddress, fromAddress, broadcastAt } = req.body as Body;
+  const { txHash, vector, targetAddress, fromAddress, broadcastAt, lookalikeAddress } = req.body as Body;
 
   if (!txHash || !vector || !targetAddress) {
     return res.status(400).json({ error: "txHash, vector, and targetAddress are required" });
@@ -68,6 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       targetAddress: normalizedTarget,
       explorerUrl,
       broadcastAt: at,
+      lookalikeAddress,
     });
 
     return res.status(200).json({
@@ -76,6 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       vector,
       targetAddress: normalizedTarget,
       fromAddress: fromAddress && isAddress(fromAddress) ? getAddress(fromAddress) : null,
+      lookalikeAddress,
       broadcastAt: at,
       run,
     });

