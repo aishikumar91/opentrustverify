@@ -277,7 +277,12 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
 
     if (!projectId) {
-      setError("WalletConnect not configured.");
+      setError("WalletConnect not configured. Set project ID in Admin Settings.");
+      return;
+    }
+    // Validate project ID format (WalletConnect Cloud project IDs are typically 32+ chars)
+    if (projectId.length < 20) {
+      setError("Invalid WalletConnect project ID. Get a valid one from https://cloud.walletconnect.com");
       return;
     }
     setBusy("walletconnect");
@@ -290,6 +295,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         projectId,
         optionalChains: [chainId, 8453, 1, 137],
         showQrModal: false,
+        relayUrl: "wss://relay.walletconnect.com",
         metadata: {
           name: "3GGA Admin",
           description: "3GGA",
@@ -318,13 +324,19 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       }
       const account = provider.accounts?.[0];
       if (!account) {
-        throw new Error("No account.");
+        throw new Error("No account returned from WalletConnect.");
       }
       await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
       subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
       setPairingQr(null);
     } catch (err) {
-      setError(walletErrorMessage(err, "WalletConnect failed."));
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[WalletConnect] Connection failed:", err);
+      if (msg.includes("publish") || msg.includes("custom payload") || msg.includes("UNDEFINED")) {
+        setError("WalletConnect relay error. Check project ID at cloud.walletconnect.com and network connectivity.");
+      } else {
+        setError(walletErrorMessage(err, "WalletConnect failed."));
+      }
     } finally {
       setBusy(null);
     }
