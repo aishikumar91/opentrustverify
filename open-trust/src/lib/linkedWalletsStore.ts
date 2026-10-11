@@ -1,5 +1,5 @@
 /**
- * Persist admin-linked real wallets (MetaMask / WalletConnect / Passkey-associated).
+ * Persist admin-linked real wallets (MetaMask / WalletConnect / sectool / manual).
  * These addresses feed the allowlist so triggers can target wallets the admin controls.
  * No private keys or seed phrases are stored.
  */
@@ -7,7 +7,7 @@
 import { getAddress, isAddress } from "viem";
 import { query } from "./db";
 
-export type LinkedWalletSource = "injected" | "walletconnect" | "passkey" | "manual" | "sectool";
+export type LinkedWalletSource = "injected" | "walletconnect" | "manual" | "sectool";
 
 export type LinkedWalletRow = {
   id: number;

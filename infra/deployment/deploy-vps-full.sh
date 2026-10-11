@@ -96,10 +96,6 @@ ensure_env_keys() {
     echo 'TRIGGER_CHAIN_NAME=Base' >>"$env_file"
   grep -q '^TRIGGER_ALLOW_MAINNET=' "$env_file" || \
     echo 'TRIGGER_ALLOW_MAINNET=true' >>"$env_file"
-  grep -q '^WEBAUTHN_RP_ID=' "$env_file" || \
-    echo 'WEBAUTHN_RP_ID=otv.poptrust.me' >>"$env_file"
-  grep -q '^WEBAUTHN_ORIGIN=' "$env_file" || \
-    echo 'WEBAUTHN_ORIGIN=https://otv.poptrust.me' >>"$env_file"
   grep -q '^OTV_PUBLIC_URL=' "$env_file" || \
     echo 'OTV_PUBLIC_URL=https://otv.poptrust.me' >>"$env_file"
   grep -q '^VITE_OTV_API_URL=' "$env_file" || \

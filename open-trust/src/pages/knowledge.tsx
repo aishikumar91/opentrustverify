@@ -37,7 +37,7 @@ const ROWS: [string, string][] = [
 ];
 const FAQ: [string, string][] = [
   ["What is a RUN?", "A RUN is one executed drill: BROADCAST (tx sent + recorded) → Verify (chain read + heuristics) → FRAUD_INTERCEPTED or VERIFIED_LEGITIMATE with a 0–100 threat score, reasons and a recommended action."],
-  ["Why does my wallet never pop a confirmation?", "No signing session in this tab (reload clears it), a passkey-only link (cannot sign), or the wallet is on the wrong network. Reconnect in the admin console and match the Network selector."],
+  ["Why does my wallet never pop a confirmation?", "No signing session in this tab (reload clears it), or the wallet is on the wrong network. Reconnect in the admin console and match the Network selector."],
   ["Why does the lure never confirm on-chain?", "By design: starved maxFeePerGas keeps it pending so the verifier can observe it. Other vectors confirm normally."],
   ["Which coins can I test?", "Base: ETH, USDC, USDT, WETH, cbBTC. Polygon: POL, USDC, USDT, WETH, WBTC, WPOL. Native BTC is watch-only (balance display); test BTC behavior via cbBTC/WBTC. Any other ERC-20 via the Contract field."],
   ["Why was my target rejected?", "Targets (and signers) must be allowlisted: link the wallet or ask the admin. The dashboard pre-checks this before asking your wallet to sign, so no gas is wasted."],

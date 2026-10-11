@@ -42,6 +42,9 @@ export function walletErrorMessage(err: unknown, fallback = "Wallet request fail
   if (/no matching key|keychain|pairing/i.test(raw)) {
     return "Stale WalletConnect session — disconnect and pair again.";
   }
+  if (/no account/i.test(raw)) {
+    return "No account after WalletConnect pairing. Approve the session in your wallet, then try again.";
+  }
   if (raw && raw.length <= 120) return raw;
   return fallback;
 }
