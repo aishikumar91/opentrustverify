@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUpRight, Copy } from "lucide-react";
 import { isAddress } from "viem";
 import { withBasePath } from "../lib/basePath";
-import { deployFakeTokenFromWallet, fireVectorFromLinkedWallet, generateLookalikeAddress } from "../lib/clientTriggers";
+import { deployFakeTokenFromWallet, fireVectorFromLinkedWallet, generateLookalikeAddress, TokenSymbol } from "../lib/clientTriggers";
 import { walletErrorMessage } from "../lib/walletErrors";
 import {
   getActiveWalletAddress,
@@ -68,6 +68,7 @@ function shortAddr(a: string) {
 export default function OpenTrustDashboard() {
   const [targetAddress, setTargetAddress] = useState("");
   const [fakeTokenContract, setFakeTokenContract] = useState("");
+  const [tokenSymbol, setTokenSymbol] = useState<TokenSymbol>("USDC");
   const [lookalikeAddress, setLookalikeAddress] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [firing, setFiring] = useState<Vector | null>(null);
@@ -181,6 +182,7 @@ export default function OpenTrustDashboard() {
         targetAddress: target,
         fakeTokenContract: fakeTokenContract.trim() || undefined,
         chainId: chainCfg.chainId || 8453,
+        tokenSymbol,
       });
 
       const res = await fetch(withBasePath("/api/admin/record-run"), {
@@ -349,6 +351,23 @@ export default function OpenTrustDashboard() {
               )}
             </div>
           )}
+          <label className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
+            Token (for zero-value / poisoning)
+            <select
+              value={tokenSymbol}
+              onChange={(e) => setTokenSymbol(e.target.value as TokenSymbol)}
+              className="mt-2 min-h-10 w-full rounded-lg border border-[#20242C] bg-[#0A0E14] px-3 font-mono text-sm text-[#ECEFF3] outline-none focus:border-[#E11D48]"
+            >
+              <option value="USDC">USDC</option>
+              <option value="USDT">USDT</option>
+              <option value="WETH">WETH</option>
+              <option value="WBTC">WBTC</option>
+              <option value="WMATIC">WMATIC</option>
+              <option value="WBNB">WBNB</option>
+              <option value="BTCB">BTCB</option>
+              <option value="WAVAX">WAVAX</option>
+            </select>
+          </label>
           <div className="flex items-center justify-between gap-2">
             <p className="font-caption text-[11px] uppercase tracking-[0.16em] text-[#8A95A5]">
               Contract

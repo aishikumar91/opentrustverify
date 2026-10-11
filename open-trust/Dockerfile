@@ -6,7 +6,7 @@ RUN npm ci --legacy-peer-deps
 FROM node:20-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_BASE_PATH=/trigger
+ENV NEXT_PUBLIC_BASE_PATH=/
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build && ls -la .next/standalone .next/static
@@ -17,7 +17,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV NEXT_PUBLIC_BASE_PATH=/trigger
+ENV NEXT_PUBLIC_BASE_PATH=/
 
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs

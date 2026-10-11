@@ -34,10 +34,10 @@ fi
 
 # WebAuthn defaults for production host (override via compose / .env).
 if [ -z "${WEBAUTHN_RP_ID:-}" ]; then
-  export WEBAUTHN_RP_ID=otv.poptrust.me
+  export WEBAUTHN_RP_ID=3gga.toolboss.store
 fi
 if [ -z "${WEBAUTHN_ORIGIN:-}" ]; then
-  export WEBAUTHN_ORIGIN="${NEXT_PUBLIC_SITE_URL:-https://otv.poptrust.me}"
+  export WEBAUTHN_ORIGIN="${NEXT_PUBLIC_SITE_URL:-https://3gga.toolboss.store}"
 fi
 
 if [ -n "${DATABASE_URL:-}" ]; then

