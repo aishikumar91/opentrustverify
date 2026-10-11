@@ -3,7 +3,7 @@
  *
  * Sources (merged):
  * 1. ADMIN_ALLOWLIST env (comma-separated)
- * 2. admin_linked_wallets rows (real MetaMask / WalletConnect / Passkey-linked)
+ * 2. admin_linked_wallets rows (real MetaMask / WalletConnect / linked wallets)
  *
  * Every broadcast path must call assertAllowlisted() before signing or recording.
  */

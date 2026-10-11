@@ -11,7 +11,6 @@ import {
 const SOURCES = new Set<LinkedWalletSource>([
   "injected",
   "walletconnect",
-  "passkey",
   "manual",
   "sectool",
 ]);
