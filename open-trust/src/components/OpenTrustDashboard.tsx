@@ -885,16 +885,28 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         <>
         <section className="col-span-1 min-w-0 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-7">
           <LinkWallet onLinked={handleLinked} onUseAsTarget={useLinkedAsTarget} />
-          <div className="mt-3 rounded-2xl border border-[#DDE1EA] bg-[#FFFFFF] p-3 sm:rounded-full">
+          <div className="clay-neu-gas mt-3 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#5B6472]">
-                Gas estimate
-              </p>
+              <div className="flex min-w-0 items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={withBasePath("/logo.png")}
+                  alt=""
+                  width={430}
+                  height={580}
+                  decoding="async"
+                  aria-hidden
+                  className="clay-neu-gas-logo h-7 w-auto max-h-7 object-contain object-left"
+                />
+                <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#5B6472]">
+                  Gas estimate
+                </p>
+              </div>
               {gasLoading && <p className="text-[10px] text-[#6B7280]">Estimating…</p>}
               {gasLoading && !gasEst && (
                 <div className="w-full space-y-2" aria-hidden>
-                  <div className="h-3 animate-pulse rounded-full bg-[#E6E9F0]" />
-                  <div className="h-3 w-2/3 animate-pulse rounded-full bg-[#E6E9F0]" />
+                  <div className="h-3 animate-pulse rounded-[10px] bg-[#E6E9F0]/80" />
+                  <div className="h-3 w-2/3 animate-pulse rounded-[10px] bg-[#E6E9F0]/80" />
                 </div>
               )}
             </div>
