@@ -6,7 +6,7 @@ import {
   type TriggerResult,
 } from "../../../services/liveEngine";
 import { NotAllowlistedError } from "../../../lib/allowlist";
-import { verifySessionToken, parseCookie, COOKIE_NAME } from "../../../lib/auth";
+import { getRequester } from "../../../lib/auth";
 import { insertExecutedRun } from "../../../lib/runs";
 
 type Vector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer";
@@ -41,9 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Every live-broadcasting route must check the session before doing
   // anything else — this is the only thing standing between this endpoint
   // and anyone who finds the URL.
-  const session = verifySessionToken(parseCookie(req.headers.cookie, COOKIE_NAME));
-  if (!session) {
-    return res.status(401).json({ error: "Admin session required." });
+  const requester = getRequester(req);
+  if (!requester) {
+    return res.status(401).json({ error: "Sign-in required." });
   }
 
   // Legacy server-key path only. Production signs in-browser via clientTriggers → record-run.

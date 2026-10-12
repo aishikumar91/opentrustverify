@@ -212,16 +212,6 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
     }
   }
 
-  if (isStaff) {
-    return (
-      <section className="mb-8 overflow-x-hidden rounded-xl border border-[#DDE1EA] bg-[#F4F6FA] p-3.5 sm:mb-10 sm:p-5">
-        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#5B6472]">Settings</h2>
-        <p className="mt-2 text-xs leading-relaxed text-[#8A8D93]">
-          Read-only subscriber access — settings are managed by the admin.
-        </p>
-      </section>
-    );
-  }
   const [settings, setSettings] = useState<SettingsPayload | null>(null);
   const [projectIdDraft, setProjectIdDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -229,6 +219,7 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (isStaff) return;
     let cancelled = false;
     void fetch(withBasePath("/api/admin/settings"), { credentials: "include" })
       .then(async (res) => {
@@ -247,7 +238,19 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isStaff]);
+
+  if (isStaff) {
+    return (
+      <section className="min-w-0 overflow-x-hidden rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-5">
+        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#5B6472]">Settings</h2>
+        <p className="mt-2 text-xs leading-relaxed text-[#8A8D93]">
+          Console testing (wallet connect, vectors, fire) is available under Vectors. System setup —
+          WalletConnect project id, team, SMTP, and fulfillment — is managed by the admin.
+        </p>
+      </section>
+    );
+  }
 
   async function saveWalletConnect() {
     setError(null);
@@ -276,46 +279,49 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
     }
   }
 
+  const card =
+    "min-w-0 overflow-hidden rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-5";
+  const sectionTitle =
+    "text-xs font-medium uppercase tracking-[0.14em] text-[#374151]";
+  const field =
+    "min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]";
+
   return (
-    <section className="mb-8 overflow-x-hidden rounded-xl border border-[#DDE1EA] bg-[#F4F6FA] p-3.5 sm:mb-10 sm:p-5">
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-        <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#5B6472]">
-          Settings
-        </h2>
-        {settings && (
-          <p className="max-w-full break-all font-mono text-[11px] leading-relaxed text-[#8A8D93] sm:break-normal sm:text-right">
-            {settings.chainName} · {settings.chainId}
-            {settings.rpcSource ? ` · ${settings.rpcSource}` : ""}
-          </p>
+    <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+      <section className={card}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <h2 className="text-xs font-medium uppercase tracking-[0.16em] text-[#5B6472]">
+            Settings
+          </h2>
+          {settings && (
+            <p className="max-w-full break-all font-mono text-[11px] leading-relaxed text-[#8A8D93] sm:max-w-[60%] sm:break-words sm:text-right">
+              {settings.chainName} · {settings.chainId}
+              {settings.rpcSource ? ` · ${settings.rpcSource}` : ""}
+            </p>
+          )}
+        </div>
+        {error && <p className="mt-3 break-words text-xs text-[#D92D20]">{error}</p>}
+        {saveMsg && <p className="mt-3 break-words text-xs text-[#5B6472]">{saveMsg}</p>}
+        {!settings && !error && (
+          <p className="mt-3 text-xs text-[#8A8D93]">Loading settings…</p>
         )}
-      </div>
-
-      {error && <p className="mb-3 break-words text-xs text-[#D92D20]">{error}</p>}
-      {saveMsg && <p className="mb-3 break-words text-xs text-[#5B6472]">{saveMsg}</p>}
-
-      {!settings && !error && (
-        <p className="text-xs text-[#8A8D93]">Loading settings…</p>
-      )}
-
-      {settings && (
-        <>
-          {/* Wrap status chips — never force 3/4 cramped columns on phone widths */}
-          <div className="mb-5 flex flex-wrap gap-2">
+        {settings && (
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {FLAGS.map(({ key, label, shortLabel }) => {
               const value = settings[key];
               const on = value === "YES";
               return (
                 <div
                   key={key}
-                  className="inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-2 rounded-full border border-[#DDE1EA] bg-[#FFFFFF] px-3 py-2"
+                  className="flex min-h-[44px] min-w-0 items-center justify-between gap-2 rounded-2xl border border-[#DDE1EA] bg-[#FFFFFF] px-2.5 py-2 sm:rounded-full sm:px-3"
                   title={label}
                 >
-                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#374151] sm:text-xs sm:tracking-[0.14em]">
+                  <span className="min-w-0 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#374151] sm:text-xs">
                     <span className="sm:hidden">{shortLabel}</span>
                     <span className="hidden sm:inline">{label}</span>
                   </span>
                   <span
-                    className={`shrink-0 rounded px-2 py-1 font-mono text-xs font-semibold tracking-wide ${
+                    className={`shrink-0 rounded px-2 py-1 font-mono text-[11px] font-semibold tracking-wide sm:text-xs ${
                       on
                         ? "bg-[#D7FF00]/30 text-[#0B0F14]"
                         : "bg-[#E6E9F0] text-[#6B7280]"
@@ -327,12 +333,13 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
               );
             })}
           </div>
+        )}
+      </section>
 
-          <div className="space-y-2 border-t border-[#E6E9F0] pt-4">
-            <label
-              htmlFor="wc-project-id"
-              className="block text-xs font-medium uppercase tracking-[0.14em] text-[#374151]"
-            >
+      {settings && (
+        <>
+          <section className={`${card} space-y-2`}>
+            <label htmlFor="wc-project-id" className={sectionTitle}>
               WalletConnect · {settings.walletConnectSource}
             </label>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
@@ -344,7 +351,7 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                 placeholder="Project ID"
                 autoComplete="off"
                 spellCheck={false}
-                className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
+                className={`${field} flex-1`}
               />
               <button
                 type="button"
@@ -355,24 +362,22 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
-          </div>
+          </section>
 
-          <div className="mt-6 space-y-2 border-t border-[#E6E9F0] pt-4">
-            <p className="block text-xs font-medium uppercase tracking-[0.14em] text-[#374151]">
-              Team · subscriber email-code login
-            </p>
+          <section className={`${card} space-y-2`}>
+            <p className={sectionTitle}>Team · subscriber email-code login</p>
             <p className="break-words text-xs leading-relaxed text-[#8A8D93]">
-              Added emails can sign in at /subscriber/login with a one-time code. Removing revokes access
-              immediately. Subscriber access is read-only (runs + verify).
+              Added emails can sign in at /subscriber/login with a one-time code. Removing revokes
+              access immediately. Staff get console testing; system setup stays with admin.
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <div className="flex flex-col gap-2 md:flex-row md:items-stretch">
               <input
                 type="text"
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value)}
                 placeholder="Name (optional)"
                 autoComplete="off"
-                className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
+                className={`${field} flex-1 !font-[inherit]`}
               />
               <input
                 type="email"
@@ -380,13 +385,13 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                 onChange={(e) => setEmailDraft(e.target.value)}
                 placeholder="member@company.com"
                 autoComplete="off"
-                className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
+                className={`${field} flex-1`}
               />
               <button
                 type="button"
                 onClick={() => void addMember()}
                 disabled={!emailDraft.trim()}
-                className="min-h-[44px] w-full shrink-0 rounded-full bg-[#D7FF00] px-5 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
+                className="min-h-[44px] w-full shrink-0 rounded-full bg-[#D7FF00] px-5 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 md:w-auto"
               >
                 Add
               </button>
@@ -395,15 +400,22 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
             {members.length > 0 && (
               <ul className="divide-y divide-[#E6E9F0]">
                 {members.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between gap-2 py-2">
-                    <span className="min-w-0 truncate font-mono text-xs text-[#101828]">
+                  <li
+                    key={m.id}
+                    className="flex flex-col gap-2 py-2.5 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between"
+                  >
+                    <span className="min-w-0 break-all font-mono text-xs text-[#101828]">
                       {m.email}
-                      {m.name ? <span className="ml-2 text-[#8A8D93]">{m.name}</span> : null}
+                      {m.name ? (
+                        <span className="mt-0.5 block text-[#8A8D93] min-[400px]:ml-2 min-[400px]:mt-0 min-[400px]:inline">
+                          {m.name}
+                        </span>
+                      ) : null}
                     </span>
                     <button
                       type="button"
                       onClick={() => void removeMember(m.id)}
-                      className="shrink-0 rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#6B7280] transition hover:border-[#B8E600] hover:text-[#0B0F14]"
+                      className="min-h-9 w-full shrink-0 rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#6B7280] transition hover:border-[#B8E600] hover:text-[#0B0F14] min-[400px]:w-auto"
                     >
                       Remove
                     </button>
@@ -411,26 +423,24 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                 ))}
               </ul>
             )}
-          </div>
+          </section>
 
-          <div className="mt-6 space-y-2 border-t border-[#E6E9F0] pt-4">
-            <p className="block text-xs font-medium uppercase tracking-[0.14em] text-[#374151]">
-              Fulfillment queue
-            </p>
+          <section className={`${card} space-y-2`}>
+            <p className={sectionTitle}>Fulfillment queue</p>
             {queueMsg && <p className="break-words text-xs text-[#5B6472]">{queueMsg}</p>}
             {queue.length === 0 ? (
               <p className="text-xs text-[#8A8D93]">No payment submissions yet.</p>
             ) : (
               <ul className="divide-y divide-[#E6E9F0]">
                 {queue.map((q) => (
-                  <li key={q.id} className="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between">
+                  <li key={q.id} className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate font-mono text-xs text-[#101828]">
+                      <p className="break-words font-mono text-xs text-[#101828]">
                         {q.email} · @{q.telegram} · {q.plan}
                       </p>
-                      <p className="truncate font-mono text-[11px] text-[#8A8D93]">{q.txn_hash}</p>
+                      <p className="break-all font-mono text-[11px] text-[#8A8D93]">{q.txn_hash}</p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                       <span
                         className={`rounded-full px-2 py-1 font-mono text-[11px] ${
                           q.status === "completed"
@@ -446,7 +456,7 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                         <button
                           type="button"
                           onClick={() => void completeQueue(q.id)}
-                          className="rounded-full bg-[#D7FF00] px-3 py-1.5 text-[11px] font-medium text-[#0B0F14] transition hover:bg-[#B8E600]"
+                          className="min-h-9 rounded-full bg-[#D7FF00] px-3 py-1.5 text-[11px] font-medium text-[#0B0F14] transition hover:bg-[#B8E600]"
                         >
                           Complete
                         </button>
@@ -456,19 +466,17 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                 ))}
               </ul>
             )}
-          </div>
+          </section>
 
-          <div className="mt-6 space-y-2 border-t border-[#E6E9F0] pt-4">
-            <p className="block text-xs font-medium uppercase tracking-[0.14em] text-[#374151]">
-              SMTP · OTP mail
-            </p>
-            <div className="flex flex-wrap gap-2">
+          <section className={`${card} space-y-3`}>
+            <p className={sectionTitle}>SMTP · OTP mail</p>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setSmtp((s) => ({ ...s, host: "smtp.gmail.com", port: "587", secure: false }))}
-                className="rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
+                className="min-h-9 rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
               >
-                Gmail preset
+                Gmail
               </button>
               <button
                 type="button"
@@ -481,37 +489,37 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
                     from: s.user ? `3GGA ENGINE <${s.user.trim()}>` : s.from,
                   }))
                 }
-                className="rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
+                className="min-h-9 rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
               >
-                Yahoo preset
+                Yahoo
               </button>
               <button
                 type="button"
                 onClick={() => setSmtp((s) => ({ ...s, host: "smtp.zoho.com", port: "587", secure: false }))}
-                className="rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
+                className="min-h-9 rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
               >
-                Zoho preset
+                Zoho
               </button>
               <button
                 type="button"
                 onClick={() => setSmtp((s) => ({ ...s, host: "pro.turbo-smtp.com", port: "587", secure: false }))}
-                className="rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
+                className="min-h-9 rounded-full border border-[#CBD1DE] px-3 py-1.5 text-[11px] text-[#5B6472] transition hover:border-[#B8E600]"
               >
-                TurboSMTP preset
+                TurboSMTP
               </button>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <input value={smtp.host} onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))} placeholder="Host (smtp.gmail.com)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
-              <input value={smtp.port} onChange={(e) => setSmtp((s) => ({ ...s, port: e.target.value }))} placeholder="Port (587)" inputMode="numeric" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
-              <input value={smtp.user} onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))} placeholder="Username (full email)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
-              <input value={smtp.pass} onChange={(e) => setSmtp((s) => ({ ...s, pass: e.target.value }))} placeholder={hasPass ? "App password (saved — leave blank to keep)" : "App password"} type="password" autoComplete="new-password" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
-              <input value={smtp.from} onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))} placeholder="From must match username (3GGA ENGINE <you@yahoo.com>)" autoComplete="off" className="min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600] sm:col-span-2" />
-              <label className="flex min-h-[44px] items-center gap-2 text-xs text-[#5B6472]">
-                <input type="checkbox" checked={smtp.secure} onChange={(e) => setSmtp((s) => ({ ...s, secure: e.target.checked }))} className="h-4 w-4" />
-                SSL / port 465 (off = STARTTLS on 587)
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input value={smtp.host} onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))} placeholder="Host (smtp.gmail.com)" autoComplete="off" className={field} />
+              <input value={smtp.port} onChange={(e) => setSmtp((s) => ({ ...s, port: e.target.value }))} placeholder="Port (587)" inputMode="numeric" autoComplete="off" className={field} />
+              <input value={smtp.user} onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))} placeholder="Username (full email)" autoComplete="off" className={field} />
+              <input value={smtp.pass} onChange={(e) => setSmtp((s) => ({ ...s, pass: e.target.value }))} placeholder={hasPass ? "App password (saved — leave blank to keep)" : "App password"} type="password" autoComplete="new-password" className={field} />
+              <input value={smtp.from} onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))} placeholder="From (3GGA ENGINE <you@yahoo.com>)" autoComplete="off" className={`${field} sm:col-span-2`} />
+              <label className="col-span-1 flex min-h-[44px] items-start gap-2 text-xs leading-snug text-[#5B6472] sm:col-span-2 sm:items-center">
+                <input type="checkbox" checked={smtp.secure} onChange={(e) => setSmtp((s) => ({ ...s, secure: e.target.checked }))} className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" />
+                <span>SSL / port 465 (off = STARTTLS on 587)</span>
               </label>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <button
                 type="button"
                 onClick={() => void saveSmtp()}
@@ -520,22 +528,22 @@ export default function AdminSettingsPanel({ role }: { role?: "admin" | "staff" 
               >
                 {saving ? "Saving…" : "Save SMTP"}
               </button>
-              <div className="flex w-full flex-1 gap-2">
-                <input value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="Test recipient" type="email" autoComplete="off" className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]" />
+              <div className="flex w-full min-w-0 flex-1 flex-col gap-2 min-[400px]:flex-row">
+                <input value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="Test recipient" type="email" autoComplete="off" className={`${field} flex-1`} />
                 <button
                   type="button"
                   onClick={() => void sendTestMail()}
                   disabled={saving || !testTo.trim()}
-                  className="min-h-[44px] shrink-0 rounded-full border border-[#CBD1DE] px-5 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30"
+                  className="min-h-[44px] w-full shrink-0 rounded-full border border-[#CBD1DE] px-5 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 min-[400px]:w-auto"
                 >
                   Test
                 </button>
               </div>
             </div>
             {smtpMsg && <p className="break-words text-xs text-[#5B6472]">{smtpMsg}</p>}
-          </div>
+          </section>
         </>
       )}
-    </section>
+    </div>
   );
 }
