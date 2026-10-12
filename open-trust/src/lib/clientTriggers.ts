@@ -23,6 +23,17 @@ import { walletErrorMessage } from "./walletErrors";
 
 export type ClientVector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer" | "zeroValue";
 
+/**
+ * Canonical ETH value for eth_sendTransaction.
+ * BigInt.toString(16) is often odd-length (e.g. 0.001 ETH → 0x38d7ea4c68000);
+ * several mobile wallets then treat value as 0 / show 0.00. Pad to even nibbles.
+ */
+function ethAmountToValueHex(amountEth: string): Hex {
+  let hex = parseEther(amountEth.trim()).toString(16);
+  if (hex.length % 2 === 1) hex = `0${hex}`;
+  return `0x${hex}` as Hex;
+}
+
 const TRANSFER_ABI = [
   {
     name: "transfer",
@@ -252,7 +263,8 @@ export async function fireMempoolLureFromWallet(
   if (chainId) await ensureWalletChain(chainId);
 
   // Deliberately low tip/fee hint — wallet may override; still a live lure tx.
-  const value = `0x${parseEther(amountEth).toString(16)}` as Hex;
+  // Keep the caller's amountEth as-is (no rounding); only canonicalize hex padding.
+  const value = ethAmountToValueHex(amountEth);
   const txHash = await sendTx(provider, {
     from,
     to: targetAddress,
@@ -459,7 +471,7 @@ export async function estimateVectorGas(input: {
     if (!/^\d*\.?\d+$/.test(amount) || Number(amount) <= 0) {
       throw new Error("Value must be a positive number.");
     }
-    tx = { from, to: target, value: `0x${parseEther(amount).toString(16)}` as Hex };
+    tx = { from, to: target, value: ethAmountToValueHex(amount) };
   } else {
     const token = resolveZeroValueToken(input.chainId, input.fakeTokenContract, input.tokenPreset ?? "USDC");
     tx = {
