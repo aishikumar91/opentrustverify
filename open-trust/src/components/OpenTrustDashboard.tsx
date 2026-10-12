@@ -358,7 +358,9 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         verifiedAt: data.run?.verifiedAt ?? null,
         chainId: data.chainId ?? data.run?.chainId ?? netId,
       });
-      const detail = `${vector} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`;
+      const amountLabel =
+        vector === "mempoolLure" ? ` · ${lureAmount} ETH` : vector === "zeroValue" ? " · 0 token" : "";
+      const detail = `${vector}${amountLabel} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`;
       setCliPreload({ task: vector, outcome: "ok", detail });
       pushStatus("ok", "Broadcast executed", detail);
       window.setTimeout(() => setCliPreload(null), 900);
