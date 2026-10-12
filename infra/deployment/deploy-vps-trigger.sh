@@ -20,11 +20,14 @@
 #   bash infra/deployment/deploy-vps-trigger.sh --remote
 set -euo pipefail
 
-DEPLOY_HOST="${DEPLOY_HOST:-administrator@93.127.142.159}"
+# Default host is the HealFast VPS that currently serves 3gga.toolboss.store
+# (and is prepared for otv.poptrust.me DNS cutover). Override for the legacy
+# 93.127.142.159 box when SSH access is available there.
+DEPLOY_HOST="${DEPLOY_HOST:-administrator@69.197.174.178}"
 DEPLOY_PATH="${DEPLOY_PATH:-/home/administrator/deployments/opentrust-verify}"
 EDGE_CADDY_DIR="${EDGE_CADDY_DIR:-/home/administrator/hosting/edge-proxy}"
 COMPOSE_FILE="infra/docker/docker-compose.vps.yml"
-BRANCH="${DEPLOY_BRANCH:-cursor/ot-admin-trigger-deploy-3332}"
+BRANCH="${DEPLOY_BRANCH:-cursor/restore-full-console-3332}"
 REMOTE=0
 
 for arg in "$@"; do
