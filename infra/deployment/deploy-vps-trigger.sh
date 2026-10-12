@@ -317,7 +317,9 @@ if [[ "$REMOTE" -eq 1 ]]; then
   fi
   sync_remote_tree
 
-  remote_cmd "bash -lc \"set -euo pipefail; cd '$DEPLOY_PATH'; bash infra/deployment/deploy-vps-trigger.sh\""
+  # Pass the same branch into the on-host script so a future git-backed
+  # checkout cannot silently rebuild from the script default.
+  remote_cmd "bash -lc \"set -euo pipefail; cd '$DEPLOY_PATH'; DEPLOY_BRANCH='$BRANCH' bash infra/deployment/deploy-vps-trigger.sh --branch='$BRANCH'\""
 else
   ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
   # Prefer explicit DEPLOY_PATH when already on the VPS layout.
