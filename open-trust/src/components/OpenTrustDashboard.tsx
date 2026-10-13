@@ -352,7 +352,11 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             ? btcPreset
               ? `${lureAmount || "0"} ${tokenPreset}`
               : `0 ${tokenPreset}`
-            : null;
+            : vector === "fakeTokenTransfer"
+              ? `${lureAmount || "1"} token`
+              : vector === "addressPoisoning"
+                ? "0 (poison event)"
+                : null;
 
       const res = await fetch(withBasePath("/api/admin/record-run"), {
         method: "POST",
@@ -898,9 +902,12 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                       >
                         {shortHash(r.txHash)}
                       </a>
-                      {r.amountDisplay && (
+                      {(r.amountDisplay ||
+                        (!r.verifiedAt &&
+                          r.status !== "FRAUD_INTERCEPTED" &&
+                          r.status !== "VERIFIED_LEGITIMATE")) && (
                         <p className="tnum truncate font-mono text-[10px] text-[#5B6472]">
-                          {r.amountDisplay}
+                          {r.amountDisplay ?? "Amount —"}
                           {!r.verifiedAt && r.status !== "FRAUD_INTERCEPTED" && r.status !== "VERIFIED_LEGITIMATE"
                             ? " · unverified"
                             : ""}
@@ -1182,14 +1189,12 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                       {typeof r.threatScore === "number" ? ` · score ${r.threatScore}` : ""}
                       {r.chainId === 137 ? " · Polygon" : r.chainId === 8453 ? " · Base" : ""}
                     </p>
-                    {(r.amountDisplay || (!assessed && r.realBalanceImpact)) && (
+                    {(r.amountDisplay || !assessed) && (
                       <p className="tnum mt-1 font-mono text-[12px] font-medium text-[#101828]">
                         Amount{" "}
                         {r.amountDisplay
                           ? r.amountDisplay
-                          : !assessed
-                            ? "pending input record"
-                            : r.realBalanceImpact}
+                          : "— (enter Value on Vectors before fire)"}
                         {!assessed && (
                           <span className="ml-2 rounded-full bg-[#F4F6FA] px-2 py-0.5 text-[10px] font-normal uppercase tracking-[0.12em] text-[#6B7280]">
                             Unverified
