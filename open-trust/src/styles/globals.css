@@ -357,3 +357,51 @@ body.nui-dark main li[class*="rounded-"]::before {
   background-image: radial-gradient(rgba(255, 130, 140, 0.16) 1.5px, transparent 2.2px);
   background-size: 18px 18px;
 }
+
+/* ---------- Mobile-first console: prevent card/nav overlap on narrow viewports ---------- */
+.nui {
+  max-width: 100vw;
+  overflow-x: clip;
+}
+.nui main,
+.nui section,
+.nui article {
+  max-width: 100%;
+}
+.nui input,
+.nui textarea,
+.nui select,
+.nui button {
+  max-width: 100%;
+}
+@media (max-width: 399px) {
+  .nui nav[aria-label="Admin sections"] button span {
+    font-size: 8px;
+    letter-spacing: 0;
+  }
+}
+
+/* ---------- Gas estimate: clay-neumorphic card (10px radius) ---------- */
+.nui .clay-neu-gas {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: linear-gradient(145deg, #eceae6 0%, #d8d4cf 48%, #ccc7c1 100%);
+  box-shadow:
+    7px 7px 16px rgba(110, 100, 90, 0.28),
+    -6px -6px 14px rgba(255, 255, 255, 0.92),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(120, 110, 100, 0.08);
+}
+.nui .clay-neu-gas-logo {
+  /* Shift lime lockup toward solid orange for this card only */
+  filter: brightness(0) saturate(100%) invert(48%) sepia(92%) saturate(1600%)
+    hue-rotate(1deg) brightness(104%) contrast(104%);
+}
+body.nui-dark .nui .clay-neu-gas {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, #2a3038 0%, #1c222a 55%, #161b22 100%);
+  box-shadow:
+    7px 7px 16px rgba(0, 0, 0, 0.45),
+    -5px -5px 12px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}

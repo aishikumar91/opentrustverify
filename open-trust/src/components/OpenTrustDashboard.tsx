@@ -26,6 +26,7 @@ import LinkWallet from "./LinkWallet";
 import BrandMark from "./BrandMark";
 import AdminSettingsPanel from "./AdminSettingsPanel";
 import ActionStatus, { type ActionTone } from "./ActionStatus";
+import CliTestPreloader from "./CliTestPreloader";
 
 type Vector = "mempoolLure" | "addressPoisoning" | "fakeTokenTransfer" | "zeroValue";
 
@@ -42,6 +43,8 @@ interface ExecutedRunView {
   actionRecommended: string | null;
   verifiedAt: string | null;
   chainId: number;
+  /** Exact inputted amount label (e.g. "0.001 POL") — shown while unverified. */
+  amountDisplay?: string | null;
 }
 
 const VECTORS: { id: Vector; label: string; needsContract: boolean }[] = [
@@ -62,7 +65,10 @@ function shortAddr(a: string) {
 }
 
 export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" }) {
+  /** System setup only (team, SMTP, WC project id, fulfillment). */
   const isAdmin = role !== "staff";
+  /** Console testing: wallet link, vectors, fire — admin and staff. */
+  const canOperate = role === "admin" || role === "staff" || role == null;
   const [targetAddress, setTargetAddress] = useState("");
   const [fakeTokenContract, setFakeTokenContract] = useState("");
   const [tokenPreset, setTokenPreset] = useState<ZeroValuePreset>("USDC");
@@ -78,6 +84,11 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   const [deploying, setDeploying] = useState(false);
   const [firing, setFiring] = useState<Vector | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [cliPreload, setCliPreload] = useState<{
+    task: string;
+    outcome: "ok" | "fail" | null;
+    detail?: string | null;
+  } | null>(null);
   const [runs, setRuns] = useState<ExecutedRunView[]>([]);
   const [loadingRuns, setLoadingRuns] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -275,6 +286,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   async function fire(vector: Vector) {
     setError(null);
     setFiring(vector);
+    setCliPreload({ task: vector, outcome: null });
     try {
       const provider = getActiveWalletProvider();
       const connectedSigner = getActiveWalletAddress();
@@ -284,8 +296,18 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
       setSigner({ address: connectedSigner, ready: true });
 
       const lureAmount = amountEth.trim();
+      const nativeUnit = netId === 137 ? "POL" : "ETH";
+      const btcPreset = tokenPreset === "cbBTC" || tokenPreset === "WBTC";
       if (vector === "mempoolLure" && (!/^\d*\.?\d+$/.test(lureAmount) || Number(lureAmount) <= 0)) {
-        throw new Error("Value must be a positive number (ETH).");
+        throw new Error(`Value must be a positive number (${nativeUnit}).`);
+      }
+      if (
+        vector === "zeroValue" &&
+        btcPreset &&
+        lureAmount &&
+        (!/^\d*\.?\d+$/.test(lureAmount) || Number(lureAmount) < 0)
+      ) {
+        throw new Error("BTC amount must be a non-negative number.");
       }
 
       const target = (targetAddress.trim() || connectedSigner).trim();
@@ -314,9 +336,27 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         targetAddress: target,
         fakeTokenContract: fakeTokenContract.trim() || undefined,
         tokenPreset,
-        amount: vector === "mempoolLure" ? lureAmount : undefined,
+        amount:
+          vector === "mempoolLure"
+            ? lureAmount
+            : vector === "zeroValue" && btcPreset
+              ? lureAmount || "0"
+              : undefined,
         chainId: netId,
       });
+
+      const amountDisplay =
+        vector === "mempoolLure"
+          ? `${lureAmount} ${nativeUnit}`
+          : vector === "zeroValue"
+            ? btcPreset
+              ? `${lureAmount || "0"} ${tokenPreset}`
+              : `0 ${tokenPreset}`
+            : vector === "fakeTokenTransfer"
+              ? `${lureAmount || "1"} token`
+              : vector === "addressPoisoning"
+                ? "0 (poison event)"
+                : null;
 
       const res = await fetch(withBasePath("/api/admin/record-run"), {
         method: "POST",
@@ -329,6 +369,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           fromAddress: clientResult.fromAddress,
           broadcastAt: clientResult.broadcastAt,
           chainId: netId,
+          amountDisplay,
         }),
       });
       const data = await res.json();
@@ -347,18 +388,29 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         actionRecommended: data.run?.actionRecommended ?? null,
         verifiedAt: data.run?.verifiedAt ?? null,
         chainId: data.chainId ?? data.run?.chainId ?? netId,
+        amountDisplay: data.amountDisplay ?? data.run?.amountDisplay ?? amountDisplay,
       });
-      pushStatus("ok", "Broadcast executed", `${vector} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`);
+      const amountLabel = amountDisplay ? ` · ${amountDisplay}` : "";
+      const detail = `${vector}${amountLabel} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`;
+      setCliPreload({ task: vector, outcome: "ok", detail });
+      pushStatus("ok", "Broadcast executed", detail);
+      window.setTimeout(() => setCliPreload(null), 900);
     } catch (err) {
       setError(walletErrorMessage(err, "Attack failed."));
       {
         const rawMsg = err instanceof Error ? err.message : "";
         const chainIssue = /wrong chain|switch.*chain|unrecognized chain|unknown chain|4902/i.test(rawMsg);
+        setCliPreload({
+          task: vector,
+          outcome: "fail",
+          detail: rawMsg.slice(0, 160) || "Fire action failed",
+        });
         pushStatus(
           chainIssue ? "warn" : "fail",
           chainIssue ? "Incorrect chain or network" : "Fire action failed",
           rawMsg.slice(0, 160) || undefined
         );
+        window.setTimeout(() => setCliPreload(null), 1400);
       }
     } finally {
       setFiring(null);
@@ -368,16 +420,22 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   async function deployTestToken() {
     setError(null);
     setDeploying(true);
+    setCliPreload({ task: "deploy-token", outcome: null });
     try {
       if (!getActiveWalletProvider() || !getActiveWalletAddress()) {
         throw new Error("Connect a wallet to sign.");
       }
       const result = await deployFakeTokenFromWallet(netId);
       setFakeTokenContract(result.contractAddress);
+      setCliPreload({ task: "deploy-token", outcome: "ok", detail: result.contractAddress });
       pushStatus("ok", "Token deployed", result.contractAddress);
+      window.setTimeout(() => setCliPreload(null), 900);
     } catch (err) {
       setError(walletErrorMessage(err, "Deploy failed."));
-      pushStatus("fail", "Deploy action failed", err instanceof Error ? err.message.slice(0, 160) : undefined);
+      const msg = err instanceof Error ? err.message.slice(0, 160) : "Deploy action failed";
+      setCliPreload({ task: "deploy-token", outcome: "fail", detail: msg });
+      pushStatus("fail", "Deploy action failed", msg);
+      window.setTimeout(() => setCliPreload(null), 1400);
     } finally {
       setDeploying(false);
     }
@@ -386,6 +444,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
   async function verify(txHash: string) {
     setError(null);
     setVerifying(txHash);
+    setCliPreload({ task: `verify:${shortHash(txHash)}`, outcome: null });
     try {
       const runChain = runs.find((rr) => rr.txHash === txHash)?.chainId ?? netId;
       const res = await fetch(withBasePath(`/api/verify/${txHash}?chainId=${runChain}`));
@@ -408,14 +467,23 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             : r
         )
       );
-      pushStatus(
-        data.status === "FRAUD_INTERCEPTED" ? "warn" : "ok",
-        data.status === "FRAUD_INTERCEPTED" ? "Fraud intercepted" : "Verified legitimate",
-        typeof data.threatScore === "number" ? `Threat score ${data.threatScore}` : undefined
-      );
+      const title =
+        data.status === "FRAUD_INTERCEPTED" ? "Fraud intercepted" : "Verified legitimate";
+      const detail =
+        typeof data.threatScore === "number" ? `Threat score ${data.threatScore}` : undefined;
+      setCliPreload({
+        task: `verify:${shortHash(txHash)}`,
+        outcome: "ok",
+        detail: detail ?? title,
+      });
+      pushStatus(data.status === "FRAUD_INTERCEPTED" ? "warn" : "ok", title, detail);
+      window.setTimeout(() => setCliPreload(null), 900);
     } catch (err) {
       setError(walletErrorMessage(err, "Verify failed."));
-      pushStatus("fail", "Verify action failed", err instanceof Error ? err.message.slice(0, 160) : undefined);
+      const msg = err instanceof Error ? err.message.slice(0, 160) : "Verify action failed";
+      setCliPreload({ task: `verify:${shortHash(txHash)}`, outcome: "fail", detail: msg });
+      pushStatus("fail", "Verify action failed", msg);
+      window.setTimeout(() => setCliPreload(null), 1400);
     } finally {
       setVerifying(null);
     }
@@ -427,7 +495,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
 
   const canSign = signer.ready;
   const navTabs: { id: "overview" | "vectors" | "runs" | "settings"; Icon: typeof LayoutGrid; label: string }[] =
-    isAdmin
+    canOperate
       ? [
           { id: "overview", Icon: LayoutGrid, label: "Overview" },
           { id: "vectors", Icon: Zap, label: "Vectors" },
@@ -479,7 +547,14 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
     : runs;
 
   return (
-    <div className="nui font-ui min-h-screen bg-[#E9EDF4] pb-24 text-[#101828] antialiased md:pb-0">
+    <div className="nui font-ui min-h-screen overflow-x-hidden bg-[#E9EDF4] pb-28 text-[#101828] antialiased sm:pb-24 md:pb-0">
+      {cliPreload && (
+        <CliTestPreloader
+          task={cliPreload.task}
+          outcome={cliPreload.outcome}
+          detail={cliPreload.detail}
+        />
+      )}
       <header
         className={`sticky top-0 z-20 border-b backdrop-blur ${
           theme === "dark"
@@ -487,8 +562,8 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             : "border-[#DDE1EA] bg-white/95 text-[#101828]"
         }`}
       >
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
-          <BrandMark size="sm" />
+        <div className="mx-auto flex w-full max-w-6xl min-w-0 items-center gap-1.5 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+          <BrandMark size="sm" className="min-w-0 shrink" />
           <div className="hidden min-w-0 flex-1 sm:block">
             <p className={`truncate text-sm font-semibold ${theme === "dark" ? "text-[#ECEFF3]" : "text-[#101828]"}`}>
               Greetings 👋
@@ -525,20 +600,23 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             {signer.address ? shortAddr(signer.address) : "My account"}
             <ChevronDown className="h-3.5 w-3.5 text-[#8A8D93]" />
           </button>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          <a
-            href={withBasePath("/api/auth/logout")}
-            className={`inline-flex min-h-8 items-center rounded-full border px-4 text-xs font-medium transition hover:border-[#B8E600] ${
-              theme === "dark"
-                ? "border-[#1C2430] bg-[#0A0E14] text-[#ECEFF3] hover:text-[#D7FF00]"
-                : "border-[#DDE1EA] bg-white text-[#101828] hover:text-[#0B0F14]"
-            }`}
-          >
-            Sign out
-          </a>
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <a
+              href={withBasePath("/api/auth/logout")}
+              className={`inline-flex min-h-8 items-center rounded-full border px-2.5 text-[11px] font-medium transition hover:border-[#B8E600] sm:px-4 sm:text-xs ${
+                theme === "dark"
+                  ? "border-[#1C2430] bg-[#0A0E14] text-[#ECEFF3] hover:text-[#D7FF00]"
+                  : "border-[#DDE1EA] bg-white text-[#101828] hover:text-[#0B0F14]"
+              }`}
+            >
+              <span className="sm:hidden">Out</span>
+              <span className="hidden sm:inline">Sign out</span>
+            </a>
+          </div>
         </div>
       </header>
-      <div className="mx-auto flex w-full max-w-6xl items-start gap-4 px-4 py-4">
+      <div className="mx-auto flex w-full max-w-6xl min-w-0 items-start gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4">
         <aside
           className="sticky top-20 hidden w-16 shrink-0 flex-col items-center gap-1 rounded-[24px] bg-[#101828] py-4 md:flex"
           aria-label="Admin sections"
@@ -580,7 +658,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             </a>
           </div>
         </aside>
-        <main className="grid w-full min-w-0 flex-1 gap-4 pb-4 lg:grid-cols-12">
+        <main className="grid w-full min-w-0 flex-1 grid-cols-1 gap-3 pb-4 sm:gap-4 lg:grid-cols-12">
         {feed.length > 0 && (
           <div className="space-y-2 lg:col-span-12">
             {feed.map((f) => (
@@ -596,47 +674,47 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         )}
         {tab === "overview" && (
           <>
-            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 lg:col-span-12">
-              <div className="rounded-[24px] border border-[#DDE1EA] border-t-4 border-t-[#B8E600] bg-white p-4">
+            <section className="col-span-1 grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4 lg:col-span-12">
+              <div className="min-w-0 rounded-2xl border border-[#DDE1EA] border-t-4 border-t-[#B8E600] bg-white p-3 sm:rounded-[24px] sm:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Signer</p>
                   <span className={`h-2 w-2 rounded-full ${signer.ready ? "bg-[#12B76A]" : "bg-[#D92D20]"}`} />
                 </div>
-                <p className="tnum mt-2 truncate font-mono text-xl font-semibold text-[#101828]">
+                <p className="tnum mt-2 truncate font-mono text-lg font-semibold text-[#101828] sm:text-xl">
                   {signer.address ? shortAddr(signer.address) : "Offline"}
                 </p>
                 <p className={`mt-1 text-[11px] ${signer.ready ? "text-[#12805C]" : "text-[#D92D20]"}`}>
                   {signer.ready ? "↑ Ready to sign" : "○ Not connected"}
                 </p>
               </div>
-              <div className="rounded-[24px] border border-[#DDE1EA] border-t-4 border-t-[#2E7CF6] bg-white p-4">
+              <div className="min-w-0 rounded-2xl border border-[#DDE1EA] border-t-4 border-t-[#2E7CF6] bg-white p-3 sm:rounded-[24px] sm:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Network</p>
                   <span className="h-2 w-2 rounded-full bg-[#2E7CF6]" />
                 </div>
-                <p className="tnum mt-2 truncate font-mono text-xl font-semibold text-[#101828]">
+                <p className="tnum mt-2 truncate font-mono text-lg font-semibold text-[#101828] sm:text-xl">
                   {netId === 137 ? "Polygon · 137" : "Base · 8453"}
                 </p>
                 <p className="mt-1 text-[11px] text-[#8A8D93]">Active network</p>
               </div>
-              <div className="rounded-[24px] border border-[#DDE1EA] border-t-4 border-t-[#101828] bg-white p-4">
+              <div className="min-w-0 rounded-2xl border border-[#DDE1EA] border-t-4 border-t-[#101828] bg-white p-3 sm:rounded-[24px] sm:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Runs</p>
                   <span className="h-2 w-2 rounded-full bg-[#101828]" />
                 </div>
-                <p className="tnum mt-2 font-mono text-xl font-semibold text-[#101828]">{runs.length}</p>
+                <p className="tnum mt-2 font-mono text-lg font-semibold text-[#101828] sm:text-xl">{runs.length}</p>
                 <p className="mt-1 text-[11px] text-[#8A8D93]">Broadcast total</p>
               </div>
-              <div className="rounded-[24px] border border-[#DDE1EA] border-t-4 border-t-[#D92D20] bg-white p-4">
+              <div className="min-w-0 rounded-2xl border border-[#DDE1EA] border-t-4 border-t-[#D92D20] bg-white p-3 sm:rounded-[24px] sm:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Intercepted</p>
                   <span className="h-2 w-2 rounded-full bg-[#2E7CF6]" />
                 </div>
-                <p className="tnum mt-2 font-mono text-xl font-semibold text-[#101828]">{interceptedCount}</p>
+                <p className="tnum mt-2 font-mono text-lg font-semibold text-[#101828] sm:text-xl">{interceptedCount}</p>
                 <p className="mt-1 text-[11px] text-[#8A8D93]">↑ Fraud stopped</p>
               </div>
             </section>
-            <section className="rounded-[24px] border border-[#DDE1EA] bg-white p-4 lg:col-span-5">
+            <section className="col-span-1 min-w-0 rounded-2xl border border-[#DDE1EA] bg-white p-3 sm:rounded-[24px] sm:p-4 lg:col-span-5">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Verdicts</h2>
                 <span className="rounded-full bg-[#F4F6FA] px-2 py-1 font-mono text-[11px] text-[#5B6472]">
@@ -710,10 +788,12 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             <section className="rounded-[24px] border border-[#DDE1EA] bg-white p-4 lg:col-span-12">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">
-                  Bitcoin · watch-only
+                  Bitcoin · watch-only + wrapped execute
                 </h2>
                 <p className="text-[11px] text-[#8A8D93]">
-                  Native BTC cannot sign here — test with cbBTC / WBTC. Balance is read-only via
+                  Native BTC cannot sign here. To execute with BTC units, open Vectors → pick{" "}
+                  <span className="font-mono">cbBTC</span> (Base) or <span className="font-mono">WBTC</span>{" "}
+                  (Polygon), enter the amount, then fire Zero-value transfer. Watch balance via
                   mempool.space.
                 </p>
               </div>
@@ -758,7 +838,11 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               )}
               {!balances && (
                 <p className="text-sm text-[#6B7280]">
-                  {canSign ? "No balances loaded yet." : isAdmin ? "Connect a wallet to load balances." : "Sign in as admin to connect a wallet."}
+                  {canSign
+                    ? "No balances loaded yet."
+                    : canOperate
+                      ? "Connect a wallet to load balances."
+                      : "Sign in to connect a wallet."}
                 </p>
               )}
               {balances && (
@@ -772,7 +856,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                 </ul>
               )}
             </section>
-            {isAdmin && (
+            {canOperate && (
             <section className="flex flex-col gap-2 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-4 lg:col-span-5">
               <h2 className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">Quick fire</h2>
               {(["mempoolLure", "zeroValue"] as const).map((v) => (
@@ -809,14 +893,27 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               <ul className="divide-y divide-[#E6E9F0]">
                 {runs.slice(0, 4).map((r) => (
                   <li key={r.txHash} className="flex items-center justify-between gap-2 py-2">
-                    <a
-                      href={r.explorerUrl || undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="truncate font-mono text-xs text-[#101828] hover:text-[#2E7CF6]"
-                    >
-                      {shortHash(r.txHash)}
-                    </a>
+                    <div className="min-w-0">
+                      <a
+                        href={r.explorerUrl || undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate font-mono text-xs text-[#101828] hover:text-[#2E7CF6]"
+                      >
+                        {shortHash(r.txHash)}
+                      </a>
+                      {(r.amountDisplay ||
+                        (!r.verifiedAt &&
+                          r.status !== "FRAUD_INTERCEPTED" &&
+                          r.status !== "VERIFIED_LEGITIMATE")) && (
+                        <p className="tnum truncate font-mono text-[10px] text-[#5B6472]">
+                          {r.amountDisplay ?? "Amount —"}
+                          {!r.verifiedAt && r.status !== "FRAUD_INTERCEPTED" && r.status !== "VERIFIED_LEGITIMATE"
+                            ? " · unverified"
+                            : ""}
+                        </p>
+                      )}
+                    </div>
                     <span className="shrink-0 font-mono text-[11px] text-[#5B6472]">
                       {r.status === "FRAUD_INTERCEPTED"
                         ? "Intercepted"
@@ -830,20 +927,32 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             </section>
           </>
         )}
-        {tab === "vectors" && isAdmin && (
+        {tab === "vectors" && canOperate && (
         <>
-        <section className="col-span-12 min-w-0 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-7">
+        <section className="col-span-1 min-w-0 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-7">
           <LinkWallet onLinked={handleLinked} onUseAsTarget={useLinkedAsTarget} />
-          <div className="mt-3 rounded-2xl border border-[#DDE1EA] bg-[#FFFFFF] p-3 sm:rounded-full">
+          <div className="clay-neu-gas mt-3 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#5B6472]">
-                Gas estimate
-              </p>
+              <div className="flex min-w-0 items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={withBasePath("/logo.png")}
+                  alt=""
+                  width={430}
+                  height={580}
+                  decoding="async"
+                  aria-hidden
+                  className="clay-neu-gas-logo h-7 w-auto max-h-7 object-contain object-left"
+                />
+                <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#5B6472]">
+                  Gas estimate
+                </p>
+              </div>
               {gasLoading && <p className="text-[10px] text-[#6B7280]">Estimating…</p>}
               {gasLoading && !gasEst && (
                 <div className="w-full space-y-2" aria-hidden>
-                  <div className="h-3 animate-pulse rounded-full bg-[#E6E9F0]" />
-                  <div className="h-3 w-2/3 animate-pulse rounded-full bg-[#E6E9F0]" />
+                  <div className="h-3 animate-pulse rounded-[10px] bg-[#E6E9F0]/80" />
+                  <div className="h-3 w-2/3 animate-pulse rounded-[10px] bg-[#E6E9F0]/80" />
                 </div>
               )}
             </div>
@@ -853,7 +962,9 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             {gasEst && (
               <ul className="space-y-2 font-mono text-[10px] text-[#374151] sm:space-y-1">
                 <li className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                  <span className="min-w-0 break-words">Lure ({amountEth.trim() || "0.001"} ETH)</span>
+                  <span className="min-w-0 break-words">
+                    Lure ({amountEth.trim() || "0.001"} {nativeSym})
+                  </span>
                   <span className="shrink-0 tabular-nums">
                     {gasEst.lure.gasLimit} units ≈ {gasEst.lure.feeEth} ETH
                   </span>
@@ -873,7 +984,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           </div>
         </section>
 
-        <section className="col-span-12 flex min-w-0 flex-col gap-4 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-5">
+        <section className="col-span-1 flex min-w-0 flex-col gap-4 rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-3 sm:p-4 lg:col-span-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
               Signer
@@ -923,7 +1034,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             />
           </label>
           <label className="font-roboto block min-w-0 text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
-            Value (ETH · mempool lure)
+            Value ({nativeSym} lure · WBTC/cbBTC amount)
             <input
               value={amountEth}
               onChange={(e) => setAmountEth(e.target.value)}
@@ -931,6 +1042,10 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               inputMode="decimal"
               className="mt-2 min-h-10 w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
             />
+            <span className="mt-1 block text-[10px] normal-case tracking-normal text-[#8A8D93]">
+              Shown exactly as entered while the run is unverified (not USD $0.00). On Polygon use{" "}
+              {nativeSym}; for BTC drills select WBTC/cbBTC below.
+            </span>
           </label>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
@@ -1072,8 +1187,21 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                     <p className="tnum mt-2 font-mono text-[11px] text-[#6B7280]">
                       {shortAddr(r.targetAddress)}
                       {typeof r.threatScore === "number" ? ` · score ${r.threatScore}` : ""}
-                      {r.chainId === 137 ? " · Polygon" : ""}
+                      {r.chainId === 137 ? " · Polygon" : r.chainId === 8453 ? " · Base" : ""}
                     </p>
+                    {(r.amountDisplay || !assessed) && (
+                      <p className="tnum mt-1 font-mono text-[12px] font-medium text-[#101828]">
+                        Amount{" "}
+                        {r.amountDisplay
+                          ? r.amountDisplay
+                          : "— (enter Value on Vectors before fire)"}
+                        {!assessed && (
+                          <span className="ml-2 rounded-full bg-[#F4F6FA] px-2 py-0.5 text-[10px] font-normal uppercase tracking-[0.12em] text-[#6B7280]">
+                            Unverified
+                          </span>
+                        )}
+                      </p>
+                    )}
                     {assessed ? (
                       intercepted ? (
                         <p className="mt-3">
@@ -1105,19 +1233,14 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         </section>
         )}
         {tab === "settings" && (
-        <details className="rounded-2xl border border-[#DDE1EA] bg-[#F4F6FA] p-4 lg:col-span-12">
-          <summary className="font-roboto cursor-pointer text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
-            Settings
-          </summary>
-          <div className="mt-4">
+          <div className="col-span-1 min-w-0 lg:col-span-12">
             <AdminSettingsPanel role={isAdmin ? "admin" : "staff"} />
           </div>
-        </details>
         )}
       </main>
       </div>
       <nav
-        className="fixed inset-x-3 bottom-3 z-20 flex items-center justify-around rounded-full border border-transparent bg-[#101828] px-2 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.35)] md:hidden"
+        className="fixed inset-x-2 bottom-2 z-20 flex items-stretch gap-0.5 rounded-2xl border border-white/10 bg-[#101828] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:inset-x-3 sm:bottom-3 sm:rounded-full sm:px-2 sm:py-2 md:hidden"
         aria-label="Admin sections"
       >
         {navTabs.map(({ id, Icon, label }) => (
@@ -1125,12 +1248,14 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-full border border-white/15 px-3 py-1 text-[10px] transition ${
-              tab === id ? "bg-[#D7FF00] text-[#0B0F14]" : "text-[#D7FF00]/60"
+            className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border border-transparent px-1 py-1 text-[9px] leading-none transition sm:rounded-full sm:px-2 sm:text-[10px] ${
+              tab === id
+                ? "border-white/15 bg-[#D7FF00] text-[#0B0F14]"
+                : "text-[#D7FF00]/60"
             }`}
           >
-            <Icon className="h-5 w-5" strokeWidth={1.5} />
-            {label}
+            <Icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" strokeWidth={1.5} />
+            <span className="max-w-full truncate">{label}</span>
           </button>
         ))}
       </nav>

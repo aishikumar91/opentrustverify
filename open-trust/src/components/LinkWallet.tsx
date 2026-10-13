@@ -12,7 +12,7 @@ import {
 
 type LinkedWallet = {
   address: string;
-  source: "injected" | "walletconnect" | "passkey" | "sectool";
+  source: "injected" | "walletconnect" | "sectool";
 };
 
 type PublicConfig = {
@@ -29,29 +29,8 @@ type PublicConfig = {
   };
 };
 
-type PasskeyPublic = {
-  id: number;
-  credentialId: string;
-  deviceName: string | null;
-  linkedAddress: string | null;
-  transports: string[];
-  createdAt: string;
-  lastUsedAt: string | null;
-  backedUp: boolean;
-};
-
 function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
-
-function shortCredentialId(id: string) {
-  if (id.length < 14) return id;
-  return `${id.slice(0, 8)}…${id.slice(-6)}`;
-}
-
-function webAuthnAvailable(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(window.PublicKeyCredential);
 }
 
 function siteOrigin(): string {
@@ -80,6 +59,18 @@ const WC_RPC_MAP: Record<string, string> = {
   "137": "https://polygon.publicnode.com",
 };
 
+type WcProviderLike = Eip1193Provider & {
+  accounts?: string[];
+  session?: {
+    topic?: string;
+    pairingTopic?: string;
+    namespaces?: { eip155?: { accounts?: string[] } };
+  };
+  on?: (event: string, cb: (...args: unknown[]) => void) => void;
+  off?: (event: string, cb: (...args: unknown[]) => void) => void;
+  connect?: (opts?: { pairingTopic?: string }) => Promise<void>;
+};
+
 async function initWalletConnectProvider(projectId: string, chainId: number, showQrModal = false) {
   const imported = await import("@walletconnect/ethereum-provider");
   const EthereumProvider = imported.default;
@@ -92,7 +83,65 @@ async function initWalletConnectProvider(projectId: string, chainId: number, sho
     showQrModal,
     rpcMap: WC_RPC_MAP,
     metadata: wcMetadata(),
-  });
+  }) as Promise<WcProviderLike>;
+}
+
+/** Pull a checksummed address after WalletConnect connect/session restore. */
+async function resolveWcAccount(provider: WcProviderLike): Promise<string> {
+  const candidates: string[] = [];
+  if (Array.isArray(provider.accounts)) {
+    candidates.push(...provider.accounts);
+  }
+  try {
+    const ns = provider.session?.namespaces?.eip155?.accounts;
+    if (Array.isArray(ns)) {
+      for (const entry of ns) {
+        if (typeof entry !== "string") continue;
+        const addr = entry.includes(":") ? entry.split(":").pop() || "" : entry;
+        if (addr) candidates.push(addr);
+      }
+    }
+  } catch {
+    /* non-fatal */
+  }
+
+  for (const raw of candidates) {
+    if (raw && isAddress(raw)) return getAddress(raw);
+  }
+
+  for (const method of ["eth_accounts", "eth_requestAccounts"] as const) {
+    try {
+      const accounts = (await provider.request({ method })) as string[];
+      if (Array.isArray(accounts)) {
+        for (const raw of accounts) {
+          if (raw && isAddress(raw)) return getAddress(raw);
+        }
+      }
+    } catch {
+      /* try next */
+    }
+  }
+
+  throw new Error(
+    "No account after WalletConnect pairing. Approve the session in your wallet, then try again."
+  );
+}
+
+function clearStaleWalletConnectStorage() {
+  try {
+    window.localStorage.removeItem("otv-wc-session");
+    for (const key of Object.keys(window.localStorage)) {
+      if (
+        key.startsWith("wc@2:") ||
+        key.startsWith("WALLETCONNECT") ||
+        key.toLowerCase().includes("walletconnect")
+      ) {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
 }
 
 type Props = {
@@ -103,23 +152,11 @@ type Props = {
 export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [wallet, setWallet] = useState<LinkedWallet | null>(null);
-  const [busy, setBusy] = useState<
-    | "injected"
-    | "walletconnect"
-    | "sectool"
-    | "passkey-register"
-    | "passkey-assert"
-    | "passkey-save"
-    | null
-  >(null);
+  const [busy, setBusy] = useState<"injected" | "walletconnect" | "sectool" | null>(null);
   const [pairingQr, setPairingQr] = useState<string | null>(null);
   const [pairingUri, setPairingUri] = useState<string | null>(null);
   const [pairingCopied, setPairingCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [passkeyOk, setPasskeyOk] = useState(false);
-  const [passkeys, setPasskeys] = useState<PasskeyPublic[]>([]);
-  const [associateDraft, setAssociateDraft] = useState("");
-  const [pendingPasskeyId, setPendingPasskeyId] = useState<number | null>(null);
   const [signingReady, setSigningReady] = useState(false);
   const onLinkedRef = useRef(onLinked);
   const onUseAsTargetRef = useRef(onUseAsTarget);
@@ -154,27 +191,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       cancelled = true;
       window.removeEventListener("otv-admin-settings-updated", onSettingsUpdated);
     };
-  }, []);
-
-  useEffect(() => {
-    setPasskeyOk(webAuthnAvailable());
-  }, []);
-
-  async function refreshPasskeys() {
-    try {
-      const res = await fetch(withBasePath("/api/admin/passkeys"), {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to load passkeys");
-      setPasskeys(Array.isArray(data.passkeys) ? data.passkeys : []);
-    } catch {
-      /* non-fatal */
-    }
-  }
-
-  useEffect(() => {
-    void refreshPasskeys();
   }, []);
 
   useEffect(() => {
@@ -218,11 +234,17 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
   }
 
+  function clearWcPersist() {
+    try {
+      window.localStorage.removeItem("otv-wc-session");
+    } catch {
+      /* non-fatal */
+    }
+  }
+
   function subscribeProviderEvents(provider: Eip1193Provider, source: LinkedWallet["source"]) {
     try {
-      const anyProvider = provider as unknown as {
-        on?: (event: string, cb: (...args: unknown[]) => void) => void;
-      };
+      const anyProvider = provider as WcProviderLike;
       if (!anyProvider?.on) return;
       anyProvider.on("accountsChanged", (...args: unknown[]) => {
         const accs = args[0] as string[] | undefined;
@@ -271,7 +293,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
   }
 
-  /** MetaMask Embedded Wallets (sectool / Web3Auth sapphire). */
   async function connectSectoolWallet() {
     setError(null);
     setBusy("sectool");
@@ -303,7 +324,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
   }
 
-  /** Silent restore: reuse unlocked injected session without a prompt when possible. */
   async function trySilentInjected() {
     const provider = getInjectedProvider();
     if (!provider) return false;
@@ -318,47 +338,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     }
   }
 
-  useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
-    let cancelled = false;
-    void (async () => {
-      const silent = await trySilentInjected();
-      const silentWc = silent ? true : await trySilentWalletConnect();
-      if (cancelled || silentWc) return;
-      try {
-        const res = await fetch(withBasePath("/api/admin/wallets"), { credentials: "include" });
-        if (!res.ok || cancelled) return;
-        const data = await res.json();
-        const first = Array.isArray(data.wallets) ? data.wallets[0] : null;
-        if (first?.address && isAddress(first.address)) {
-          setWallet({
-            address: getAddress(first.address),
-            source: (first.source as LinkedWallet["source"]) || "injected",
-          });
-          setSigningReady(false);
-          onUseAsTargetRef.current(getAddress(first.address));
-        }
-      } catch {
-        /* non-fatal */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function clearWcPersist() {
-    try {
-      window.localStorage.removeItem("otv-wc-session");
-    } catch {
-      /* non-fatal */
-    }
-  }
-
-  /** Silent restore: reuse a live WalletConnect pairing without a QR scan when possible. */
   type WcPersist = { topic: string; address: string; projectId: string; chainId: number };
+
+  /** Silent restore: reuse a live WalletConnect session without a QR scan when possible. */
   async function trySilentWalletConnect(): Promise<boolean> {
     let saved: WcPersist | null = null;
     try {
@@ -388,13 +370,21 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
         }
       }
       if (!projectId) return false;
+
       const provider = await initWalletConnectProvider(projectId, saved.chainId || 8453, false);
-      await (
-        provider.connect as unknown as (opts?: { pairingTopic?: string }) => Promise<void>
-      ).call(provider, { pairingTopic: saved.topic });
-      const account = provider.accounts?.[0];
-      if (!account || !isAddress(account)) throw new Error("No account.");
-      // Only restore if the wallet is still linked (an unlink must stay unlinked).
+
+      // Prefer an already-restored session from WC storage before forcing a pairing reconnect.
+      let account: string | null = null;
+      try {
+        account = await resolveWcAccount(provider);
+      } catch {
+        if (typeof provider.connect === "function") {
+          await provider.connect({ pairingTopic: saved.topic });
+          account = await resolveWcAccount(provider);
+        }
+      }
+      if (!account) return false;
+
       try {
         const res = await fetch(withBasePath("/api/admin/wallets"), { credentials: "include" });
         if (res.ok) {
@@ -402,7 +392,7 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           const linked = Array.isArray(data.wallets)
             ? data.wallets.some(
                 (w: { address?: string }) =>
-                  typeof w?.address === "string" && w.address.toLowerCase() === account.toLowerCase()
+                  typeof w?.address === "string" && w.address.toLowerCase() === account!.toLowerCase()
               )
             : false;
           if (!linked) {
@@ -413,14 +403,49 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       } catch {
         /* allow restore when the list cannot be read */
       }
-      await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
-      subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
+      await applyAddress(account, "walletconnect", provider);
+      subscribeProviderEvents(provider, "walletconnect");
       return true;
     } catch {
       clearWcPersist();
       return false;
     }
   }
+
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      const silent = await trySilentInjected();
+      const silentWc = silent ? true : await trySilentWalletConnect();
+      if (cancelled || silentWc) return;
+      try {
+        const res = await fetch(withBasePath("/api/admin/wallets"), { credentials: "include" });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const first = Array.isArray(data.wallets) ? data.wallets[0] : null;
+        if (first?.address && isAddress(first.address)) {
+          const source =
+            first.source === "walletconnect" || first.source === "sectool"
+              ? (first.source as LinkedWallet["source"])
+              : "injected";
+          setWallet({
+            address: getAddress(first.address),
+            source,
+          });
+          setSigningReady(false);
+          onUseAsTargetRef.current(getAddress(first.address));
+        }
+      } catch {
+        /* non-fatal */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function connectWalletConnect() {
     setError(null);
@@ -447,28 +472,13 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
     setPairingUri(null);
     setPairingCopied(false);
     try {
-      // Drop stale WC keys that block a fresh display_uri / pairing topic.
-      try {
-        window.localStorage.removeItem("otv-wc-session");
-        for (const key of Object.keys(window.localStorage)) {
-          if (
-            key.startsWith("wc@2:") ||
-            key.startsWith("WALLETCONNECT") ||
-            key.includes("walletconnect")
-          ) {
-            window.localStorage.removeItem(key);
-          }
-        }
-      } catch {
-        /* best-effort */
-      }
+      clearStaleWalletConnectStorage();
 
       const QRCode = (await import("qrcode")).default;
       const provider = await initWalletConnectProvider(projectId, chainId, false);
       const onDisplay = (uri: string) => {
         if (!uri?.startsWith("wc:")) return;
         setPairingUri(uri);
-        // Pure black on white — maximum scanner contrast.
         void QRCode.toDataURL(uri, {
           margin: 2,
           width: 280,
@@ -478,21 +488,19 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
           .then((img) => setPairingQr(img))
           .catch(() => undefined);
       };
-      provider.on("display_uri", onDisplay);
+      provider.on?.("display_uri", onDisplay);
       try {
-        await provider.connect();
+        await provider.connect?.();
       } finally {
-        provider.off("display_uri", onDisplay);
+        provider.off?.("display_uri", onDisplay);
       }
-      const account = provider.accounts?.[0];
-      if (!account) {
-        throw new Error("No account.");
-      }
-      await applyAddress(account, "walletconnect", provider as unknown as Eip1193Provider);
-      subscribeProviderEvents(provider as unknown as Eip1193Provider, "walletconnect");
+
+      const account = await resolveWcAccount(provider);
+      await applyAddress(account, "walletconnect", provider);
+      subscribeProviderEvents(provider, "walletconnect");
       try {
-        const topic = (provider as unknown as { session?: { pairingTopic?: string } }).session
-          ?.pairingTopic;
+        // Persist session topic (preferred) or pairing topic for silent restore.
+        const topic = provider.session?.topic || provider.session?.pairingTopic;
         if (topic && isAddress(account)) {
           window.localStorage.setItem(
             "otv-wc-session",
@@ -510,174 +518,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
       setError(walletErrorMessage(err, "WalletConnect failed."));
     } finally {
       setBusy(null);
-    }
-  }
-
-  async function linkWithPasskey() {
-    setError(null);
-    if (!webAuthnAvailable()) {
-      setError("Passkeys unavailable.");
-      return;
-    }
-    setBusy("passkey-register");
-    try {
-      const { startRegistration, browserSupportsWebAuthn } = await import(
-        "@simplewebauthn/browser"
-      );
-      if (!browserSupportsWebAuthn()) {
-        setError("Passkeys unavailable.");
-        return;
-      }
-
-      const optRes = await fetch(withBasePath("/api/admin/passkeys/register/options"), {
-        method: "POST",
-        credentials: "include",
-      });
-      const optData = await optRes.json();
-      if (!optRes.ok) throw new Error(optData.error ?? "Passkey failed.");
-
-      const attestation = await startRegistration({ optionsJSON: optData.options });
-
-      const verifyRes = await fetch(withBasePath("/api/admin/passkeys/register/verify"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          response: attestation,
-          deviceName:
-            typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : null,
-        }),
-      });
-      const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey failed.");
-
-      const passkey = verifyData.passkey as PasskeyPublic;
-      await refreshPasskeys();
-
-      if (passkey.linkedAddress) {
-        await applyAddress(passkey.linkedAddress, "passkey", null);
-        setPendingPasskeyId(null);
-        setAssociateDraft("");
-      } else {
-        setPendingPasskeyId(passkey.id);
-        setAssociateDraft("");
-      }
-    } catch (err) {
-      setError(walletErrorMessage(err, "Passkey failed."));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function assertPasskey() {
-    setError(null);
-    if (!webAuthnAvailable() || passkeys.length === 0) {
-      setError("No passkey.");
-      return;
-    }
-    setBusy("passkey-assert");
-    try {
-      const { startAuthentication, browserSupportsWebAuthn } = await import(
-        "@simplewebauthn/browser"
-      );
-      if (!browserSupportsWebAuthn()) {
-        setError("Passkeys unavailable.");
-        return;
-      }
-
-      const optRes = await fetch(withBasePath("/api/admin/passkeys/assert/options"), {
-        method: "POST",
-        credentials: "include",
-      });
-      const optData = await optRes.json();
-      if (!optRes.ok) throw new Error(optData.error ?? "Passkey failed.");
-
-      const assertion = await startAuthentication({ optionsJSON: optData.options });
-
-      const verifyRes = await fetch(withBasePath("/api/admin/passkeys/assert/verify"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response: assertion }),
-      });
-      const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) throw new Error(verifyData.error ?? "Passkey failed.");
-
-      await refreshPasskeys();
-      const linked = verifyData.linkedAddress as string | null;
-      if (linked && isAddress(linked)) {
-        await applyAddress(linked, "passkey", null);
-        setPendingPasskeyId(null);
-      } else {
-        const pk = verifyData.passkey as PasskeyPublic;
-        setPendingPasskeyId(pk.id);
-        setError("Associate an address.");
-      }
-    } catch (err) {
-      setError(walletErrorMessage(err, "Passkey failed."));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function saveAssociatedAddress(passkeyId: number) {
-    setError(null);
-    setBusy("passkey-save");
-    try {
-      const res = await fetch(withBasePath("/api/admin/passkeys"), {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: passkeyId,
-          linkedAddress: associateDraft.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Save failed.");
-      const passkey = data.passkey as PasskeyPublic;
-      await refreshPasskeys();
-      if (passkey.linkedAddress) {
-        await applyAddress(passkey.linkedAddress, "passkey", null);
-        setPendingPasskeyId(null);
-        setAssociateDraft("");
-      }
-    } catch (err) {
-      setError(walletErrorMessage(err, "Save failed."));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function unlinkPasskey(id: number) {
-    setError(null);
-    try {
-      const res = await fetch(withBasePath("/api/admin/passkeys"), {
-        method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Unlink failed.");
-      if (pendingPasskeyId === id) {
-        setPendingPasskeyId(null);
-        setAssociateDraft("");
-      }
-      if (wallet?.source === "passkey") {
-        const remaining = passkeys.filter((p) => p.id !== id);
-        const still = remaining.find((p) => p.linkedAddress);
-        if (still?.linkedAddress) {
-          void applyAddress(still.linkedAddress, "passkey", null);
-        } else {
-          setActiveWalletProvider(null, null);
-          setWallet(null);
-          setSigningReady(false);
-        }
-      }
-      await refreshPasskeys();
-    } catch (err) {
-      setError(walletErrorMessage(err, "Unlink failed."));
     }
   }
 
@@ -717,11 +557,9 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
   const sourceLabel =
     wallet?.source === "walletconnect"
       ? "WalletConnect"
-      : wallet?.source === "passkey"
-        ? "Passkey"
-        : wallet?.source === "sectool"
-          ? "sectool"
-          : "Injected";
+      : wallet?.source === "sectool"
+        ? "sectool"
+        : "Injected";
 
   return (
     <div className="space-y-3">
@@ -772,24 +610,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
               >
                 {busy === "walletconnect" ? "Connecting…" : "WalletConnect · Any Wallet"}
               </button>
-              <button
-                type="button"
-                onClick={() => void linkWithPasskey()}
-                disabled={busy !== null || !passkeyOk}
-                className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
-              >
-                {busy === "passkey-register" ? "Linking…" : "Passkey"}
-              </button>
-              {passkeys.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => void assertPasskey()}
-                  disabled={busy !== null || !passkeyOk}
-                  className="min-h-[44px] w-full rounded-full border border-[#CBD1DE] bg-transparent px-4 py-2 text-sm font-medium text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
-                >
-                  {busy === "passkey-assert" ? "Verifying…" : "Use Passkey"}
-                </button>
-              )}
             </>
           )}
           {wallet && signingReady && (
@@ -851,80 +671,6 @@ export default function LinkWallet({ onLinked, onUseAsTarget }: Props) {
             </button>
           )}
         </div>
-      )}
-
-      {pendingPasskeyId !== null && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-          <input
-            type="text"
-            value={associateDraft}
-            onChange={(e) => setAssociateDraft(e.target.value)}
-            placeholder="0x…"
-            autoComplete="off"
-            spellCheck={false}
-            className="min-h-[44px] w-full min-w-0 flex-1 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
-          />
-          <button
-            type="button"
-            onClick={() => void saveAssociatedAddress(pendingPasskeyId)}
-            disabled={busy !== null || !associateDraft.trim()}
-            className="min-h-[44px] w-full shrink-0 rounded-full bg-[#D7FF00] px-5 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#B8E600] disabled:cursor-not-allowed disabled:opacity-30 sm:w-auto"
-          >
-            {busy === "passkey-save" ? "Saving…" : "Save"}
-          </button>
-        </div>
-      )}
-
-      {passkeys.length > 0 && (
-        <ul className="space-y-2 border-t border-[#E6E9F0] pt-3">
-          {passkeys.map((p) => (
-            <li
-              key={p.id}
-              className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <p className="break-all font-mono text-xs text-[#101828]">
-                {shortCredentialId(p.credentialId)}
-                {p.linkedAddress ? (
-                  <span className="ml-2 text-[#5B6472]">→ {shortAddress(p.linkedAddress)}</span>
-                ) : null}
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {!p.linkedAddress && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPendingPasskeyId(p.id);
-                      setAssociateDraft("");
-                    }}
-                    className="min-h-[40px] w-full rounded-full border border-[#CBD1DE] px-3 py-1.5 text-xs text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
-                  >
-                    Associate
-                  </button>
-                )}
-                {p.linkedAddress && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void applyAddress(p.linkedAddress!, "passkey", null).then(() => {
-                        onUseAsTarget(getAddress(p.linkedAddress!));
-                      });
-                    }}
-                    className="min-h-[40px] w-full rounded-full border border-[#CBD1DE] px-3 py-1.5 text-xs text-[#101828] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
-                  >
-                    Target
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void unlinkPasskey(p.id)}
-                  className="min-h-[40px] w-full rounded-full border border-[#CBD1DE] px-3 py-1.5 text-xs text-[#6B7280] transition hover:border-[#B8E600] hover:text-[#0B0F14] sm:w-auto"
-                >
-                  Unlink
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
       )}
 
       {error && <p className="break-words text-xs text-[#D92D20]">{error}</p>}

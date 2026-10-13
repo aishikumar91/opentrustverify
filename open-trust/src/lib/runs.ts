@@ -18,6 +18,8 @@ export interface ExecutedRunRow {
   broadcast_at: string | null;
   verified_at: string | null;
   chain_id: number | null;
+  /** Exact operator-entered amount label, e.g. "0.001 POL" — not USD. */
+  amount_display: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +38,8 @@ export interface ExecutedRun {
   broadcastAt: string | null;
   verifiedAt: string | null;
   chainId: number;
+  /** Exact operator-entered amount label while / after broadcast. */
+  amountDisplay: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +71,7 @@ export async function ensureExecutedRunsTable(): Promise<void> {
       ON executed_runs (broadcast_at DESC NULLS LAST, created_at DESC);
   `);
   await query(`ALTER TABLE executed_runs ADD COLUMN IF NOT EXISTS chain_id INTEGER NOT NULL DEFAULT 8453;`);
+  await query(`ALTER TABLE executed_runs ADD COLUMN IF NOT EXISTS amount_display TEXT;`);
   ensured = true;
 }
 
@@ -92,6 +97,7 @@ function mapRow(row: ExecutedRunRow): ExecutedRun {
     broadcastAt: row.broadcast_at,
     verifiedAt: row.verified_at,
     chainId: row.chain_id ?? 8453,
+    amountDisplay: row.amount_display ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -104,17 +110,24 @@ export async function insertExecutedRun(input: {
   explorerUrl: string;
   broadcastAt: string;
   chainId?: number;
+  /** Exact amount label from the operator input (never USD-rounded). */
+  amountDisplay?: string | null;
 }): Promise<ExecutedRun> {
   await ensureExecutedRunsTable();
+  const amountDisplay =
+    typeof input.amountDisplay === "string" && input.amountDisplay.trim()
+      ? input.amountDisplay.trim().slice(0, 64)
+      : null;
   const result = await query<ExecutedRunRow>(
     `INSERT INTO executed_runs (
-       tx_hash, vector, target_address, explorer_url, status, broadcast_at, chain_id
-     ) VALUES ($1, $2, $3, $4, 'BROADCAST', $5, $6)
+       tx_hash, vector, target_address, explorer_url, status, broadcast_at, chain_id, amount_display
+     ) VALUES ($1, $2, $3, $4, 'BROADCAST', $5, $6, $7)
      ON CONFLICT (tx_hash) DO UPDATE SET
        vector = EXCLUDED.vector,
        target_address = EXCLUDED.target_address,
        explorer_url = EXCLUDED.explorer_url,
        broadcast_at = COALESCE(EXCLUDED.broadcast_at, executed_runs.broadcast_at),
+       amount_display = COALESCE(EXCLUDED.amount_display, executed_runs.amount_display),
        updated_at = NOW()
      RETURNING *`,
     [
@@ -124,6 +137,7 @@ export async function insertExecutedRun(input: {
       input.explorerUrl,
       input.broadcastAt,
       input.chainId ?? 8453,
+      amountDisplay,
     ]
   );
   return mapRow(result.rows[0]);
