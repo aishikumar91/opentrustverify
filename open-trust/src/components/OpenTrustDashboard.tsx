@@ -43,6 +43,8 @@ interface ExecutedRunView {
   actionRecommended: string | null;
   verifiedAt: string | null;
   chainId: number;
+  /** Exact inputted amount label (e.g. "0.001 POL") — shown while unverified. */
+  amountDisplay?: string | null;
 }
 
 const VECTORS: { id: Vector; label: string; needsContract: boolean }[] = [
@@ -294,8 +296,18 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
       setSigner({ address: connectedSigner, ready: true });
 
       const lureAmount = amountEth.trim();
+      const nativeUnit = netId === 137 ? "POL" : "ETH";
+      const btcPreset = tokenPreset === "cbBTC" || tokenPreset === "WBTC";
       if (vector === "mempoolLure" && (!/^\d*\.?\d+$/.test(lureAmount) || Number(lureAmount) <= 0)) {
-        throw new Error("Value must be a positive number (ETH).");
+        throw new Error(`Value must be a positive number (${nativeUnit}).`);
+      }
+      if (
+        vector === "zeroValue" &&
+        btcPreset &&
+        lureAmount &&
+        (!/^\d*\.?\d+$/.test(lureAmount) || Number(lureAmount) < 0)
+      ) {
+        throw new Error("BTC amount must be a non-negative number.");
       }
 
       const target = (targetAddress.trim() || connectedSigner).trim();
@@ -324,9 +336,23 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         targetAddress: target,
         fakeTokenContract: fakeTokenContract.trim() || undefined,
         tokenPreset,
-        amount: vector === "mempoolLure" ? lureAmount : undefined,
+        amount:
+          vector === "mempoolLure"
+            ? lureAmount
+            : vector === "zeroValue" && btcPreset
+              ? lureAmount || "0"
+              : undefined,
         chainId: netId,
       });
+
+      const amountDisplay =
+        vector === "mempoolLure"
+          ? `${lureAmount} ${nativeUnit}`
+          : vector === "zeroValue"
+            ? btcPreset
+              ? `${lureAmount || "0"} ${tokenPreset}`
+              : `0 ${tokenPreset}`
+            : null;
 
       const res = await fetch(withBasePath("/api/admin/record-run"), {
         method: "POST",
@@ -339,6 +365,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
           fromAddress: clientResult.fromAddress,
           broadcastAt: clientResult.broadcastAt,
           chainId: netId,
+          amountDisplay,
         }),
       });
       const data = await res.json();
@@ -357,9 +384,9 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
         actionRecommended: data.run?.actionRecommended ?? null,
         verifiedAt: data.run?.verifiedAt ?? null,
         chainId: data.chainId ?? data.run?.chainId ?? netId,
+        amountDisplay: data.amountDisplay ?? data.run?.amountDisplay ?? amountDisplay,
       });
-      const amountLabel =
-        vector === "mempoolLure" ? ` · ${lureAmount} ETH` : vector === "zeroValue" ? " · 0 token" : "";
+      const amountLabel = amountDisplay ? ` · ${amountDisplay}` : "";
       const detail = `${vector}${amountLabel} · ${shortHash(data.txHash)} · ${netId === 137 ? "Polygon" : "Base"}`;
       setCliPreload({ task: vector, outcome: "ok", detail });
       pushStatus("ok", "Broadcast executed", detail);
@@ -757,10 +784,12 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             <section className="rounded-[24px] border border-[#DDE1EA] bg-white p-4 lg:col-span-12">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">
-                  Bitcoin · watch-only
+                  Bitcoin · watch-only + wrapped execute
                 </h2>
                 <p className="text-[11px] text-[#8A8D93]">
-                  Native BTC cannot sign here — test with cbBTC / WBTC. Balance is read-only via
+                  Native BTC cannot sign here. To execute with BTC units, open Vectors → pick{" "}
+                  <span className="font-mono">cbBTC</span> (Base) or <span className="font-mono">WBTC</span>{" "}
+                  (Polygon), enter the amount, then fire Zero-value transfer. Watch balance via
                   mempool.space.
                 </p>
               </div>
@@ -860,14 +889,24 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               <ul className="divide-y divide-[#E6E9F0]">
                 {runs.slice(0, 4).map((r) => (
                   <li key={r.txHash} className="flex items-center justify-between gap-2 py-2">
-                    <a
-                      href={r.explorerUrl || undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="truncate font-mono text-xs text-[#101828] hover:text-[#2E7CF6]"
-                    >
-                      {shortHash(r.txHash)}
-                    </a>
+                    <div className="min-w-0">
+                      <a
+                        href={r.explorerUrl || undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate font-mono text-xs text-[#101828] hover:text-[#2E7CF6]"
+                      >
+                        {shortHash(r.txHash)}
+                      </a>
+                      {r.amountDisplay && (
+                        <p className="tnum truncate font-mono text-[10px] text-[#5B6472]">
+                          {r.amountDisplay}
+                          {!r.verifiedAt && r.status !== "FRAUD_INTERCEPTED" && r.status !== "VERIFIED_LEGITIMATE"
+                            ? " · unverified"
+                            : ""}
+                        </p>
+                      )}
+                    </div>
                     <span className="shrink-0 font-mono text-[11px] text-[#5B6472]">
                       {r.status === "FRAUD_INTERCEPTED"
                         ? "Intercepted"
@@ -916,7 +955,9 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             {gasEst && (
               <ul className="space-y-2 font-mono text-[10px] text-[#374151] sm:space-y-1">
                 <li className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                  <span className="min-w-0 break-words">Lure ({amountEth.trim() || "0.001"} ETH)</span>
+                  <span className="min-w-0 break-words">
+                    Lure ({amountEth.trim() || "0.001"} {nativeSym})
+                  </span>
                   <span className="shrink-0 tabular-nums">
                     {gasEst.lure.gasLimit} units ≈ {gasEst.lure.feeEth} ETH
                   </span>
@@ -986,7 +1027,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
             />
           </label>
           <label className="font-roboto block min-w-0 text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
-            Value (ETH · mempool lure)
+            Value ({nativeSym} lure · WBTC/cbBTC amount)
             <input
               value={amountEth}
               onChange={(e) => setAmountEth(e.target.value)}
@@ -994,6 +1035,10 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
               inputMode="decimal"
               className="mt-2 min-h-10 w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-3 font-mono text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]"
             />
+            <span className="mt-1 block text-[10px] normal-case tracking-normal text-[#8A8D93]">
+              Shown exactly as entered while the run is unverified (not USD $0.00). On Polygon use{" "}
+              {nativeSym}; for BTC drills select WBTC/cbBTC below.
+            </span>
           </label>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-roboto text-[11px] uppercase tracking-[0.16em] text-[#5B6472]">
@@ -1135,8 +1180,23 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
                     <p className="tnum mt-2 font-mono text-[11px] text-[#6B7280]">
                       {shortAddr(r.targetAddress)}
                       {typeof r.threatScore === "number" ? ` · score ${r.threatScore}` : ""}
-                      {r.chainId === 137 ? " · Polygon" : ""}
+                      {r.chainId === 137 ? " · Polygon" : r.chainId === 8453 ? " · Base" : ""}
                     </p>
+                    {(r.amountDisplay || (!assessed && r.realBalanceImpact)) && (
+                      <p className="tnum mt-1 font-mono text-[12px] font-medium text-[#101828]">
+                        Amount{" "}
+                        {r.amountDisplay
+                          ? r.amountDisplay
+                          : !assessed
+                            ? "pending input record"
+                            : r.realBalanceImpact}
+                        {!assessed && (
+                          <span className="ml-2 rounded-full bg-[#F4F6FA] px-2 py-0.5 text-[10px] font-normal uppercase tracking-[0.12em] text-[#6B7280]">
+                            Unverified
+                          </span>
+                        )}
+                      </p>
+                    )}
                     {assessed ? (
                       intercepted ? (
                         <p className="mt-3">

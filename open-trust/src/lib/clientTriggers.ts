@@ -10,6 +10,7 @@ import {
   getAddress,
   isAddress,
   parseEther,
+  parseUnits,
   type Hash,
   type Hex,
 } from "viem";
@@ -364,24 +365,41 @@ export async function fireFakeTokenTransferFromWallet(
  * (chain default, or Contract-field override). Emits Transfer(from, target, 0)
  * with no balance movement — the exact pattern the verifier flags as
  * ADDRESS_POISONING. No custom contract deployment needed.
+ *
+ * Optional `amountHuman` (appended, non-breaking): when set for wrapped-BTC
+ * presets (cbBTC / WBTC), transfers that exact human amount instead of 0 so
+ * BTC-denominated drills can execute on EVM without native BTC signing.
  */
 export async function fireZeroValueTransferFromWallet(
   targetAddress: string,
   tokenOverride?: string,
   chainId?: number,
-  preset?: ZeroValuePreset
+  preset?: ZeroValuePreset,
+  amountHuman?: string
 ): Promise<ClientTriggerResult> {
   const { provider, from } = requireProvider();
   if (!isAddress(targetAddress)) {
     throw new Error("Target is not a valid EVM address.");
   }
-  const token = resolveZeroValueToken(chainId, tokenOverride, preset ?? "USDC");
+  const resolvedPreset = preset ?? "USDC";
+  const token = resolveZeroValueToken(chainId, tokenOverride, resolvedPreset);
   if (chainId) await ensureWalletChain(chainId);
+
+  let amountWei = 0n;
+  const trimmed = (amountHuman ?? "").trim();
+  const btcPreset = resolvedPreset === "cbBTC" || resolvedPreset === "WBTC";
+  if (btcPreset && trimmed) {
+    if (!/^\d*\.?\d+$/.test(trimmed) || Number(trimmed) < 0) {
+      throw new Error("BTC amount must be a non-negative number.");
+    }
+    const decimals = ZERO_VALUE_PRESET_META[resolvedPreset].decimals;
+    amountWei = parseUnits(trimmed, decimals);
+  }
 
   const data = encodeFunctionData({
     abi: TRANSFER_ABI,
     functionName: "transfer",
-    args: [getAddress(targetAddress), 0n],
+    args: [getAddress(targetAddress), amountWei],
   });
 
   const txHash = await sendTx(provider, {
@@ -526,7 +544,8 @@ export async function fireVectorFromLinkedWallet(input: {
         input.targetAddress,
         input.fakeTokenContract,
         input.chainId,
-        input.tokenPreset ?? "USDC"
+        input.tokenPreset ?? "USDC",
+        input.amount
       );
     default:
       throw new Error(`Unknown vector: ${input.vector}`);

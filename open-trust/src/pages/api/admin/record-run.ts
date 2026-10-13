@@ -14,6 +14,8 @@ interface Body {
   fromAddress?: string;
   broadcastAt?: string;
   chainId?: number;
+  /** Exact operator-entered amount label (e.g. "0.001 POL", "0.05 WBTC"). */
+  amountDisplay?: string;
 }
 
 function explorerLink(chainId: number, txHash: string): string {
@@ -31,11 +33,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const session = { username: requester.id };
 
-  const { txHash, vector, targetAddress, fromAddress, broadcastAt, chainId: chainIdRaw } = req.body as Body;
+  const {
+    txHash,
+    vector,
+    targetAddress,
+    fromAddress,
+    broadcastAt,
+    chainId: chainIdRaw,
+    amountDisplay: amountDisplayRaw,
+  } = req.body as Body;
   if (chainIdRaw !== undefined && chainIdRaw !== 8453 && chainIdRaw !== 137) {
     return res.status(400).json({ error: "Unsupported chainId (use 8453 or 137)" });
   }
   const cid = chainIdRaw === 137 ? 137 : 8453;
+  const amountDisplay =
+    typeof amountDisplayRaw === "string" && amountDisplayRaw.trim()
+      ? amountDisplayRaw.trim().slice(0, 64)
+      : null;
 
   if (!txHash || !vector || !targetAddress) {
     return res.status(400).json({ error: "txHash, vector, and targetAddress are required" });
@@ -74,6 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       explorerUrl,
       broadcastAt: at,
       chainId: cid,
+      amountDisplay,
     });
 
     return res.status(200).json({
@@ -84,6 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fromAddress: fromAddress && isAddress(fromAddress) ? getAddress(fromAddress) : null,
       broadcastAt: at,
       chainId: cid,
+      amountDisplay: run.amountDisplay,
       run,
     });
   } catch (err) {
