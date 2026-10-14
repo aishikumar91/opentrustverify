@@ -5,7 +5,6 @@
  * NOTE: the provider lives in this tab's memory only. A full page reload
  * clears the signing session; the linked *address* is restored from Postgres
  * for allowlist display, but the wallet must reconnect to sign again.
- * Passkey-only links never have a provider (they identify the target only).
  */
 
 export type Eip1193Provider = {

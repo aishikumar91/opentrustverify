@@ -58,12 +58,12 @@ export default function LoginPage() {
     "mt-2 min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-4 text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]";
 
   return (
-    <div className="nui font-ui relative flex min-h-screen flex-col bg-[#E9EDF4] text-[#101828]">
+    <div className="nui nui-clay font-ui relative flex min-h-screen flex-col bg-[#E9EDF4] text-[#101828]">
       <header className="flex items-center justify-end gap-3 px-4 py-3">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </header>
       <main className="flex w-full flex-1 items-center justify-center px-4 pb-4">
-        <div className="w-full max-w-sm border border-transparent bg-transparent p-1 sm:rounded-[24px] sm:border-[#DDE1EA] sm:bg-white sm:p-6">
+        <div className="clay-panel w-full max-w-sm p-5 sm:p-6">
           <BrandMark size="lg" as="h1" className="mb-1" />
           <p className="mb-4 text-sm text-[#6B7280]">Sign in</p>
           <form onSubmit={onSubmit}>

@@ -33,7 +33,7 @@ export default function Home() {
     window.location.assign(withBasePath("/subscriber/install"));
   }
   return (
-    <div className="font-ui min-h-screen overflow-x-hidden bg-[#0A0E14] text-[#ECEFF3]">
+    <div className="landing-clay font-ui min-h-screen overflow-x-hidden bg-[#0A0E14] text-[#ECEFF3]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(ellipse_at_20%_0%,_rgba(183,230,0,0.10),_transparent_55%),radial-gradient(ellipse_at_80%_10%,_rgba(46,124,246,0.14),_transparent_50%)]" />
 
       <nav className="relative mx-auto flex max-w-5xl items-center px-4 py-5 sm:px-6 md:px-8">

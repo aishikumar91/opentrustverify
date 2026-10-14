@@ -20,11 +20,14 @@
 #   bash infra/deployment/deploy-vps-trigger.sh --remote
 set -euo pipefail
 
-DEPLOY_HOST="${DEPLOY_HOST:-administrator@93.127.142.159}"
+# Default host is the HealFast VPS that currently serves 3gga.toolboss.store
+# (and is prepared for otv.poptrust.me DNS cutover). Override for the legacy
+# 93.127.142.159 box when SSH access is available there.
+DEPLOY_HOST="${DEPLOY_HOST:-administrator@69.197.174.178}"
 DEPLOY_PATH="${DEPLOY_PATH:-/home/administrator/deployments/opentrust-verify}"
 EDGE_CADDY_DIR="${EDGE_CADDY_DIR:-/home/administrator/hosting/edge-proxy}"
 COMPOSE_FILE="infra/docker/docker-compose.vps.yml"
-BRANCH="${DEPLOY_BRANCH:-cursor/ot-admin-trigger-deploy-3332}"
+BRANCH="${DEPLOY_BRANCH:-cursor/restore-full-console-3332}"
 REMOTE=0
 
 for arg in "$@"; do
@@ -108,12 +111,6 @@ ensure_env_keys() {
       echo 'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=' >>"$env_file"
     fi
   fi
-
-  # WebAuthn / Passkeys for admin wallet linking (origin-bound; never invent off-host RP).
-  grep -q '^WEBAUTHN_RP_ID=' "$env_file" || \
-    echo 'WEBAUTHN_RP_ID=otv.poptrust.me' >>"$env_file"
-  grep -q '^WEBAUTHN_ORIGIN=' "$env_file" || \
-    echo 'WEBAUTHN_ORIGIN=https://otv.poptrust.me' >>"$env_file"
 
   # Sanity: required OTV secrets must already be present.
   for key in OTV_PG_PASSWORD SESSION_SECRET; do
@@ -323,7 +320,9 @@ if [[ "$REMOTE" -eq 1 ]]; then
   fi
   sync_remote_tree
 
-  remote_cmd "bash -lc \"set -euo pipefail; cd '$DEPLOY_PATH'; bash infra/deployment/deploy-vps-trigger.sh\""
+  # Pass the same branch into the on-host script so a future git-backed
+  # checkout cannot silently rebuild from the script default.
+  remote_cmd "bash -lc \"set -euo pipefail; cd '$DEPLOY_PATH'; DEPLOY_BRANCH='$BRANCH' bash infra/deployment/deploy-vps-trigger.sh --branch='$BRANCH'\""
 else
   ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
   # Prefer explicit DEPLOY_PATH when already on the VPS layout.

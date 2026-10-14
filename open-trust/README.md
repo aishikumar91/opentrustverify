@@ -60,8 +60,7 @@ before firing any vector.
 
 - `src/lib/allowlist.ts` — the admin allowlist chokepoint
 - `src/lib/auth.ts` — signed-cookie admin session (HMAC, expiring, HttpOnly)
-- `src/lib/webauthn.ts` / `passkeysStore.ts` — WebAuthn passkey wallet linking (credential id + public key; optional linked EVM address)
-- `src/pages/api/admin/passkeys/*` — session-gated register / assert / list / unlink
+- `src/components/LinkWallet.tsx` — MetaMask / WalletConnect / sectool linking for admin signing
 - `src/services/liveEngine.ts` — signs and broadcasts the three demo vectors
 - `src/services/verifierService.ts` — read-only RPC scan + threat assessment
 - `src/agent/system-prompt.md` — system prompt for the Vertex AI Agent Builder / ADK agent
