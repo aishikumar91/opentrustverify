@@ -6,7 +6,7 @@ import { withBasePath } from "../lib/basePath";
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   return (
-    <div className="nui font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
+    <div className="nui nui-clay font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
       <nav className="nui-legal-nav mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-5">
         <a href={withBasePath("/")} aria-label="3GGA home">
           <BrandMark size="sm" />

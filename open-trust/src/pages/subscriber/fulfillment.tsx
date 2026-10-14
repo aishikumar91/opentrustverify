@@ -97,7 +97,7 @@ export default function FulfillmentPage() {
   const inputCls =
     "min-h-[44px] w-full min-w-0 rounded-full border border-[#CBD1DE] bg-[#FFFFFF] px-4 text-sm text-[#101828] outline-none placeholder:text-[#AEB4C2] focus:border-[#B8E600]";
   return (
-    <div className="nui font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
+    <div className="nui nui-clay font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
       <header className="mx-auto flex w-full max-w-md items-center justify-end gap-3 px-4 py-3">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
       </header>

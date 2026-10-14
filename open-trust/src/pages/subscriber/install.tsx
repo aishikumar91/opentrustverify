@@ -96,7 +96,7 @@ export default function InstallPage() {
   const Icon = device === "iphone" ? Apple : device === "desktop" ? Laptop : Smartphone;
 
   return (
-    <div className="nui font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
+    <div className="nui nui-clay font-ui min-h-screen bg-[#E9EDF4] text-[#101828]">
       <header className="mx-auto flex w-full max-w-md items-center justify-between px-4 py-3">
         <BrandMark size="sm" />
         <ThemeToggle theme={theme} onToggle={toggleTheme} />

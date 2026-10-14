@@ -547,7 +547,7 @@ export default function OpenTrustDashboard({ role }: { role?: "admin" | "staff" 
     : runs;
 
   return (
-    <div className="nui font-ui min-h-screen overflow-x-hidden bg-[#E9EDF4] pb-28 text-[#101828] antialiased sm:pb-24 md:pb-0">
+    <div className="nui nui-clay font-ui min-h-screen overflow-x-hidden bg-[#E9EDF4] pb-28 text-[#101828] antialiased sm:pb-24 md:pb-0">
       {cliPreload && (
         <CliTestPreloader
           task={cliPreload.task}

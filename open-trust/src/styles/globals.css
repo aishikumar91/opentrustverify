@@ -381,27 +381,290 @@ body.nui-dark main li[class*="rounded-"]::before {
   }
 }
 
-/* ---------- Gas estimate: clay-neumorphic card (10px radius) ---------- */
-.nui .clay-neu-gas {
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: linear-gradient(145deg, #eceae6 0%, #d8d4cf 48%, #ccc7c1 100%);
-  box-shadow:
-    7px 7px 16px rgba(110, 100, 90, 0.28),
-    -6px -6px 14px rgba(255, 255, 255, 0.92),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(120, 110, 100, 0.08);
+/* ==========================================================================
+   Claymorphic complete — soft matte clay surfaces across the whole console.
+   Applied when a root carries both `.nui` and `.nui-clay` (all product pages).
+   ========================================================================== */
+:root {
+  --clay-base: #e4e0da;
+  --clay-raised-from: #f2efe9;
+  --clay-raised-mid: #e6e2db;
+  --clay-raised-to: #d8d3cb;
+  --clay-inset-from: #d5d0c8;
+  --clay-inset-to: #ebe7e0;
+  --clay-shadow-dark: rgba(110, 100, 90, 0.28);
+  --clay-shadow-light: rgba(255, 255, 255, 0.9);
+  --clay-border: rgba(255, 255, 255, 0.55);
+  --clay-orange: #f07a1a;
+  --clay-radius: 18px;
+  --clay-radius-sm: 10px;
+  --clay-radius-pill: 999px;
 }
-.nui .clay-neu-gas-logo {
-  /* Shift lime lockup toward solid orange for this card only */
+
+.nui.nui-clay,
+div.nui.nui-clay {
+  background-color: var(--clay-base) !important;
+  background-image:
+    radial-gradient(ellipse 55% 40% at 12% 0%, rgba(240, 122, 26, 0.1), transparent 58%),
+    radial-gradient(ellipse 48% 36% at 88% 6%, rgba(183, 230, 0, 0.1), transparent 55%),
+    linear-gradient(165deg, #ebe7e1 0%, #e4e0da 42%, #dcd7cf 100%) !important;
+  color: #1a1f27;
+}
+
+/* Raised clay panel primitive */
+.nui.nui-clay .clay-raised,
+.nui.nui-clay .clay-neu-gas,
+.nui.nui-clay main section[class*="rounded-"],
+.nui.nui-clay main article[class*="rounded-"],
+.nui.nui-clay main li[class*="rounded-"],
+.nui.nui-clay main .rounded-2xl,
+.nui.nui-clay main .rounded-\[24px\],
+.nui.nui-clay main div.min-w-0.rounded-2xl,
+.nui.nui-clay main div.min-w-0.sm\:rounded-\[24px\] {
+  border-radius: var(--clay-radius) !important;
+  border: 1px solid var(--clay-border) !important;
+  background: linear-gradient(
+    145deg,
+    var(--clay-raised-from) 0%,
+    var(--clay-raised-mid) 48%,
+    var(--clay-raised-to) 100%
+  ) !important;
+  box-shadow:
+    8px 8px 18px var(--clay-shadow-dark),
+    -6px -6px 14px var(--clay-shadow-light),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 0 rgba(120, 110, 100, 0.07) !important;
+}
+
+/* Gas card keeps the tighter 10px clay radius + orange mark */
+.nui.nui-clay .clay-neu-gas {
+  border-radius: var(--clay-radius-sm) !important;
+}
+.nui.nui-clay .clay-neu-gas-logo {
   filter: brightness(0) saturate(100%) invert(48%) sepia(92%) saturate(1600%)
     hue-rotate(1deg) brightness(104%) contrast(104%);
 }
-body.nui-dark .nui .clay-neu-gas {
-  border-color: rgba(255, 255, 255, 0.08);
+
+/* Sticky header — soft clay bar */
+.nui.nui-clay > header,
+.nui.nui-clay header.sticky {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  background: linear-gradient(180deg, rgba(242, 239, 233, 0.94), rgba(228, 224, 218, 0.9)) !important;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 8px 20px rgba(110, 100, 90, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Side rail — deep clay */
+.nui.nui-clay aside[aria-label="Admin sections"] {
+  border-radius: 22px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(160deg, #2a3038 0%, #1a1f27 55%, #12161c 100%) !important;
+  box-shadow:
+    8px 8px 20px rgba(40, 36, 32, 0.35),
+    -4px -4px 12px rgba(255, 255, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Inset clay fields */
+.nui.nui-clay input:not([type="checkbox"]):not([type="radio"]),
+.nui.nui-clay textarea,
+.nui.nui-clay select,
+.nui.nui-clay label.rounded-full,
+.nui.nui-clay header label.rounded-full {
+  border-radius: var(--clay-radius-pill) !important;
+  border: 1px solid rgba(160, 150, 140, 0.35) !important;
+  background: linear-gradient(145deg, var(--clay-inset-from), var(--clay-inset-to)) !important;
+  box-shadow:
+    inset 4px 4px 8px rgba(110, 100, 90, 0.22),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.75) !important;
+}
+.nui.nui-clay input:focus,
+.nui.nui-clay textarea:focus,
+.nui.nui-clay select:focus {
+  border-color: rgba(240, 122, 26, 0.55) !important;
+  outline: none;
+  box-shadow:
+    inset 4px 4px 8px rgba(110, 100, 90, 0.2),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.7),
+    0 0 0 3px rgba(240, 122, 26, 0.18) !important;
+}
+
+/* Raised clay chips / secondary buttons */
+.nui.nui-clay button.border,
+.nui.nui-clay a.border,
+.nui.nui-clay button.rounded-full.border,
+.nui.nui-clay a.rounded-full.border {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: linear-gradient(145deg, #f0ece6, #ddd7ce) !important;
+  box-shadow:
+    4px 4px 10px rgba(110, 100, 90, 0.22),
+    -3px -3px 8px rgba(255, 255, 255, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+}
+.nui.nui-clay button.border:active:not(:disabled),
+.nui.nui-clay a.border:active {
+  box-shadow:
+    inset 3px 3px 7px rgba(110, 100, 90, 0.25),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.7) !important;
+  transform: translateY(1px);
+}
+
+/* Lime CTA — clay press with soft orange edge light */
+.nui.nui-clay button.bg-\[\#D7FF00\],
+.nui.nui-clay a.bg-\[\#D7FF00\] {
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  background-image: linear-gradient(180deg, #e8ff4a 0%, #d7ff00 45%, #b8e600 100%) !important;
+  box-shadow:
+    0 4px 0 #7a9a00,
+    6px 8px 16px rgba(110, 100, 90, 0.28),
+    -3px -3px 10px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+.nui.nui-clay button.bg-\[\#D7FF00\]:active:not(:disabled),
+.nui.nui-clay a.bg-\[\#D7FF00\]:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #7a9a00,
+    inset 3px 3px 8px rgba(90, 100, 0, 0.25),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Selected chip (lime fill) stays clay-raised */
+.nui.nui-clay button.border-\[\#B8E600\].bg-\[\#D7FF00\],
+.nui.nui-clay button.bg-\[\#D7FF00\].border-\[\#B8E600\] {
+  box-shadow:
+    0 3px 0 #7a9a00,
+    5px 6px 12px rgba(110, 100, 90, 0.25),
+    -3px -3px 8px rgba(255, 255, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Login / form shells */
+.nui.nui-clay main > div.max-w-sm,
+.nui.nui-clay .clay-panel {
+  border-radius: 24px !important;
+  border: 1px solid var(--clay-border) !important;
+  background: linear-gradient(
+    145deg,
+    var(--clay-raised-from) 0%,
+    var(--clay-raised-mid) 50%,
+    var(--clay-raised-to) 100%
+  ) !important;
+  box-shadow:
+    10px 12px 28px var(--clay-shadow-dark),
+    -8px -8px 20px var(--clay-shadow-light),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Bottom mobile nav */
+.nui.nui-clay nav[aria-label="Admin sections"] {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  background: linear-gradient(180deg, #efebe5, #ddd8d0) !important;
+  box-shadow:
+    0 -6px 18px rgba(110, 100, 90, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Soft status chips */
+.nui.nui-clay .rounded-full.bg-\[\#F4F6FA\],
+.nui.nui-clay .rounded-full.bg-\[\#D6EFD0\],
+.nui.nui-clay .rounded-full.bg-\[\#E6E9F0\] {
+  box-shadow:
+    inset 2px 2px 4px rgba(110, 100, 90, 0.12),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.7);
+}
+
+/* ---------- Dark clay ---------- */
+body.nui-dark .nui.nui-clay,
+body.nui-dark div.nui.nui-clay {
+  background-color: #12161c !important;
+  background-image:
+    radial-gradient(ellipse 50% 36% at 10% 0%, rgba(240, 122, 26, 0.12), transparent 55%),
+    radial-gradient(ellipse 42% 30% at 90% 4%, rgba(183, 230, 0, 0.08), transparent 55%),
+    linear-gradient(165deg, #1a1f27 0%, #12161c 50%, #0c1016 100%) !important;
+}
+
+body.nui-dark .nui.nui-clay .clay-raised,
+body.nui-dark .nui.nui-clay .clay-neu-gas,
+body.nui-dark .nui.nui-clay main section[class*="rounded-"],
+body.nui-dark .nui.nui-clay main article[class*="rounded-"],
+body.nui-dark .nui.nui-clay main li[class*="rounded-"],
+body.nui-dark .nui.nui-clay main .rounded-2xl,
+body.nui-dark .nui.nui-clay main .rounded-\[24px\],
+body.nui-dark .nui.nui-clay main > div.max-w-sm,
+body.nui-dark .nui.nui-clay .clay-panel {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  background: linear-gradient(145deg, #2a3038 0%, #1c222a 55%, #161b22 100%) !important;
+  box-shadow:
+    8px 8px 18px rgba(0, 0, 0, 0.5),
+    -5px -5px 12px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+body.nui-dark .nui.nui-clay > header,
+body.nui-dark .nui.nui-clay header.sticky {
+  background: linear-gradient(180deg, rgba(26, 31, 39, 0.95), rgba(18, 22, 28, 0.92)) !important;
+  border-color: #1c2430 !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.nui-dark .nui.nui-clay input:not([type="checkbox"]):not([type="radio"]),
+body.nui-dark .nui.nui-clay textarea,
+body.nui-dark .nui.nui-clay select,
+body.nui-dark .nui.nui-clay label.rounded-full,
+body.nui-dark .nui.nui-clay header label.rounded-full {
+  border-color: #2a3442 !important;
+  background: linear-gradient(145deg, #141920, #1c232c) !important;
+  box-shadow:
+    inset 4px 4px 9px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.03) !important;
+  color: #eceff3 !important;
+}
+
+body.nui-dark .nui.nui-clay button.border,
+body.nui-dark .nui.nui-clay a.border {
+  border-color: #2a3442 !important;
+  background: linear-gradient(145deg, #262c36, #171c24) !important;
+  box-shadow:
+    4px 4px 10px rgba(0, 0, 0, 0.45),
+    -2px -2px 6px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  color: #eceff3 !important;
+}
+
+body.nui-dark .nui.nui-clay nav[aria-label="Admin sections"] {
+  background: linear-gradient(180deg, #1a1f27, #12161c) !important;
+  border-color: #1c2430 !important;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Landing (non-.nui shell): claymorphic dark explorer card */
+.landing-clay .clay-panel,
+body.nui-on .landing-clay #explorer > div {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(145deg, #2a3038 0%, #1c222a 55%, #161b22 100%);
   box-shadow:
-    7px 7px 16px rgba(0, 0, 0, 0.45),
-    -5px -5px 12px rgba(255, 255, 255, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    8px 8px 20px rgba(0, 0, 0, 0.45),
+    -4px -4px 12px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+body.nui-on .landing-clay input {
+  border-radius: 999px;
+  border: 1px solid #2a3442;
+  background: linear-gradient(145deg, #141920, #1c232c);
+  box-shadow:
+    inset 4px 4px 9px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.03);
+}
+body.nui-on .landing-clay button.bg-\[\#D7FF00\],
+body.nui-on .landing-clay a.bg-\[\#D7FF00\] {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background-image: linear-gradient(180deg, #e8ff4a 0%, #d7ff00 45%, #b8e600 100%);
+  box-shadow:
+    0 4px 0 #7a9a00,
+    6px 8px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
