@@ -20,8 +20,8 @@ export function DocsLayout() {
   return (
     <div className="otv-shell flex min-h-screen flex-col">
       <SiteHeader />
-      <div className="flex-1 md:grid md:grid-cols-[240px_1fr]">
-        <aside className="border-b border-[var(--otv-border)] bg-[var(--otv-surface-tint)] p-6 md:border-b-0 md:border-r">
+      <div className="flex-1 md:grid md:grid-cols-[minmax(220px,280px)_1fr]">
+        <aside className="otv-docs-nav">
           <p className="mb-4 hidden text-xs font-semibold tracking-[0.28em] text-[var(--otv-text-muted)] md:block">
             INTEGRATION
           </p>
@@ -30,7 +30,7 @@ export function DocsLayout() {
               <a
                 key={id}
                 href={`#${id}`}
-                className="block rounded-[10px] px-3 py-2 text-[13px] font-medium tracking-wide text-[var(--otv-text-secondary)] hover:bg-[var(--otv-surface)] hover:text-[var(--otv-text-primary)]"
+                className="block px-3 py-2 text-[13px] font-medium tracking-wide text-[var(--otv-text-secondary)] hover:bg-[var(--otv-brand-muted)] hover:text-[var(--otv-text-primary)]"
               >
                 {label}
               </a>

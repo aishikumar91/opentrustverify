@@ -62,7 +62,7 @@ function AdminChrome({ title, children }: { title: string; children: ReactNode }
             to={item.to}
             end={"end" in item ? item.end : false}
             className={({ isActive }) =>
-              `rounded-[8px] border px-2 py-1 text-[11px] font-semibold ${
+              `otv-clay-chip border px-3 py-1 text-[11px] font-semibold ${
                 isActive
                   ? "border-[var(--otv-border-strong)] bg-[var(--otv-brand-muted)] text-[var(--otv-brand-text)]"
                   : "border-[var(--otv-border)] text-[var(--otv-text-secondary)]"

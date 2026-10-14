@@ -17,12 +17,12 @@ export function Sidebar({
 }) {
   const logo = <Logo href={false} />;
   return (
-    <aside className="sticky top-0 hidden min-h-screen w-52 shrink-0 self-start border-r border-[var(--otv-border)] bg-[var(--otv-surface)] p-3 md:block">
+    <aside className="otv-sidebar hidden md:block">
       {renderLogo ? renderLogo(logo) : <div className="mb-8">{logo}</div>}
       <nav className="space-y-1" aria-label="Dashboard">
         {items.map((item) => {
           const className = clsx(
-            "block rounded-[8px] px-2.5 py-1.5 text-xs font-medium",
+            "block px-3 py-2 text-xs font-medium",
             active === item.href
               ? "bg-[var(--otv-brand-muted)] text-[var(--otv-brand-text)]"
               : "text-[var(--otv-text-secondary)] hover:bg-[var(--otv-surface-muted)]"

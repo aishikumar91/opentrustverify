@@ -48,7 +48,7 @@ export function DocsPage() {
             POST a claim to <code className="otv-mono">/v1/verify/incoming</code>.
           </li>
         </ol>
-        <pre className="otv-mono mt-4 overflow-x-auto rounded-[14px] border border-[var(--otv-border)] bg-[var(--otv-surface-muted)] p-4 text-xs">{`curl -s ${apiBase()}/v1/verify/incoming \\
+        <pre className="otv-clay-well otv-mono mt-4 overflow-x-auto p-4 text-xs">{`curl -s ${apiBase()}/v1/verify/incoming \\
   -H "Authorization: Bearer otv_live_…" \\
   -H "Content-Type: application/json" \\
   -d '{

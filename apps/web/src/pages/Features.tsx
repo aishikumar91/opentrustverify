@@ -124,7 +124,7 @@ export function FeaturesPage() {
           </p>
           <dl className="grid gap-4 sm:grid-cols-2">
             {STATUSES.map(([id, note]) => (
-              <div key={id} className="border-b border-[var(--otv-border)] pb-3">
+              <div key={id} className="otv-clay-panel">
                 <dt className="otv-mono text-sm font-semibold text-[var(--otv-text-primary)]">{id}</dt>
                 <dd className="mt-1 mb-0 text-sm text-[var(--otv-text-secondary)]">{note}</dd>
               </div>

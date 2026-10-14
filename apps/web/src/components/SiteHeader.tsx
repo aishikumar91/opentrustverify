@@ -119,7 +119,7 @@ export function SiteHeader() {
                 key={l.to}
                 to={l.to}
                 className={({ isActive }) =>
-                  `rounded-[8px] px-3 py-2 text-sm font-semibold ${
+                  `rounded-full px-3 py-2 text-sm font-semibold ${
                     isActive
                       ? "bg-[var(--otv-brand)] text-[var(--otv-ink)]"
                       : "text-[var(--otv-text-secondary)]"
@@ -134,7 +134,7 @@ export function SiteHeader() {
               <NavLink
                 to="/dashboard"
                 className={({ isActive }) =>
-                  `rounded-[8px] px-3 py-2 text-sm font-semibold ${
+                  `rounded-full px-3 py-2 text-sm font-semibold ${
                     isActive
                       ? "bg-[var(--otv-brand)] text-[var(--otv-ink)]"
                       : "text-[var(--otv-text-secondary)]"
@@ -148,7 +148,7 @@ export function SiteHeader() {
             {!user && !onLogin && (
               <Link
                 to="/login"
-                className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] sm:hidden"
+                className="rounded-full px-3 py-2 text-sm font-semibold text-[var(--otv-text-secondary)] sm:hidden"
                 onClick={() => setOpen(false)}
               >
                 Log in

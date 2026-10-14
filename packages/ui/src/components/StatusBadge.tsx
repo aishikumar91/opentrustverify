@@ -9,7 +9,7 @@ export function StatusBadge({ status }: { status: VerificationStatus | string })
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-2 rounded-[8px] border px-2.5 py-1 text-xs font-semibold tracking-wide"
+        "otv-clay-chip inline-flex items-center gap-2 border px-3 py-1 text-xs font-semibold tracking-wide"
       )}
       style={{ borderColor: `${color}55`, color, background: `${color}14` }}
       role="status"

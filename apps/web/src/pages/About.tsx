@@ -57,7 +57,7 @@ export function AboutPage() {
           alt={`${product.builderName}, ${product.builderTitle} of ${product.parentBrand}`}
           width={440}
           height={720}
-          className="w-full max-w-[220px] rounded-[14px] border border-[var(--otv-border)] bg-[var(--otv-surface)] object-cover"
+          className="otv-clay-media w-full max-w-[220px] bg-[var(--otv-surface)] object-cover"
         />
         <figcaption className="space-y-3">
           <p className="mb-0 text-xl font-bold text-[var(--otv-text-primary)]">{product.builderName}</p>

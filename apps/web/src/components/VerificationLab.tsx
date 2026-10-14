@@ -164,7 +164,7 @@ export function VerificationLab({ embedded = false }: { embedded?: boolean }) {
                   key={item.id}
                   type="button"
                   onClick={() => start(item.id)}
-                  className={`rounded-[12px] border px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--otv-ivory)] md:text-xs ${
+                  className={`rounded-full border px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--otv-ivory)] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.35)] md:text-xs ${
                     scenarioId === item.id ? "border-[var(--otv-brand)] bg-[var(--otv-brand)]/10" : "border-white/15"
                   }`}
                 >
@@ -181,14 +181,14 @@ export function VerificationLab({ embedded = false }: { embedded?: boolean }) {
             {scenario && (
               <div className="mt-4 space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <article className="rounded-[12px] border border-white/15 p-3">
+                  <article className="rounded-[24px] border border-white/15 p-3 shadow-[inset_2px_3px_8px_rgba(0,0,0,0.35),inset_-2px_-2px_6px_rgba(255,236,200,0.06)]">
                     <h3 className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/55">Event</h3>
                     <p className="mt-1 mb-0 text-sm font-semibold text-[var(--otv-ivory)]">
                       {formatBaseUnits(scenario.expectedAmountBaseUnits, scenario.decimals)} {scenario.tokenSymbol}
                     </p>
                     <p className="mt-1 mb-0 text-[11px] text-[var(--otv-ivory)]/65">Detected</p>
                   </article>
-                  <article className="rounded-[12px] border border-white/15 p-3">
+                  <article className="rounded-[24px] border border-white/15 p-3 shadow-[inset_2px_3px_8px_rgba(0,0,0,0.35),inset_-2px_-2px_6px_rgba(255,236,200,0.06)]">
                     <h3 className="m-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--otv-ivory)]/55">State</h3>
                     <p className="mt-1 mb-0 text-sm font-semibold text-[var(--otv-ivory)]">{verdict}</p>
                     <p className="mt-1 mb-0 text-[11px] text-[var(--otv-ivory)]/65">

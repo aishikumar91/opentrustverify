@@ -490,7 +490,7 @@ export function WalletShell() {
           {setup === "backup" && (
             <div className="space-y-3">
               <p className="text-sm">Write these words down. They are shown once and are not sent to OpenTrust.</p>
-              <p className="rounded-[14px] border border-[var(--otv-border)] p-4 font-mono text-sm">{phraseDraft}</p>
+              <p className="otv-clay-well p-4 font-mono text-sm">{phraseDraft}</p>
               <label className="block text-sm">
                 Last word
                 <Input className="mt-1" value={phraseConfirm} onChange={(e) => setPhraseConfirm(e.target.value)} autoComplete="off" />
@@ -913,7 +913,7 @@ function SendPanel({
         <Button type="button" size="sm" onClick={review} disabled={session.kind === "watch"}>Review</Button>
       )}
       {phase !== "form" && asset && (
-        <div className="space-y-2 rounded-[14px] border border-[var(--otv-border)] p-4 text-sm">
+        <div className="otv-clay-well space-y-2 p-4 text-sm">
           <p>From {session.address}</p>
           <p>To {to}</p>
           <p>Network {network.viem.name}</p>

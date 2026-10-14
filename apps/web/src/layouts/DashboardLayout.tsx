@@ -57,10 +57,7 @@ export function DashboardLayout() {
         <main className="otv-dash-main flex-1 p-3 md:p-5">
           <Outlet />
         </main>
-        <nav
-          className="flex overflow-x-auto border-t border-[var(--otv-border)] bg-[var(--otv-surface)] md:hidden"
-          aria-label="Dashboard"
-        >
+        <nav className="otv-dash-tabs md:hidden" aria-label="Dashboard">
           {items.map((n) => (
             <NavLink
               key={n.href}
