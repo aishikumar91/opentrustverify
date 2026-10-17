@@ -1246,9 +1246,9 @@ textarea.otv-input:focus {
   .otv-status-legend { text-align: center; }
 }
 @media (min-width: 960px) {
-  .otv-menu-btn { display: inline-flex; }
-  .otv-header-nav { display: none; }
-  .otv-header-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .otv-header .otv-menu-btn { display: inline-flex; }
+  .otv-header .otv-header-nav { display: none; }
+  .otv-header .otv-header-row { grid-template-columns: minmax(0, 1fr) auto; }
 }
 @media (max-width: 959px) {
   .otv-frame,

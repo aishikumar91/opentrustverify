@@ -14,10 +14,10 @@ type ThemeState = {
 const ThemeContext = createContext<ThemeState | null>(null);
 
 function readPreference(): ThemePreference {
-  if (typeof localStorage === "undefined") return "system";
+  if (typeof localStorage === "undefined") return "dark";
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw === "light" || raw === "dark" || raw === "system") return raw;
-  return "system";
+  return "dark";
 }
 
 function systemTheme(): ResolvedTheme {
