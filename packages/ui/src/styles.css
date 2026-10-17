@@ -1154,6 +1154,27 @@ textarea.otv-input:focus {
 .otv-header-row { min-width: 0; }
 .otv-header-actions { flex-wrap: wrap; justify-content: flex-end; }
 .otv-header .otv-logo-word { font-size: clamp(1.7rem, 2.8vw, 2.35rem); line-height: 1.9; }
+.otv-logo-mark {
+  display: none;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 8px;
+}
+@media (max-width: 767px) {
+  .otv-header .otv-header-row { grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; }
+  .otv-dash-header .otv-logo { flex: none; }
+  .otv-header .otv-logo-word,
+  .otv-dash-header .otv-logo-word { display: none; }
+  .otv-header .otv-logo-mark,
+  .otv-dash-header .otv-logo-mark { display: block; }
+  .otv-header .otv-logo,
+  .otv-dash-header .otv-logo { max-width: none; }
+  .otv-header-actions { flex-wrap: nowrap; gap: 4px; min-width: 0; }
+  .otv-header .otv-btn { padding: 0 8px; }
+  .otv-header .otv-btn-face small { letter-spacing: 0.06em; }
+  .otv-header .otv-theme-icon { width: 36px; height: 36px; }
+}
 .otv-theme-icon { border-radius: 8px; box-shadow: none; }
 .otv-card-feature { background: var(--otv-surface); }
 .otv-footer {
