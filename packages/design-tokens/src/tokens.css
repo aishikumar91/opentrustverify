@@ -1,7 +1,7 @@
 :root {
-  /* Sampled from https://otv.poptrust.me (Oct 2026). The brief's
-     approx. #04080E / #2BB3E0 are this navy and this cyan. */
-  --background: #03070c;
+  /* Codex-like neutrals. Lime is the single accent. Cyan stays available
+     for verdict and chain status, not for chrome. */
+  --background: #f6f6f6;
   --background-secondary: #050b12;
   --surface: #071019;
   --surface-elevated: #0a141e;
@@ -12,52 +12,50 @@
   --otv-ink: #10202c;
   --otv-cyan: var(--cyan);
   --otv-cyan-bright: var(--cyan-bright);
-  --otv-brand: var(--cyan);
-  --otv-brand-hover: var(--cyan-bright);
-  --otv-brand-muted: rgba(8, 127, 168, 0.14);
-  --otv-brand-text: #055f7c;
+  --otv-lime: #e5ff5d;
+  --otv-brand: var(--otv-lime);
+  --otv-brand-hover: #f4ff9a;
+  --otv-brand-muted: rgba(229, 255, 93, 0.16);
+  --otv-brand-text: #3d4f00;
   --otv-accent: var(--cyan);
   --otv-accent-warm: var(--cyan-bright);
-  --otv-logo-accent: #12202c;
-  --otv-on-brand: #041018;
-  --otv-inverse: #10202c;
-  --otv-on-inverse: #f4f7fb;
-  --otv-inverse-muted: rgba(16, 32, 44, 0.12);
-  --otv-inverse-wash: rgba(16, 32, 44, 0.05);
+  --otv-logo-accent: #181818;
+  --otv-on-brand: #141414;
+  --otv-inverse: #181818;
+  --otv-on-inverse: #f7f7f7;
+  --otv-inverse-muted: rgba(24, 24, 24, 0.12);
+  --otv-inverse-wash: rgba(24, 24, 24, 0.05);
 
-  --otv-background: #f4f7fb;
+  --otv-background: #f6f6f6;
   --otv-surface: #ffffff;
-  --otv-surface-muted: #f3f7fb;
-  --otv-surface-tint: #e7eef6;
+  --otv-surface-muted: #f0f0f0;
+  --otv-surface-tint: #ececec;
   --otv-surface-elevated: #ffffff;
-  --otv-border: rgba(16, 40, 60, 0.12);
-  --otv-border-strong: rgba(16, 40, 60, 0.22);
+  --otv-border: rgba(0, 0, 0, 0.08);
+  --otv-border-strong: rgba(0, 0, 0, 0.16);
 
-  --otv-text-primary: #12202c;
-  --otv-text-secondary: #3c5364;
-  --otv-text-muted: #4d6576;
-  --otv-on-dark: #12202c;
-  --otv-footer-muted: #3c5364;
+  --otv-text-primary: #181818;
+  --otv-text-secondary: #3a3a3a;
+  --otv-text-muted: #5c5c5c;
+  --otv-on-dark: #181818;
+  --otv-footer-muted: #3a3a3a;
 
-  --otv-header-bg: rgba(255, 255, 255, 0.9);
-  --otv-header-shadow: rgba(16, 40, 60, 0.08);
+  --otv-header-bg: rgba(246, 246, 246, 0.9);
+  --otv-header-shadow: transparent;
   --otv-hero-bg: transparent;
-  --otv-hero-title: #12202c;
-  --otv-hero-copy: #3c5364;
-  --otv-hero-spot-a: rgba(8, 191, 255, 0.18);
-  --otv-hero-spot-b: rgba(22, 119, 255, 0.08);
+  --otv-hero-title: #181818;
+  --otv-hero-copy: #3a3a3a;
+  --otv-hero-spot-a: transparent;
+  --otv-hero-spot-b: transparent;
   --otv-btn-shadow: transparent;
   --otv-btn-outline: rgba(16, 40, 60, 0.18);
 
-  --otv-stage: #f4f7fb;
+  --otv-stage: #f6f6f6;
   --otv-stage-elevated: #ffffff;
-  --otv-panel-bg:
-    radial-gradient(circle at 50% 115%, rgba(8, 191, 255, 0.12), transparent 36%),
-    radial-gradient(ellipse 42% 50% at 78% 28%, rgba(8, 191, 255, 0.08), transparent 60%),
-    linear-gradient(180deg, #ffffff 0%, #f4f7fb 70%);
-  --otv-ivory: #12202c;
-  --otv-ivory-dim: #3c5364;
-  --otv-frame-line: rgba(16, 40, 60, 0.12);
+  --otv-panel-bg: #f6f6f6;
+  --otv-ivory: #181818;
+  --otv-ivory-dim: #3a3a3a;
+  --otv-frame-line: rgba(0, 0, 0, 0.08);
 
   --otv-success: #0f7a45;
   --otv-warning: #8a5a10;
@@ -115,50 +113,47 @@
 [data-theme="dark"] {
   color-scheme: dark;
   --otv-ink: #03070c;
-  --otv-brand: var(--cyan);
-  --otv-brand-hover: var(--cyan-bright);
-  --otv-brand-muted: rgba(8, 191, 255, 0.12);
-  --otv-brand-text: #9ae7ff;
-  --otv-on-brand: #03070c;
-  --otv-logo-accent: #f3f5f7;
-  --otv-inverse: #f3f5f7;
-  --otv-on-inverse: #03070c;
-  --otv-inverse-muted: rgba(243, 245, 247, 0.16);
-  --otv-inverse-wash: rgba(243, 245, 247, 0.06);
+  --otv-brand: #e5ff5d;
+  --otv-brand-hover: #f4ff9a;
+  --otv-brand-muted: rgba(229, 255, 93, 0.14);
+  --otv-brand-text: #e5ff5d;
+  --otv-on-brand: #141414;
+  --otv-logo-accent: #f7f7f7;
+  --otv-inverse: #f7f7f7;
+  --otv-on-inverse: #141414;
+  --otv-inverse-muted: rgba(247, 247, 247, 0.14);
+  --otv-inverse-wash: rgba(247, 247, 247, 0.05);
 
-  --otv-background: #03070c;
-  --otv-surface: #071019;
-  --otv-surface-muted: #0a141e;
-  --otv-surface-tint: #050b12;
-  --otv-surface-elevated: #0a141e;
-  --otv-border: rgba(150, 190, 215, 0.12);
-  --otv-border-strong: rgba(8, 191, 255, 0.55);
+  --otv-background: #111111;
+  --otv-surface: #181818;
+  --otv-surface-muted: #1f1f1f;
+  --otv-surface-tint: #141414;
+  --otv-surface-elevated: #1f1f1f;
+  --otv-border: rgba(255, 255, 255, 0.08);
+  --otv-border-strong: rgba(255, 255, 255, 0.16);
 
-  --otv-text-primary: #f3f5f7;
-  --otv-text-secondary: #c5d0d8;
-  --otv-text-muted: #8ea0ad;
-  --otv-on-dark: #f3f5f7;
-  --otv-footer-muted: #c5d0d8;
+  --otv-text-primary: #f7f7f7;
+  --otv-text-secondary: #cdd3de;
+  --otv-text-muted: #8b909a;
+  --otv-on-dark: #f7f7f7;
+  --otv-footer-muted: #cdd3de;
 
-  --otv-header-bg: rgba(3, 7, 12, 0.82);
-  --otv-header-shadow: rgba(0, 0, 0, 0.4);
+  --otv-header-bg: rgba(17, 17, 17, 0.86);
+  --otv-header-shadow: transparent;
   --otv-hero-bg: transparent;
-  --otv-hero-title: #f3f5f7;
-  --otv-hero-copy: #c5d0d8;
-  --otv-hero-spot-a: rgba(8, 191, 255, 0.1);
-  --otv-hero-spot-b: rgba(22, 119, 255, 0.08);
+  --otv-hero-title: #f7f7f7;
+  --otv-hero-copy: #cdd3de;
+  --otv-hero-spot-a: transparent;
+  --otv-hero-spot-b: transparent;
   --otv-btn-shadow: transparent;
-  --otv-btn-outline: rgba(8, 191, 255, 0.55);
+  --otv-btn-outline: rgba(255, 255, 255, 0.16);
 
-  --otv-stage: #03070c;
-  --otv-stage-elevated: #0a141e;
-  --otv-panel-bg:
-    radial-gradient(circle at 50% 115%, rgba(0, 180, 255, 0.1), transparent 36%),
-    radial-gradient(ellipse 42% 50% at 78% 28%, rgba(8, 191, 255, 0.08), transparent 60%),
-    linear-gradient(180deg, #071019 0%, #03070c 70%);
-  --otv-ivory: #f3f5f7;
-  --otv-ivory-dim: #c5d0d8;
-  --otv-frame-line: rgba(150, 190, 215, 0.16);
+  --otv-stage: #111111;
+  --otv-stage-elevated: #181818;
+  --otv-panel-bg: #111111;
+  --otv-ivory: #f7f7f7;
+  --otv-ivory-dim: #cdd3de;
+  --otv-frame-line: rgba(255, 255, 255, 0.08);
 
   --otv-clay: none;
   --otv-clay-inset: inset 0 2px 6px rgba(0, 0, 0, 0.45);

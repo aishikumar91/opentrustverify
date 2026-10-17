@@ -13,6 +13,7 @@ export function Logo({
 }) {
   const content = (
     <span className={clsx("otv-logo", invert && "otv-logo-invert", !showWordmark && "otv-logo-compact", className)}>
+      <img className="otv-logo-mark" src="/favicon.png" alt="" width={36} height={36} />
       <span className="otv-logo-word">{showWordmark ? "Open Trust" : "OTV"}</span>
     </span>
   );
