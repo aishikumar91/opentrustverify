@@ -13,7 +13,7 @@ export function Logo({
 }) {
   const content = (
     <span className={clsx("otv-logo", invert && "otv-logo-invert", !showWordmark && "otv-logo-compact", className)}>
-      <span className="otv-logo-word">{showWordmark ? "Open Trust Verify" : "OTV"}</span>
+      <span className="otv-logo-word">{showWordmark ? "Open Trust" : "OTV"}</span>
     </span>
   );
   return href ? (

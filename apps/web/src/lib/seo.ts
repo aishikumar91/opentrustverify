@@ -87,6 +87,18 @@ const pages: Record<string, SeoPage> = {
       "A simulated demonstration of why OpenTrust Verify does not treat a payment event as a confirmed balance. No real transaction is sent.",
     keywords: "OTV verification lab, event versus blockchain state, payment verification demo",
   },
+  "/scan": {
+    path: "/scan",
+    title: "Verify Any Crypto Payment | OpenTrust Verify",
+    description:
+      "Enter a transaction hash. OpenTrust Verify checks the chain evidence and returns a signed verdict on whether the named recipient can spend what arrived.",
+    keywords: "crypto transaction scanner, payment verification, signed verdict, OpenTrust Verify",
+  },
+  "/pricing": {
+    path: "/pricing",
+    title: "OTV pricing | OpenTrust Verify",
+    description: "OpenTrust Verify does not publish a rate card. Volume beyond a new workspace is a written agreement.",
+  },
   "/verifier": {
     path: "/verifier",
     title: "Public crypto verifier | Check an incoming transfer",

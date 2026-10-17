@@ -12,6 +12,7 @@ import { FeaturesPage } from "./pages/Features";
 import { ContactPage, SecurityPage } from "./pages/Public";
 import { PrivacyPage, TermsPage } from "./pages/Legal";
 import { VerifierPage } from "./pages/Verifier";
+import { PricingPage } from "./pages/Pricing";
 import {
   DashboardApi,
   DashboardAudit,
@@ -65,6 +66,10 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/verifier" element={<VerifierPage />} />
+            <Route path="/verifier/" element={<VerifierPage />} />
+            <Route path="/scan" element={<VerifierPage />} />
+            <Route path="/scan/" element={<VerifierPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
             <Route path="/lab" element={<LabPage />} />
           </Route>
 
@@ -106,7 +111,6 @@ export default function App() {
           <Route path="/developers" element={<Navigate to="/docs" replace />} />
           <Route path="/standards" element={<Navigate to="/whitepaper" replace />} />
           <Route path="/research" element={<Navigate to="/about" replace />} />
-          <Route path="/pricing" element={<Navigate to="/" replace />} />
           <Route path="/company" element={<Navigate to="/about" replace />} />
           <Route path="/marketing" element={<Navigate to="/" replace />} />
           <Route path="/policy" element={<Navigate to="/privacy" replace />} />

@@ -8,29 +8,21 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const NAV = [
   { to: "/features", label: "Features" },
+  { to: "/pricing", label: "Pricing" },
   { to: "/docs", label: "Docs" },
   { to: "/whitepaper", label: "Whitepaper" },
   { to: "/verifier", label: "Verifier" },
-  { to: "/lab", label: "Lab" },
+  { to: "/about", label: "About" },
 ];
 
 const FOOTER_LINKS = [
-  { title: "Product", items: [
-    { to: "/features", label: "Features" },
-    { to: "/docs", label: "Docs" },
-    { to: "/verifier", label: "Verifier" },
-    { to: "/lab", label: "Verification lab" },
-    { to: "/whitepaper", label: "Whitepaper" },
-  ]},
-  { title: "Company", items: [
-    { to: "/about", label: "About" },
-    { to: "/security", label: "Security" },
-    { to: "/contact", label: "Contact" },
-  ]},
-  { title: "Legal", items: [
-    { to: "/privacy", label: "Privacy policy" },
-    { to: "/terms", label: "Terms of use" },
-  ]},
+  { to: "/features", label: "Features" },
+  { to: "/pricing", label: "Pricing" },
+  { to: "/docs", label: "Docs" },
+  { to: "/whitepaper", label: "Whitepaper" },
+  { to: "/about", label: "About" },
+  { to: "/privacy", label: "Privacy" },
+  { to: "/terms", label: "Terms" },
 ];
 
 function navClass({ isActive }: { isActive: boolean }) {
@@ -94,7 +86,7 @@ export function SiteHeader() {
           ) : (
             <>
               {!onLogin && (
-                <Link to="/login" className={buttonClassName("secondary", "hidden sm:inline-flex", "sm")}>
+                <Link to="/login" className={buttonClassName("secondary", undefined, "sm")}>
                   <BtnText>Log in</BtnText>
                 </Link>
               )}
@@ -168,33 +160,28 @@ export function SiteFooter() {
   const { user } = useAuth();
   return (
     <footer className="otv-footer">
-      <div className="otv-container grid gap-8 py-10 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
+      <div className="otv-container grid gap-8 py-10 md:grid-cols-[1.2fr_2fr]">
         <div>
           <BrandLink invert />
           <p className="mt-5 max-w-sm text-sm">
             A signed answer to one question: can this recipient spend what just arrived?
           </p>
-          <div className="mt-6">
-            <GithubStar invert />
-          </div>
+          <p className="mt-4">
+            <a href="/downloads/opentrust-verify.apk">Download the Android app</a>
+          </p>
         </div>
-        {FOOTER_LINKS.map((col) => (
-          <div key={col.title}>
-            <h3 className="mb-4">{col.title}</h3>
-            <ul className="space-y-2 text-sm text-[var(--otv-on-dark)]">
-              {col.items.map((l) => (
-                <li key={l.to}>
-                  <Link to={l.to}>{l.label}</Link>
-                </li>
-              ))}
-              {col.title === "Product" && user && (
-                <li>
-                  <Link to="/dashboard">Dashboard</Link>
-                </li>
-              )}
-            </ul>
-          </div>
-        ))}
+        <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--otv-on-dark)]">
+          {FOOTER_LINKS.map((l) => (
+            <li key={l.to}>
+              <Link to={l.to}>{l.label}</Link>
+            </li>
+          ))}
+          {user && (
+            <li>
+              <Link to="/dashboard">Dashboard</Link>
+            </li>
+          )}
+        </ul>
       </div>
       <div className="border-t border-[var(--otv-inverse-muted)] py-5 text-center text-sm">
         {product.name} · a product of {product.legalEntity} · RC {product.rcNumber} ·{" "}

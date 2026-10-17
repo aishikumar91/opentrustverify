@@ -66,9 +66,40 @@ function InstrumentMark() {
   );
 }
 
+const VERDICT_PATH = [
+  "OBSERVED",
+  "PENDING",
+  "EXECUTED",
+  "ASSET_CONFIRMED",
+  "BALANCE_CONFIRMED",
+  "FINAL",
+  "SPENDABLE",
+] as const;
+
+const VERDICT_TERMINAL = ["REJECTED", "SUSPICIOUS", "UNVERIFIED"] as const;
+
+export function VerdictLegend() {
+  return (
+    <div className="otv-status-legend">
+      <p>Verdict path</p>
+      <ol>
+        {VERDICT_PATH.map((status) => (
+          <li key={status}>{status}</li>
+        ))}
+      </ol>
+      <p>Separate outcome</p>
+      <ul>
+        {VERDICT_TERMINAL.map((status) => (
+          <li key={status}>{status}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function VerdictOrbit({ size = "panel" }: { size?: "hero" | "panel" }) {
   const hero = size === "hero";
-  return (
+  const graphic = (
     <div className={hero ? "otv-orbit otv-orbit-hero" : "otv-orbit"} aria-hidden>
       <svg viewBox="0 0 480 480">
         <g className="otv-spin">
@@ -142,6 +173,13 @@ export function VerdictOrbit({ size = "panel" }: { size?: "hero" | "panel" }) {
           </g>
         )}
       </svg>
+    </div>
+  );
+  if (!hero) return graphic;
+  return (
+    <div className="otv-orbit-block">
+      {graphic}
+      <VerdictLegend />
     </div>
   );
 }

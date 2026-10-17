@@ -93,41 +93,34 @@ export function HomePage() {
 
   return (
     <>
-      <section className="otv-stage">
-        <div className="otv-container">
-          <div className="otv-frame otv-frame-hero" data-aos="fade-up">
-            <div className="otv-hero-layout">
-              <div className="otv-hero-copy" data-aos="fade-up" data-aos-delay="40">
-                <p className="otv-kicker">Incoming verification</p>
-                <h1 className="otv-display">
-                  Trust the balance,
-                  <br />
-                  not the event.
-                </h1>
-                <p className="otv-lede">
-                  A hash can look paid while the recipient still cannot spend the asset. Send the claim.
-                  The API returns a signed verdict.
-                </p>
-                <div className="otv-hero-actions">
-                  <Link to="/register" className={buttonClassName("primary")}>
-                    <BtnText>Create an account</BtnText>
-                  </Link>
-                  <Link to="/docs" className={buttonClassName("secondary", "otv-btn-invert")}>
-                    <BtnText>Read the API</BtnText>
-                  </Link>
-                </div>
-                <p className="otv-hero-note">
-                  <Link to="/lab">Run the demo</Link>
-                  <span aria-hidden> · </span>
-                  <Link to="/verifier">Look up a verdict</Link>
-                </p>
-              </div>
-              <div data-aos="zoom-in" data-aos-delay="80">
-                <VerdictOrbit size="hero" />
-              </div>
+      <section className="otv-hero-scene">
+        <div className="otv-container otv-hero-layout">
+          <div className="otv-hero-copy">
+            <h1 className="otv-display">
+              Trust the balance,
+              <br />
+              not the event.
+            </h1>
+            <div className="otv-hero-actions">
+              <Link to="/register" className={buttonClassName("primary")}>
+                <BtnText>Create an account</BtnText>
+              </Link>
+              <Link to="/docs" className={buttonClassName("secondary", "otv-btn-invert")}>
+                <BtnText>Read the API</BtnText>
+              </Link>
             </div>
           </div>
-          <ExplorerSearchBar compact className="otv-hero-search" />
+          <VerdictOrbit size="hero" />
+        </div>
+      </section>
+
+      <section className="otv-section otv-lookup" aria-labelledby="lookup-heading">
+        <div className="otv-container">
+          <h2 id="lookup-heading" className="otv-heading">Look up a verdict</h2>
+          <p className="otv-lede">
+            A seen transaction is not spendable funds. SPENDABLE requires FINAL.
+          </p>
+          <ExplorerSearchBar className="otv-lookup-search" />
         </div>
       </section>
 
