@@ -64,22 +64,21 @@ a { color: inherit; text-decoration: none; }
 .otv-logo-invert { color: var(--otv-logo-accent); }
 .otv-logo-word {
   font-family: var(--otv-font-logo);
-  font-size: clamp(0.82rem, 1.6vw, 0.98rem);
+  font-size: clamp(1.55rem, 2.6vw, 2.15rem);
   font-weight: 400;
-  letter-spacing: 0.02em;
-  line-height: 0.9;
+  letter-spacing: 0.08em;
+  line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
 }
 .otv-logo-compact .otv-logo-word {
   font-size: 0.82rem;
 }
-.otv-header .otv-logo-word {
-  font-size: clamp(0.78rem, 1.4vw, 0.92rem);
-}
+.otv-header .otv-logo-word,
 .otv-footer .otv-logo-word {
-  font-size: clamp(0.82rem, 1.5vw, 0.95rem);
-  color: var(--otv-ivory);
+  font-size: clamp(1.55rem, 2.6vw, 2.15rem);
+  line-height: 1;
+  color: var(--otv-logo-accent);
 }
 
 .otv-btn {
@@ -471,16 +470,7 @@ textarea.otv-input:focus {
     14px 18px 32px rgba(60, 36, 16, 0.28),
     -8px -8px 18px rgba(255, 248, 230, 0.65);
 }
-.otv-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.18;
-  background-image: radial-gradient(rgba(240, 235, 198, 0.18) 0.6px, transparent 0.6px);
-  background-size: 3px 3px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 70%);
-}
+.otv-frame::before { content: none; }
 .otv-hero-layout {
   position: relative;
   z-index: 1;
@@ -1046,42 +1036,41 @@ textarea.otv-input:focus {
   .otv-card:hover { transform: none; }
 }
 
-/* Live surface. Sampled navy/cyan from otv.poptrust.me, then tightened
-   to the ghost controls and 12px lookup card. */
+/* Flat charcoal surface. No dot grid, no cyan wash. */
+html,
 body,
 [data-theme="dark"] body {
-  background:
-    radial-gradient(ellipse 70% 42% at 50% -12%, var(--otv-hero-spot-a), transparent 58%),
-    radial-gradient(ellipse 40% 36% at 100% 0%, var(--otv-hero-spot-b), transparent 52%),
-    var(--otv-background);
+  background: var(--otv-background);
+  background-image: none;
 }
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--otv-brand) 48%, transparent) 0.55px, transparent 1.15px);
-  background-size: 16px 16px;
-  opacity: 0.32;
-}
+body::before { content: none; }
 #root { position: relative; z-index: 1; }
 .otv-shell { padding-bottom: env(safe-area-inset-bottom); }
 
-.otv-logo-word {
-  letter-spacing: 0.18em;
+.otv-logo-word,
+.otv-header .otv-logo-word,
+.otv-footer .otv-logo-word {
+  /* Gondens draws about 1.59em above the baseline. A line-height of 1
+     clips the cap height against the header edge. */
+  font-size: clamp(1.7rem, 2.8vw, 2.35rem);
+  line-height: 1.9;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+.otv-logo-compact .otv-logo-word {
+  font-size: 1.15rem;
+  line-height: 1.9;
 }
 
 .otv-btn,
 .otv-btn-ghost {
   min-height: 40px;
-  border: 1px solid var(--otv-cyan);
-  border-radius: 4px;
+  border: 1px solid var(--otv-border-strong);
+  border-radius: 8px;
   background: transparent;
   color: var(--otv-text-primary);
   box-shadow: none;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .otv-btn:hover,
@@ -1094,22 +1083,22 @@ body::before {
   background: var(--otv-brand-muted);
 }
 .otv-btn-dark {
-  background: var(--otv-cyan);
+  background: var(--otv-brand);
   color: var(--otv-on-brand);
-  border-color: var(--otv-cyan);
+  border-color: var(--otv-brand);
 }
 .otv-btn-dark:hover,
 .otv-btn-dark:active {
-  background: var(--otv-cyan-bright);
+  background: var(--otv-brand-hover);
   color: var(--otv-on-brand);
-  border-color: var(--otv-cyan-bright);
+  border-color: var(--otv-brand-hover);
   box-shadow: none;
 }
 .otv-btn-border,
 .otv-btn-invert {
   background: transparent;
   color: var(--otv-text-primary);
-  border-color: var(--otv-cyan);
+  border-color: var(--otv-border-strong);
 }
 .otv-btn-border:hover,
 .otv-btn-invert:hover {
@@ -1131,7 +1120,7 @@ textarea.otv-input { border-radius: 8px; }
 .otv-input:focus,
 select.otv-input:focus,
 textarea.otv-input:focus {
-  border-color: var(--otv-cyan);
+  border-color: var(--otv-brand);
   box-shadow: 0 0 0 3px var(--otv-brand-muted);
 }
 
@@ -1164,7 +1153,9 @@ textarea.otv-input:focus {
 .otv-dash-header { height: auto; min-height: 56px; }
 .otv-header-row { min-width: 0; }
 .otv-header-actions { flex-wrap: wrap; justify-content: flex-end; }
-.otv-header .otv-logo-word { font-size: clamp(1rem, 3.4vw, 1.7rem); }
+.otv-header .otv-logo-word { font-size: clamp(1.7rem, 2.8vw, 2.35rem); line-height: 1.9; }
+.otv-theme-icon { border-radius: 8px; box-shadow: none; }
+.otv-card-feature { background: var(--otv-surface); }
 .otv-footer {
   margin-top: 0;
   border-radius: 0;
@@ -1181,7 +1172,7 @@ textarea.otv-input:focus {
 }
 .otv-search {
   border-radius: 12px;
-  border: 1px solid var(--otv-cyan);
+  border: 1px solid var(--otv-border-strong);
   background: var(--otv-surface);
   box-shadow: none;
   padding: 14px;
